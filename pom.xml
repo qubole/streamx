@@ -28,14 +28,12 @@
 
     <properties>
         <confluent.version>2.0-SNAPSHOT</confluent.version>
-        <copycat.version>2.0-SNAPSHOT</copycat.version>
+        <kafka.version>0.9.0.0-SNAPSHOT</kafka.version>
         <junit.version>4.11</junit.version>
-        <easymock.version>3.0</easymock.version>
-        <powermock.version>1.6.2</powermock.version>
-        <commons.version>2.4</commons.version>
         <hadoop.version>2.6.0</hadoop.version>
         <avro.version>1.7.7</avro.version>
         <parquet.version>1.7.0</parquet.version>
+        <commons-io.version>2.4</commons-io.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -49,19 +47,14 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.confluent</groupId>
+            <groupId>org.apache.kafka</groupId>
             <artifactId>copycat-api</artifactId>
-            <version>${copycat.version}</version>
+            <version>${kafka.version}</version>
         </dependency>
         <dependency>
             <groupId>io.confluent</groupId>
-            <artifactId>copycat-runtime</artifactId>
-            <version>${copycat.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>copycat-data</artifactId>
-            <version>${copycat.version}</version>
+            <artifactId>copycat-avro-converter</artifactId>
+            <version>${confluent.version}</version>
         </dependency>
         <dependency>
             <groupId>io.confluent</groupId>
@@ -72,30 +65,6 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
-            <version>${easymock.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
-            <version>${powermock.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-easymock</artifactId>
-            <version>${powermock.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${commons.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -123,6 +92,11 @@
             <artifactId>parquet-avro</artifactId>
             <version>${parquet.version}</version>
         </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons-io.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -139,7 +113,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.5.2</version>
+                <version>2.5.3</version>
                 <configuration>
                     <descriptors>
                         <descriptor>src/assembly/development.xml</descriptor>

@@ -19,36 +19,39 @@ package io.confluent.copycat.hdfs;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.io.DatumWriter;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.Path;
+import org.apache.kafka.copycat.data.Schema;
+import org.apache.kafka.copycat.sink.SinkRecord;
 
 import java.io.IOException;
 
-import io.confluent.copycat.data.Schema;
-import io.confluent.copycat.data.GenericRecord;
-import io.confluent.copycat.sink.SinkRecord;
-import io.confluent.copycat.util.AvroData;
+import io.confluent.copycat.avro.AvroData;
 
 public class AvroRecordWriterProvider implements RecordWriterProvider {
 
   @Override
-  public RecordWriter<Long, SinkRecord> getRecordWriter(Configuration conf, String fileName, SinkRecord record)
-      throws IOException{
-    DatumWriter<Object> datumWriter = new GenericDatumWriter<Object>();
-    final DataFileWriter<Object> writer = new DataFileWriter<Object>(datumWriter);
+  public RecordWriter<Long, SinkRecord> getRecordWriter(Configuration conf, final String fileName,
+                                                        SinkRecord record, final AvroData avroData)
+      throws IOException {
+    DatumWriter<Object> datumWriter = new GenericDatumWriter<>();
+    final DataFileWriter<Object> writer = new DataFileWriter<>(datumWriter);
     Path path = new Path(fileName);
-    Schema schema = ((GenericRecord) record.getValue()).getSchema();
-    writer.create(AvroData.asAvroSchema(schema), path.getFileSystem(conf).create(path));
+
+    final Schema schema = record.valueSchema();
+    final FSDataOutputStream out = path.getFileSystem(conf).create(path);
+    writer.create(avroData.fromCopycatSchema(schema), out);
 
     return new RecordWriter<Long, SinkRecord>(){
       @Override
-      public void write(Long key, SinkRecord record) throws IOException{
-        Object value = AvroData.convertToAvro(record.getValue());
+      public void write(Long key, SinkRecord record) throws IOException {
+        Object value = avroData.fromCopycatData(schema, record.value());
         writer.append(value);
       }
 
       @Override
-      public void close() throws IOException{
+      public void close() throws IOException {
         writer.close();
       }
     };

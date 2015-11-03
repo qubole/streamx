@@ -14,15 +14,20 @@
 
 package io.confluent.copycat.hdfs;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.kafka.copycat.sink.SinkRecord;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 
-import java.io.IOException;
 
-import io.confluent.copycat.avro.AvroData;
+public class CommittedFileFilter implements PathFilter {
 
-public interface RecordWriterProvider {
+  @Override
+  public boolean accept(Path path) {
+    String filename = path.getName();
+    if (filename.equals("log") || filename.equals("log.1")) {
+      return false;
+    }
+    String[] parts = path.getName().split("_");
 
-  RecordWriter<Long, SinkRecord> getRecordWriter(Configuration conf, String fileName, SinkRecord record, AvroData avroData) throws
-                                                                                       IOException;
+    return !(parts.length != 2 || parts[1].equals("tmp"));
+  }
 }

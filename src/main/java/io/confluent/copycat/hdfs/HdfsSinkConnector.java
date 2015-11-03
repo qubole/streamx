@@ -14,15 +14,16 @@
 
 package io.confluent.copycat.hdfs;
 
+
+import org.apache.kafka.copycat.connector.Connector;
+import org.apache.kafka.copycat.connector.Task;
+import org.apache.kafka.copycat.errors.CopycatException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 import io.confluent.common.config.ConfigException;
-import io.confluent.copycat.connector.Connector;
-import io.confluent.copycat.connector.Task;
-import io.confluent.copycat.errors.CopycatException;
-import io.confluent.copycat.errors.CopycatRuntimeException;
 
 /**
  * HdfsSinkConnector is a Copycat Connector implementation that ingest data
@@ -39,19 +40,19 @@ public class HdfsSinkConnector extends Connector{
       configProperties = props;
       config = new HdfsSinkConnectorConfig(props);
     } catch (ConfigException e) {
-      throw new CopycatRuntimeException("Couldn't start HdfsSinkConnector due to configuration "
+      throw new CopycatException("Couldn't start HdfsSinkConnector due to configuration "
                                          + "error", e);
     }
   }
 
   @Override
-  public Class<? extends Task> getTaskClass() {
+  public Class<? extends Task> taskClass() {
     return HdfsSinkTask.class;
   }
 
   @Override
-  public List<Properties> getTaskConfigs(int maxTasks) {
-    List<Properties> taskConfigs = new ArrayList<Properties>();
+  public List<Properties> taskConfigs(int maxTasks) {
+    List<Properties> taskConfigs = new ArrayList<>();
     Properties taskProps = new Properties();
     taskProps.putAll(configProperties);
     for (int i = 0; i < maxTasks; i++) {

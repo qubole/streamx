@@ -26,30 +26,49 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.copycat.data.Schema;
+import org.apache.kafka.copycat.data.SchemaBuilder;
+import org.apache.kafka.copycat.data.Struct;
+import org.apache.kafka.copycat.sink.SinkTaskContext;
 import org.junit.After;
 import org.junit.Before;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
-import io.confluent.copycat.data.GenericRecord;
-import io.confluent.copycat.data.GenericRecordBuilder;
-import io.confluent.copycat.data.Schema;
-import io.confluent.copycat.data.SchemaBuilder;
+import io.confluent.copycat.avro.AvroData;
 
 public class HdfsSinkConnectorTestBase {
   protected MiniDFSCluster cluster;
   protected Configuration conf;
   protected String url;
   protected FileSystem fs;
+  protected HdfsSinkConnectorConfig connectorConfig;
+  protected String topicsDir;
+  protected AvroData avroData;
+  protected boolean dfsCluster = true;
+
+  protected MockSinkTaskContext context;
+  protected static final String TOPIC = "topic";
+  protected static final int PARTITION = 12;
+  protected static final int PARTITION2 = 13;
+  protected static final int PARTITION3 = 14;
+  protected static final TopicPartition TOPIC_PARTITION = new TopicPartition(TOPIC, PARTITION);
+  protected static final TopicPartition TOPIC_PARTITION2 = new TopicPartition(TOPIC, PARTITION2);
+  protected static final TopicPartition TOPIC_PARTITION3 = new TopicPartition(TOPIC, PARTITION3);
+  protected static Set<TopicPartition> assignment;
 
   private MiniDFSCluster createDFSCluster(Configuration conf) throws IOException {
     MiniDFSCluster cluster;
-    String[] hosts = {"localhost"};
+    String[] hosts = {"localhost", "localhost", "localhost"};
     MiniDFSCluster.Builder builder = new MiniDFSCluster.Builder(conf);
-    builder.hosts(hosts).nameNodePort(9000);
+    builder.hosts(hosts).nameNodePort(9000).numDataNodes(3);
     cluster = builder.build();
     cluster.waitActive();
     return cluster;
@@ -61,33 +80,33 @@ public class HdfsSinkConnectorTestBase {
     props.put(HdfsSinkConnectorConfig.RECORD_WRITER_PROVIDER_CLASS_CONFIG,
               AvroRecordWriterProvider.class.getName());
     props.put(HdfsSinkConnectorConfig.FLUSH_SIZE_CONFIG, 3);
+    props.put(HdfsSinkConnectorConfig.ROTATE_INTERVAL_CONFIG, 10);
     return props;
   }
 
-  protected GenericRecord createRecord() {
-    Schema schema = SchemaBuilder.record("record").fields()
-        .name("null").type().nullType().noDefault()
-        .requiredBoolean("boolean")
-        .requiredInt("int")
-        .requiredLong("long")
-        .requiredFloat("float")
-        .requiredDouble("double")
-        .endRecord();
-
-    return new GenericRecordBuilder(schema)
-        .set("null", null)
-        .set("boolean", true)
-        .set("int", 12)
-        .set("long", 12L)
-        .set("float", 12.2f)
-        .set("double", 12.2)
+  protected Schema createSchema() {
+    return SchemaBuilder.struct().name("record")
+        .field("boolean", Schema.BOOLEAN_SCHEMA)
+        .field("int", Schema.INT32_SCHEMA)
+        .field("long", Schema.INT64_SCHEMA)
+        .field("float", Schema.FLOAT32_SCHEMA)
+        .field("double", Schema.FLOAT64_SCHEMA)
         .build();
   }
 
+  protected Struct createRecord(Schema schema) {
+    return new Struct(schema)
+        .put("boolean", true)
+        .put("int", 12)
+        .put("long", 12L)
+        .put("float", 12.2f)
+        .put("double", 12.2);
+  }
+
   protected Collection<Object> readAvroFile(Path path) throws IOException {
-    Collection<Object> collection = new ArrayList<Object>();
+    Collection<Object> collection = new ArrayList<>();
     SeekableInput input = new FsInput(path, conf);
-    DatumReader<Object> reader = new GenericDatumReader<Object>();
+    DatumReader<Object> reader = new GenericDatumReader<>();
     FileReader<Object> fileReader = DataFileReader.openReader(input, reader);
     for (Object object: fileReader) {
       collection.add(object);
@@ -97,17 +116,63 @@ public class HdfsSinkConnectorTestBase {
   }
 
   @Before
-  public void setUp() throws IOException {
+  public void setUp() throws Exception {
     conf = new Configuration();
-    cluster = createDFSCluster(conf);
-    url = "hdfs://" + cluster.getNameNode().getClientNamenodeAddress();
-    fs = cluster.getFileSystem();
+    if (dfsCluster) {
+      cluster = createDFSCluster(conf);
+      cluster.waitActive();
+      url = "hdfs://" + cluster.getNameNode().getClientNamenodeAddress();
+      fs = cluster.getFileSystem();
+    } else {
+      url = "memory://";
+    }
+    Properties props = createProps();
+    connectorConfig = new HdfsSinkConnectorConfig(props);
+    topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPIC_DIR_CONFIG);
+    int schemaCacheSize = connectorConfig.getInt(HdfsSinkConnectorConfig.SCHEMA_CACHE_SIZE_CONFIG);
+    avroData = new AvroData(schemaCacheSize);
+    assignment = new HashSet<>();
+    assignment.add(TOPIC_PARTITION);
+    assignment.add(TOPIC_PARTITION2);
+    context = new MockSinkTaskContext();
   }
 
   @After
   public void tearDown() throws IOException {
+    if (fs != null) {
+      fs.close();
+    }
     if (cluster != null) {
-      cluster.shutdown();
+      cluster.shutdown(true);
+    }
+    if (assignment != null) {
+      assignment.clear();
+    }
+  }
+
+  protected static class MockSinkTaskContext extends SinkTaskContext {
+
+    public Map<TopicPartition, Long> offsets() {
+      return offsets;
+    }
+
+    public long backoff() {
+      return timeoutMs;
+    }
+
+    @Override
+    public Set<TopicPartition> assignment() {
+      return assignment;
+    }
+
+    @Override
+    public void pause(TopicPartition... partitions) {
+      return;
+    }
+
+    @Override
+    public void resume(TopicPartition... partitions) {
+      return;
     }
   }
 }
