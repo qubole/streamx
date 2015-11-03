@@ -18,10 +18,10 @@ package io.confluent.copycat.hdfs;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.kafka.common.TopicPartition;
 
 import java.io.IOException;
-
-import io.confluent.copycat.connector.TopicPartition;
+import java.util.UUID;
 
 public class FileUtils {
 
@@ -38,19 +38,31 @@ public class FileUtils {
   }
 
   public static String tempFileName(String url, String topicsDir, TopicPartition topicPart) {
-    return fileName(url, topicsDir, topicPart, "tmp");
+    UUID id = UUID.randomUUID();
+    String name = id.toString() + "_" + "tmp";
+    return fileName(url, topicsDir, topicPart, name);
   }
 
   public static String committedFileName(String url, String topicsDir, TopicPartition topicPart,
-                                         long offset) {
-    String suffix = String.valueOf(offset);
-    return fileName(url, topicsDir, topicPart, suffix);
+                                         long startOffset, long endOffset) {
+    String name = String.valueOf(startOffset) + "_" + String.valueOf(endOffset);
+    return fileName(url, topicsDir, topicPart, name);
   }
 
-  public static String fileName(String url, String topicsDir, TopicPartition topicPart, String suffix) {
+  public static String logFileName(String url, String topicsDir, TopicPartition topicPart) {
+    return fileName(url, topicsDir, topicPart, "log");
+  }
+
+  public static String directoryName(String url, String topicsDir, TopicPartition topicPart) {
     String topic = topicPart.topic();
     int partition = topicPart.partition();
-    return url + "/" + topicsDir + "/" + topic + "/" + partition + "." + suffix;
+    return url + "/" + topicsDir + "/" + topic + "/" + partition;
+  }
+
+  public static String fileName(String url, String topicsDir, TopicPartition topicPart, String name) {
+    String topic = topicPart.topic();
+    int partition = topicPart.partition();
+    return url + "/" + topicsDir + "/" + topic + "/" + partition + "/" + name;
   }
 
 }

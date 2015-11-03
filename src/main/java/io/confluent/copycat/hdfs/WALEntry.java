@@ -14,15 +14,37 @@
 
 package io.confluent.copycat.hdfs;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.kafka.copycat.sink.SinkRecord;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
-import io.confluent.copycat.avro.AvroData;
+public class WALEntry implements Writable {
 
-public interface RecordWriterProvider {
+  private String filename;
 
-  RecordWriter<Long, SinkRecord> getRecordWriter(Configuration conf, String fileName, SinkRecord record, AvroData avroData) throws
-                                                                                       IOException;
+  public WALEntry(String filename) {
+    this.filename = filename;
+  }
+
+  public WALEntry() {
+    filename = null;
+  }
+
+  public String getFilename() {
+    return filename;
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    filename = Text.readString(in);
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    Text.writeString(out, filename);
+  }
+
 }
