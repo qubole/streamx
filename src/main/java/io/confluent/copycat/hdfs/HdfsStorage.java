@@ -42,7 +42,7 @@ public class HdfsStorage implements Storage {
   public FileStatus[] listStatus(String path, PathFilter filter) throws IOException {
     return fs.listStatus(new Path(path), filter);
   }
-  
+
   @Override
   public void append(String filename, Object object) throws IOException {
 

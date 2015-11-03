@@ -81,6 +81,8 @@ public class HdfsSinkConnectorTestBase {
               AvroRecordWriterProvider.class.getName());
     props.put(HdfsSinkConnectorConfig.FLUSH_SIZE_CONFIG, 3);
     props.put(HdfsSinkConnectorConfig.ROTATE_INTERVAL_CONFIG, 10);
+    props.put(HdfsSinkConnectorConfig.HIVE_HOME_CONFIG, "hive");
+    props.put(HdfsSinkConnectorConfig.HIVE_CONF_DIR_CONFIG, "hive_conf");
     return props;
   }
 
@@ -91,6 +93,17 @@ public class HdfsSinkConnectorTestBase {
         .field("long", Schema.INT64_SCHEMA)
         .field("float", Schema.FLOAT32_SCHEMA)
         .field("double", Schema.FLOAT64_SCHEMA)
+        .build();
+  }
+
+  protected Schema createNewSchema() {
+    return SchemaBuilder.struct().name("record")
+        .field("boolean", Schema.BOOLEAN_SCHEMA)
+        .field("int", Schema.INT32_SCHEMA)
+        .field("long", Schema.INT64_SCHEMA)
+        .field("float", Schema.FLOAT32_SCHEMA)
+        .field("double", Schema.FLOAT64_SCHEMA)
+        .field("String", SchemaBuilder.string().defaultValue("abc").build())
         .build();
   }
 
