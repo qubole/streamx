@@ -43,6 +43,10 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   public static final String RETRY_BACKOFF_CONFIG = "retry.backoff.ms";
   private static final String RETRY_BACKOFF_DOC = "The retry backoff in milliseconds.";
   public static final long RETRY_BACKOFF_DEFALUT = 5000L;
+  public static final String HIVE_HOME_CONFIG = "hive.home";
+  private static final String HIVE_HOME_DOC = "Hive home directory";
+  public static final String HIVE_CONF_DIR_CONFIG = "hive.conf.dir";
+  private static final String HIVE_CONF_DIR_DOC = "Hive configuration directory";
 
   static ConfigDef config = new ConfigDef()
       .define(HDFS_URL_CONFIG, Type.STRING, Importance.HIGH, HDFS_URL_DOC)
@@ -53,7 +57,9 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       .define(TOPIC_DIR_CONFIG, Type.STRING, TOPIC_DIR_DEFAULT, Importance.HIGH, TOPIC_DIR_DOC)
       .define(SCHEMA_CACHE_SIZE_CONFIG, Type.INT, SCHEMA_CACHE_SIZE_DEFAULT, Importance.MEDIUM, SCHEMA_CACHE_SIZE_DOC)
       .define(STORAGE_CLASS_CONFIG, Type.STRING, STORAGE_CLASS_DEFAULT, Importance.MEDIUM, STORAGE_CLASS_DOC)
-      .define(RETRY_BACKOFF_CONFIG, Type.LONG, RETRY_BACKOFF_DEFALUT, Importance.HIGH, RETRY_BACKOFF_DOC);
+      .define(RETRY_BACKOFF_CONFIG, Type.LONG, RETRY_BACKOFF_DEFALUT, Importance.HIGH, RETRY_BACKOFF_DOC)
+      .define(HIVE_HOME_CONFIG, Type.STRING, Importance.HIGH, HIVE_HOME_DOC)
+      .define(HIVE_CONF_DIR_CONFIG, Type.STRING, Importance.HIGH, HIVE_CONF_DIR_DOC);
 
   HdfsSinkConnectorConfig(Properties props) {
     super(config, props);
