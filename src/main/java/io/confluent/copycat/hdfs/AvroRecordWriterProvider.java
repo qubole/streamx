@@ -41,7 +41,8 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
 
     final Schema schema = record.valueSchema();
     final FSDataOutputStream out = path.getFileSystem(conf).create(path);
-    writer.create(avroData.fromCopycatSchema(schema), out);
+    org.apache.avro.Schema avroSchema = avroData.fromCopycatSchema(schema);
+    writer.create(avroSchema, out);
 
     return new RecordWriter<Long, SinkRecord>(){
       @Override

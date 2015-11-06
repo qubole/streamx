@@ -36,7 +36,6 @@ import org.junit.Before;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
@@ -87,23 +86,12 @@ public class HdfsSinkConnectorTestBase {
   }
 
   protected Schema createSchema() {
-    return SchemaBuilder.struct().name("record")
+    return SchemaBuilder.struct().name("record").version(1)
         .field("boolean", Schema.BOOLEAN_SCHEMA)
         .field("int", Schema.INT32_SCHEMA)
         .field("long", Schema.INT64_SCHEMA)
         .field("float", Schema.FLOAT32_SCHEMA)
         .field("double", Schema.FLOAT64_SCHEMA)
-        .build();
-  }
-
-  protected Schema createNewSchema() {
-    return SchemaBuilder.struct().name("record")
-        .field("boolean", Schema.BOOLEAN_SCHEMA)
-        .field("int", Schema.INT32_SCHEMA)
-        .field("long", Schema.INT64_SCHEMA)
-        .field("float", Schema.FLOAT32_SCHEMA)
-        .field("double", Schema.FLOAT64_SCHEMA)
-        .field("String", SchemaBuilder.string().defaultValue("abc").build())
         .build();
   }
 
@@ -116,8 +104,30 @@ public class HdfsSinkConnectorTestBase {
         .put("double", 12.2);
   }
 
-  protected Collection<Object> readAvroFile(Path path) throws IOException {
-    Collection<Object> collection = new ArrayList<>();
+  protected Schema createNewSchema() {
+    return SchemaBuilder.struct().name("record").version(2)
+        .field("boolean", Schema.BOOLEAN_SCHEMA)
+        .field("int", Schema.INT32_SCHEMA)
+        .field("long", Schema.INT64_SCHEMA)
+        .field("float", Schema.FLOAT32_SCHEMA)
+        .field("double", Schema.FLOAT64_SCHEMA)
+        .field("string", SchemaBuilder.string().defaultValue("abc").build())
+        .build();
+  }
+
+  protected Struct createNewRecord(Schema newSchema) {
+    return new Struct(newSchema)
+        .put("boolean", true)
+        .put("int", 12)
+        .put("long", 12L)
+        .put("float", 12.2f)
+        .put("double", 12.2)
+        .put("string", "def");
+  }
+
+
+  protected ArrayList<Object> readAvroFile(Path path) throws IOException {
+    ArrayList<Object> collection = new ArrayList<>();
     SeekableInput input = new FsInput(path, conf);
     DatumReader<Object> reader = new GenericDatumReader<>();
     FileReader<Object> fileReader = DataFileReader.openReader(input, reader);

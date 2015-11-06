@@ -14,12 +14,21 @@
 
 package io.confluent.copycat.hdfs;
 
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.FileReader;
+import org.apache.avro.file.SeekableInput;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.mapred.FsInput;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.copycat.data.Schema;
+import org.apache.kafka.copycat.data.SchemaProjector;
 import org.apache.kafka.copycat.errors.CopycatException;
 import org.apache.kafka.copycat.errors.IllegalWorkerStateException;
+import org.apache.kafka.copycat.errors.SchemaProjectorException;
 import org.apache.kafka.copycat.sink.SinkRecord;
 import org.apache.kafka.copycat.sink.SinkTaskContext;
 import org.slf4j.Logger;
@@ -61,6 +70,8 @@ public class HdfsWriter {
   private long backOffMs;
   private Set<TopicPartition> lastAssignment;
   private Map<TopicPartition, Long> failureTime;
+  private Map<TopicPartition, Schema> schemas;
+  private final Compatibility compatibility;
 
   private enum State {
     RECOVERY_STARTED,
@@ -82,6 +93,12 @@ public class HdfsWriter {
     }
   }
 
+  private enum Compatibility {
+    NONE,
+    BACKWARD,
+    FORWARD,
+    FULL
+  }
 
   @SuppressWarnings("unchecked")
   public HdfsWriter(HdfsSinkConnectorConfig connectorConfig, SinkTaskContext context, AvroData avroData) {
@@ -120,6 +137,8 @@ public class HdfsWriter {
       recovered = new HashSet<>();
       lastAssignment = new HashSet<>();
       failureTime = new HashMap<>();
+      schemas = new HashMap<>();
+      compatibility = getCompatibility(connectorConfig.getString(HdfsSinkConnectorConfig.SCHEMA_COMPATIBILITY_CONFIG));
     } catch (IOException e) {
       throw new CopycatException(e);
     } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
@@ -154,7 +173,7 @@ public class HdfsWriter {
       execute(topicPart);
     }
   }
-
+  
   public void recover(TopicPartition topicPart) {
     try {
       switch (states.get(topicPart)) {
@@ -199,11 +218,24 @@ public class HdfsWriter {
             pause(topicPart);
             nextState(topicPart);
           case WRITE_PARTITION_PAUSED:
-            writeRecord(topicPart, records.peek());
-            records.poll();
+            if (!schemas.containsKey(topicPart)) {
+              getLastUsedSchema(topicPart);
+            }
+            SinkRecord record = records.peek();
+            Schema valueSchema = record.valueSchema();
             if (shouldRotate(topicPart)) {
               nextState(topicPart);
+            } else if (shouldChangeSchema(topicPart, valueSchema)) {
+              schemas.put(topicPart, valueSchema);
+              if (recordCounters.containsKey(topicPart) && recordCounters.get(topicPart) > 0) {
+                nextState(topicPart);
+              } else {
+                break;
+              }
             } else {
+              SinkRecord projectedRecord = project(topicPart, record);
+              writeRecord(topicPart, projectedRecord);
+              records.poll();
               break;
             }
           case SHOULD_ROTATE:
@@ -224,6 +256,8 @@ public class HdfsWriter {
       } catch (IllegalWorkerStateException e) {
         // Should we retry in this case?
         throw e;
+      } catch (SchemaProjectorException e) {
+        throw new RuntimeException(e);
       } catch (IOException | CopycatException e) {
         log.error("Exception on {}", topicPart);
         recordFailureTime(topicPart);
@@ -318,6 +352,42 @@ public class HdfsWriter {
     }
   }
 
+  private Compatibility getCompatibility(String compatibilityString) {
+    switch (compatibilityString) {
+      case "BACKWARD":
+        return Compatibility.BACKWARD;
+      case "FORWARD":
+        return Compatibility.FORWARD;
+      case "FULL":
+        return Compatibility.FULL;
+      default:
+        return Compatibility.NONE;
+    }
+  }
+
+  private Schema getSchema(TopicPartition topicPart) {
+    return schemas.get(topicPart);
+  }
+
+  private SinkRecord project(TopicPartition topicPart, SinkRecord record) {
+    switch (compatibility) {
+      case BACKWARD:
+      case FULL:
+      case FORWARD:
+        Schema valueSchema = record.valueSchema();
+        Object value = record.value();
+        Schema currentSchema = schemas.get(topicPart);
+        if (valueSchema.equals(currentSchema)) {
+          return record;
+        }
+        Object projected = SchemaProjector.project(valueSchema, value, currentSchema);
+        return new SinkRecord(record.topic(), record.kafkaPartition(), record.keySchema(),
+                            record.key(), currentSchema, projected, record.kafkaOffset());
+      default:
+        return record;
+    }
+  }
+
   private void readOffsets(TopicPartition topicPart) throws CopycatException {
     String path = FileUtils.directoryName(url, topicsDir, topicPart);
     PathFilter filter = new CommittedFileFilter();
@@ -353,7 +423,6 @@ public class HdfsWriter {
       RecordWriter<Long, SinkRecord> writer = writerProvider.getRecordWriter(conf, fileName, record, avroData);
       writers.put(topicPart, writer);
       tempFileNames.put(topicPart, fileName);
-      recordCounters.put(topicPart, 0);
       return writer;
     } catch (IOException e) {
       throw new CopycatException(e);
@@ -362,6 +431,26 @@ public class HdfsWriter {
 
   private boolean shouldRotate(TopicPartition topicPart) {
     return recordCounters.containsKey(topicPart) && recordCounters.get(topicPart) >= flushSize;
+  }
+
+
+  private boolean shouldChangeSchema(TopicPartition topicPart, Schema valueSchema) {
+    Schema currentSchema = getSchema(topicPart);
+    if (currentSchema == null) {
+      return true;
+    }
+    if ((valueSchema.version() == null || currentSchema.version() == null) && compatibility != Compatibility.NONE) {
+      throw new SchemaProjectorException("Schema version required for " + compatibility.toString() + " compatibility");
+    }
+    switch (compatibility) {
+      case BACKWARD:
+      case FULL:
+        return (valueSchema.version()).compareTo(currentSchema.version()) > 0;
+      case FORWARD:
+        return (valueSchema.version()).compareTo(currentSchema.version()) < 0;
+      default:
+        return !valueSchema.equals(currentSchema);
+    }
   }
 
   public void close() throws CopycatException {
@@ -497,6 +586,7 @@ public class HdfsWriter {
         FileUtils.committedFileName(url, topicsDir, topicPart, startOffset, endOffset);
     storage.commit(tempFileName, finalFileName);
     offsets.put(topicPart, endOffset);
+    recordCounters.put(topicPart, 0);
   }
 
   private void setRetryBackoff(long backOffMs) {
@@ -518,5 +608,27 @@ public class HdfsWriter {
 
   public WAL getWAL(TopicPartition topicPart) {
     return wals.get(topicPart);
+  }
+
+  private void getLastUsedSchema(TopicPartition topicPart) throws IOException {
+    if (compatibility == Compatibility.NONE) {
+      return;
+    }
+    // No files from previous execution
+    if (!offsets.containsKey(topicPart)) {
+      return;
+    }
+    String path = FileUtils.directoryName(url, topicsDir, topicPart);
+    long offset = offsets.get(topicPart);
+    PathFilter filter = new CommittedFileWithEndOffsetFilter(offset);
+    FileStatus[] statuses = storage.listStatus(path, filter);
+    assert statuses.length == 1;
+
+    SeekableInput input = new FsInput(statuses[0].getPath(), conf);
+    DatumReader<Object> reader = new GenericDatumReader<>();
+    FileReader<Object> fileReader = DataFileReader.openReader(input, reader);
+    org.apache.avro.Schema avroSchema = fileReader.getSchema();
+    Schema schema = avroData.toCopycatSchema(avroSchema);
+    schemas.put(topicPart, schema);
   }
 }
