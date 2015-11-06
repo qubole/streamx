@@ -18,6 +18,8 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.copycat.data.Schema;
+import org.apache.kafka.copycat.data.SchemaBuilder;
+import org.apache.kafka.copycat.data.SchemaProjector;
 import org.apache.kafka.copycat.data.Struct;
 import org.apache.kafka.copycat.sink.SinkRecord;
 import org.junit.Test;
@@ -27,10 +29,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class HdfsWriterTest extends HdfsSinkConnectorTestBase {
 
@@ -306,4 +310,190 @@ public class HdfsWriterTest extends HdfsSinkConnectorTestBase {
     }
     assignment = oldAssignment;
   }
+
+
+  @Test
+  public void testProjectBackWard() throws Exception {
+    Properties props = createProps();
+    props.put(HdfsSinkConnectorConfig.SCHEMA_COMPATIBILITY_CONFIG, "BACKWARD");
+    HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
+
+    HdfsWriter hdfsWriter = new HdfsWriter(connectorConfig, context, avroData);
+    hdfsWriter.recover(TOPIC_PARTITION);
+
+    String key = "key";
+    Schema schema = createSchema();
+    Struct record = createRecord(schema);
+
+    Schema newSchema = createNewSchema();
+    Struct newRecord = createNewRecord(newSchema);
+
+    Collection<SinkRecord> sinkRecords = new ArrayList<>();
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 0L));
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 1L));
+
+    hdfsWriter.write(sinkRecords);
+    hdfsWriter.close();
+
+    Path path = new Path(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 0L, 1L));
+    ArrayList<Object> records = readAvroFile(path);
+    assertEquals(2, records.size());
+
+    assertEquals(avroData.fromCopycatData(newSchema, newRecord), records.get(0));
+
+    Object projected = SchemaProjector.project(schema, record, newSchema);
+    assertEquals(avroData.fromCopycatData(newSchema, projected), records.get(1));
+
+    hdfsWriter = new HdfsWriter(connectorConfig, context, avroData);
+    hdfsWriter.recover(TOPIC_PARTITION);
+
+    sinkRecords.clear();
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 2L));
+
+    hdfsWriter.write(sinkRecords);
+    hdfsWriter.close();
+
+    path = new Path(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 2L, 2L));
+    records = readAvroFile(path);
+    assertEquals(1, records.size());
+
+    assertEquals(avroData.fromCopycatData(newSchema, projected), records.get(0));
+  }
+
+  @Test
+  public void testProjectNone() throws Exception {
+    HdfsWriter hdfsWriter = new HdfsWriter(connectorConfig, context, avroData);
+    hdfsWriter.recover(TOPIC_PARTITION);
+
+    String key = "key";
+    Schema schema = createSchema();
+    Struct record = createRecord(schema);
+
+    Schema newSchema = createNewSchema();
+    Struct newRecord = createNewRecord(newSchema);
+
+    Collection<SinkRecord> sinkRecords = new ArrayList<>();
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 0L));
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 1L));
+
+    hdfsWriter.write(sinkRecords);
+    hdfsWriter.close();
+
+    Path path = new Path(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 0L, 0L));
+    ArrayList<Object> records = readAvroFile(path);
+    assertEquals(1, records.size());
+
+    assertEquals(avroData.fromCopycatData(newSchema, newRecord), records.get(0));
+
+    path = new Path(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 1L, 1L));
+    records = readAvroFile(path);
+    assertEquals(avroData.fromCopycatData(schema, record), records.get(0));
+
+    hdfsWriter = new HdfsWriter(connectorConfig, context, avroData);
+    hdfsWriter.recover(TOPIC_PARTITION);
+
+    sinkRecords.clear();
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 2L));
+
+    hdfsWriter.write(sinkRecords);
+    hdfsWriter.close();
+
+    path = new Path(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 2L, 2L));
+    records = readAvroFile(path);
+    assertEquals(1, records.size());
+
+    assertEquals(avroData.fromCopycatData(newSchema, newRecord), records.get(0));
+  }
+
+  @Test
+  public void testProjectForward() throws Exception {
+    Properties props = createProps();
+    props.put(HdfsSinkConnectorConfig.SCHEMA_COMPATIBILITY_CONFIG, "FORWARD");
+    HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
+
+    HdfsWriter hdfsWriter = new HdfsWriter(connectorConfig, context, avroData);
+    hdfsWriter.recover(TOPIC_PARTITION);
+
+    String key = "key";
+    Schema schema = createSchema();
+    Struct record = createRecord(schema);
+
+    Schema newSchema = createNewSchema();
+    Struct newRecord = createNewRecord(newSchema);
+
+    Collection<SinkRecord> sinkRecords = new ArrayList<>();
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 0L));
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 1L));
+
+    hdfsWriter.write(sinkRecords);
+    hdfsWriter.close();
+
+    Path path = new Path(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 0L, 0L));
+    ArrayList<Object> records = readAvroFile(path);
+    assertEquals(1, records.size());
+
+    assertEquals(avroData.fromCopycatData(newSchema, newRecord), records.get(0));
+
+    path = new Path(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 1L, 1L));
+    records = readAvroFile(path);
+    assertEquals(avroData.fromCopycatData(schema, record), records.get(0));
+
+    hdfsWriter = new HdfsWriter(connectorConfig, context, avroData);
+    hdfsWriter.recover(TOPIC_PARTITION);
+
+    sinkRecords.clear();
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 2L));
+
+    hdfsWriter.write(sinkRecords);
+    hdfsWriter.close();
+
+    path = new Path(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 2L, 2L));
+    records = readAvroFile(path);
+    assertEquals(1, records.size());
+
+    assertEquals(avroData.fromCopycatData(schema, record), records.get(0));
+  }
+
+  @Test
+  public void testProjectNoVersion() throws Exception {
+    Schema schemaNoVersion = SchemaBuilder.struct().name("record")
+        .field("boolean", Schema.BOOLEAN_SCHEMA)
+        .field("int", Schema.INT32_SCHEMA)
+        .field("long", Schema.INT64_SCHEMA)
+        .field("float", Schema.FLOAT32_SCHEMA)
+        .field("double", Schema.FLOAT64_SCHEMA)
+        .build();
+
+    Struct recordNoVersion = new Struct(schemaNoVersion);
+    recordNoVersion.put("boolean", true)
+        .put("int", 12)
+        .put("long", 12L)
+        .put("float", 12.2f)
+        .put("double", 12.2);
+
+    Properties props = createProps();
+    props.put(HdfsSinkConnectorConfig.SCHEMA_COMPATIBILITY_CONFIG, "BACKWARD");
+    HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
+
+    HdfsWriter hdfsWriter = new HdfsWriter(connectorConfig, context, avroData);
+    hdfsWriter.recover(TOPIC_PARTITION);
+
+    String key = "key";
+    Schema schema = createSchema();
+    Struct record = createRecord(schema);
+
+    Collection<SinkRecord> sinkRecords = new ArrayList<>();
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schemaNoVersion, recordNoVersion, 0L));
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 1L));
+
+    try {
+      hdfsWriter.write(sinkRecords);
+      fail("Version is required for Backward compatibility.");
+    } catch (RuntimeException e) {
+      // expected
+    }
+
+    hdfsWriter.close();
+  }
 }
+

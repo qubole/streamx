@@ -47,6 +47,9 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static final String HIVE_HOME_DOC = "Hive home directory";
   public static final String HIVE_CONF_DIR_CONFIG = "hive.conf.dir";
   private static final String HIVE_CONF_DIR_DOC = "Hive configuration directory";
+  public static final String SCHEMA_COMPATIBILITY_CONFIG = "schema.compatibility";
+  private static final String SCHEMA_COMPATIBILITY_DOC = "The schema compatibility level";
+  private static final String SCHEMA_COMPATIBILITY_DEFAULT = "NONE";
 
   static ConfigDef config = new ConfigDef()
       .define(HDFS_URL_CONFIG, Type.STRING, Importance.HIGH, HDFS_URL_DOC)
@@ -59,7 +62,8 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       .define(STORAGE_CLASS_CONFIG, Type.STRING, STORAGE_CLASS_DEFAULT, Importance.MEDIUM, STORAGE_CLASS_DOC)
       .define(RETRY_BACKOFF_CONFIG, Type.LONG, RETRY_BACKOFF_DEFALUT, Importance.HIGH, RETRY_BACKOFF_DOC)
       .define(HIVE_HOME_CONFIG, Type.STRING, Importance.HIGH, HIVE_HOME_DOC)
-      .define(HIVE_CONF_DIR_CONFIG, Type.STRING, Importance.HIGH, HIVE_CONF_DIR_DOC);
+      .define(HIVE_CONF_DIR_CONFIG, Type.STRING, Importance.HIGH, HIVE_CONF_DIR_DOC)
+      .define(SCHEMA_COMPATIBILITY_CONFIG, Type.STRING, SCHEMA_COMPATIBILITY_DEFAULT, Importance.HIGH, SCHEMA_COMPATIBILITY_DOC);
 
   HdfsSinkConnectorConfig(Properties props) {
     super(config, props);
