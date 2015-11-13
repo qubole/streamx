@@ -1,2 +1,2 @@
-# copycat-hdfs
-Copycat HDFS connector
+# kafka-connect-hdfs
+Kafka Connect HDFS connector

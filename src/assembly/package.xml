@@ -11,7 +11,7 @@
     <fileSets>
         <fileSet>
             <directory>${project.basedir}</directory>
-            <outputDirectory>share/doc/copycat-hdfs/</outputDirectory>
+            <outputDirectory>share/doc/kafka-connect-hdfs/</outputDirectory>
             <includes>
                 <include>README*</include>
                 <include>LICENSE*</include>
@@ -21,7 +21,7 @@
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/config</directory>
-            <outputDirectory>etc/copycat-hdfs</outputDirectory>
+            <outputDirectory>etc/kafka-connect-hdfs</outputDirectory>
             <includes>
                 <include>*</include>
             </includes>
@@ -29,11 +29,12 @@
     </fileSets>
     <dependencySets>
         <dependencySet>
-            <outputDirectory>share/java/copycat-hdfs</outputDirectory>
+            <outputDirectory>share/java/kafka-connect-hdfs</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <excludes>
-                <exclude>io.confluent:copycat</exclude>
+                <exclude>io.confluent:common-*</exclude>
+                <exclude>io.confluent:connect-api</exclude>
             </excludes>
         </dependencySet>
     </dependencySets>

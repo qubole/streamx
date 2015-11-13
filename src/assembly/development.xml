@@ -11,7 +11,7 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <dependencySets>
         <dependencySet>
-            <outputDirectory>share/java/copycat-hdfs/</outputDirectory>
+            <outputDirectory>share/java/kafka-connect-hdfs/</outputDirectory>
         </dependencySet>
     </dependencySets>
 </assembly>
