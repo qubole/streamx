@@ -5,17 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.confluent</groupId>
-    <artifactId>copycat-hdfs</artifactId>
+    <artifactId>kafka-connect-hdfs</artifactId>
     <packaging>jar</packaging>
     <version>2.0.0-SNAPSHOT</version>
-    <name>copycat-hdfs</name>
+    <name>kafka-connect-hdfs</name>
     <organization>
         <name>Confluent, Inc.</name>
         <url>http://confluent.io</url>
     </organization>
     <url>http://confluent.io</url>
     <description>
-        A Copycat HDFS connector for copying data between Kafka and HDFS.
+        A Kafka Connect HDFS connector for copying data between Kafka and HDFS.
     </description>
 
     <licenses>
@@ -26,9 +26,16 @@
         </license>
     </licenses>
 
+    <scm>
+        <connection>scm:git:git://github.com/confluentinc/kafka-connect-hdfs.git</connection>
+        <developerConnection>scm:git:git@github.com:confluentinc/kafka-connect-hdfs.git</developerConnection>
+        <url>https://github.com/confluentinc/kafka-connect-hdfs</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <properties>
         <confluent.version>2.0.0-SNAPSHOT</confluent.version>
-        <kafka.version>0.9.0.0-SNAPSHOT</kafka.version>
+        <kafka.version>0.9.0.0</kafka.version>
         <junit.version>4.11</junit.version>
         <hadoop.version>2.6.0</hadoop.version>
         <hive.version>1.2.1</hive.version>
@@ -49,12 +56,12 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>copycat-api</artifactId>
+            <artifactId>connect-api</artifactId>
             <version>${kafka.version}</version>
         </dependency>
         <dependency>
             <groupId>io.confluent</groupId>
-            <artifactId>copycat-avro-converter</artifactId>
+            <artifactId>kafka-connect-avro-converter</artifactId>
             <version>${confluent.version}</version>
         </dependency>
         <dependency>
