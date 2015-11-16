@@ -1,0 +1,5 @@
+Portions of the Web Console were orginally developed by
+International Business Machines Corporation and are
+licensed to the Apache Software Foundation under the
+"Software Grant and Corporate Contribution License Agreement",
+informally known as the "IBM Console CLA".

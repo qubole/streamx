@@ -1,0 +1,309 @@
+kafka-connect-hdfs
+Copyright (c) 2015 Confluent Inc.
+
+The following libraries are included in packaged versions of this project:
+
+* ANTLR 2
+ * COPYRIGHT: Copyright (c) 2002 Terence Parr
+ * LICENSE: licenses/LICENSE.antlr2.txt
+ * HOMEPAGE: http://www.antlr2.org/
+
+* AOP Alliance
+ * COPYRIGHT: ?
+ * LICENSE: licenses/LICENSE.aop-publicdomain.txt
+ * HOMEPAGE: http://aopalliance.sourceforge.net/
+
+* Apache Ant
+ * COPYRIGHT: Copyright 1999-2015 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.ant.txt
+ * HOMEPAGE: http://ant.apache.org/
+
+* Apache Avro
+ * COPYRIGHT: Copyright 2010 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.avro.txt
+ * HOMEPAGE: http://avro.apache.org
+
+* Apache Calcite
+ * COPYRIGHT: Copyright 2012-2015 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.calcite.txt
+ * HOMEPAGE: http://calcite.apache.org/
+
+* Apache Commons Compress
+ * COPYRIGHT: Copyright 2002-2015 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.commons-compress.txt
+ * HOMEPAGE: http://commons.apache.org/proper/commons-compress/
+
+* Apache Curator
+ * COPYRIGHT: Copyright 2011-2015 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.curator.txt
+ * HOMEPAGE: http://curator.apache.org/
+
+* Apache Derby
+ * COPYRIGHT: Copyright 2003-2015 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.derby.txt
+ * HOMEPAGE: http://db.apache.org/derby/
+
+* Apache Directory/ApacheDS
+ * COPYRIGHT: Copyright 2003-2015 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.apache-directory.txt
+ * HOMEPAGE: https://directory.apache.org/apacheds/
+
+* Apache Geronimo
+ * COPYRIGHT: Copyright The Apache Software Foundation.
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.geronimo.txt
+ * HOMEPAGE: http://geronimo.apache.org/
+
+* Apache Hadoop Common, HDFS, MapReduce
+ * COPYRIGHT: Copyright The Apache Software Foundation.
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.hadoop.txt
+ * HOMEPAGE: http://hadoop.apache.org/
+
+* Apache Hive
+ * COPYRIGHT: Copyright 2008-2015 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.hive.txt
+ * HOMEPAGE: http://hive.apache.org/
+
+* Apache HTrace (Incubator)
+ * COPYRIGHT: Copyright 2015 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.htrace.txt
+ * HOMEPAGE: http://htrace.incubator.apache.org/
+
+* Apache HttpComponents Client
+ * COPYRIGHT: Copyright 1999-2015 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.httpcomponents.txt
+ * HOMEPAGE: https://hc.apache.org/
+
+* Apache HttpComponents Core
+ * COPYRIGHT: Copyright 2006-2009 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.httpcomponents.txt
+ * HOMEPAGE: https://hc.apache.org/
+
+* Apache Ivy
+ * COPYRIGHT: Copyright 2006-2009 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: http://ant.apache.org/ivy/
+
+* Apache Kafka
+ * COPYRIGHT: Copyright 2012 The Apache Software Foundation.
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.kafka.txt
+ * HOMEPAGE: http://kafka.apache.org
+
+* Apache log4j
+ * COPYRIGHT: Copyright 2010 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.log4j.txt
+ * HOMEPAGE: http://logging.apache.org/log4j/1.2/
+
+* Apache Parquet
+ * COPYRIGHT: Copyright 2014 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.avro.txt
+ * HOMEPAGE: http://parquet.apache.org/
+
+* Apache Thrift
+ * COPYRIGHT: Copyright 2006-2010 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.thrift.txt
+ * HOMEPAGE: http://thrift.apache.org/
+
+* Apache Velocity
+ * COPYRIGHT: Copyright (C) 2000-2007 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.velocity.txt
+ * HOMEPAGE: http://velocity.apache.org/
+
+* Apache Xerces
+ * COPYRIGHT: Copyright (C) 1999-2002 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: https://xerces.apache.org/
+
+* Apache ZooKeeper
+ * COPYRIGHT: Copyright 2009-2014 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.zookeeper.txt
+ * HOMEPAGE: http://zookeeper.apache.org/
+
+* ASM
+ * COPYRIGHT: Copyright (c) 2000-2011 INRIA, France Telecom
+ * LICENSE: licenses/LICENSE.asm.txt
+ * HOMEPAGE: http://asm.ow2.org/
+
+* BoneCP
+ * COPYRIGHT: Copyright (c) 2000-2011 INRIA, France Telecom
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.bonecp.txt
+ * HOMEPAGE: http://jolbox.com/
+
+* Confluent Common
+ * COPYRIGHT: Confluent Inc.
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: https://github.com/confluentinc/common
+
+* Confluent Schema Registry
+ * COPYRIGHT: Confluent Inc.
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: https://github.com/confluentinc/schema-registry
+
+* DataNucleus API-JDO
+ * COPYRIGHT: Copyright (c) 2007 Andy Jefferson and others.
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: https://github.com/datanucleus/datanucleus-api-jdo
+
+* DataNucleus Core
+ * COPYRIGHT: Copyright (c) 2005 Erik Bengtson and others.
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: https://github.com/datanucleus/datanucleus-core
+
+* DataNucleus RDBMS
+ * COPYRIGHT: Copyright (c) 2006 Erik Bengtson and others.
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: https://github.com/datanucleus/datanucleus-rdbms
+
+* Eigenbase Properties
+ * COPYRIGHT: Copyright (C) 2012-2015, Julian Hyde
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.eigenbase-properties.txt
+ * HOMEPAGE: https://github.com/julianhyde/eigenbase-properties
+
+* Google GSON
+ * COPYRIGHT: Copyright 2008 Google Inc.
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: https://github.com/google/gson
+
+* Google Guava
+ * COPYRIGHT: Copyright Google Inc.
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: https://github.com/google/guava
+
+* Google Guice
+ * COPYRIGHT: Copyright Google Inc.
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: https://github.com/google/guice
+
+* Google Protocol Buffers
+ * COPYRIGHT: Copyright 2008 Google Inc.
+ * LICENSE: licenses/LICENSE.protobuf.txt
+ * HOMEPAGE: https://github.com/google/protobuf
+
+* Groovy
+ * COPYRIGHT: Copyright 2003-2015 The Apache Software Foundation
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.groovy.txt
+ * HOMEPAGE: http://www.groovy-lang.org/
+
+* Jackson annotations
+ * LICENSE: licenses/LICENSE.jackson-annotations.txt (Apache 2)
+ * HOMEPAGE: http://github.com/FasterXML/jackson
+
+* Jackson core, core-asl
+ * LICENSE: licenses/LICENSE.jackson-core.txt (Apache 2)
+ * NOTICE: licenses/NOTICE.jackson-core.txt
+ * HOMEPAGE: http://github.com/FasterXML/jackson
+
+* Jackson databind
+ * LICENSE: licenses/LICENSE.jackson-databind.txt (Apache 2)
+ * NOTICE: licenses/NOTICE.jackson-databind.txt
+ * HOMEPAGE: http://github.com/FasterXML/jackson
+
+* Jackson jaxrs
+ * LICENSE: licenses/LICENSE.jackson-core.txt (Apache 2)
+ * NOTICE: licenses/NOTICE.jackson-core.txt
+ * HOMEPAGE: http://github.com/FasterXML/jackson
+
+* Jackson mapper
+ * LICENSE: licenses/LICENSE.jackson-core.txt (Apache 2)
+ * NOTICE: licenses/NOTICE.jackson-core.txt
+ * HOMEPAGE: http://github.com/FasterXML/jackson
+
+* javax.annotation-api, javax.inject, javax.mail, javax.servlet, javax.transaction, javax.ws.rs-api, javax.xml
+ * COPYRIGHT: Coypright Oracle
+ * LICENSE: licenses/LICENSE.cddl+gpl2.html
+
+* Jersey
+ * LICENSE: licenses/LICENSE.cddl+gpl2.html
+ * HOMEPAGE: http://jersey.java.net
+
+* Jetty
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: http://www.eclipse.org/jetty/
+
+* jline
+ * COPYRIGHT: Copyright (c) 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu>
+ * LICENSE: licenses/LICENSE.bsd.txt
+ * HOMEPAGE: http://jline.sourceforge.net/
+
+* Joda-Time
+ * COPYRIGHT: Copyright (c) 2002-2015 Joda.org
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.joda-time.txt
+ * HOMEPAGE: http://www.joda.org/joda-time/
+
+* JPAM
+ * COPYRIGHT: Copyright 2003-2006 Greg Luck
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: http://jpam.sourceforge.net/
+
+* JSch
+ * COPYRIGHT: Copyright (c) 2002-2015 Atsuhiko Yamanaka, JCraft, Inc.
+ * LICENSE: licenses/LICENSE.bsd.txt
+ * HOMEPAGE: http://www.jcraft.com/jsch/
+
+* leveldbjni
+ * COPYRIGHT: Copyright (c) 2011 FuseSource Corp.
+ * LICENSE: licenses/LICENSE.bsd.txt
+ * HOMEPAGE: https://github.com/fusesource/leveldbjni
+
+* Netty
+ * COPYRIGHT: Copyright 2014 The Netty Project
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * NOTICE: licenses/NOTICE.netty.txt
+ * HOMEPAGE: http://netty.io/
+
+* Opencsv
+ * COPYRIGHT: ?
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: http://opencsv.sourceforge.net/
+
+* paranamer
+ * COPYRIGHT: Copyright (c) 2006 Paul Hammant & ThoughtWorks Inc
+ * LICENSE: licenses/LICENSE.bsd.txt
+ * HOMEPAGE: http://xircles.codehaus.org/projects/paranamer
+
+* Pentaho aggdesigner
+ * COPYRIGHT: Copyright 2006 - 2013 Pentaho Corporation
+ * LICENSE: licenses/LICENSE.gpl2.txt
+ * HOMEPAGE: https://github.com/pentaho/pentaho-aggdesigner
+
+* SLF4J
+ * COPYRIGHT: Copyright (c) 2004-2013 QOS.ch
+ * LICENSE: licenses/LICENSE.mit.txt
+ * HOMEPAGE: http://www.slf4j.org/
+
+* StringTemplate
+ * COPYRIGHT: Copyright (c) 2011-2013 Terence Parr
+ * LICENSE: licenses/LICENSE.bsd.txt
+ * HOMEPAGE: https://github.com/xerial/snappy-java
+
+* xmlenc
+ * COPYRIGHT: Copyright 2003-2005, Ernst de Haan <wfe.dehaan@gmail.com>
+ * LICENSE: licenses/LICENSE.bsd.txt
+ * HOMEPAGE: http://xmlenc.sourceforge.net
+
+* XZ for Java
+ * COPYRIGHT: Original Author: Lasse Collin <lasse.collin@tukaani.org>
+ * LICENSE: Public Domain
+ * HOMEPAGE: http://tukaani.org/xz/java.html
