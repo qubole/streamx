@@ -1,7 +1,8 @@
 # Build products
 target/
-
 build/
+derby.log
+metastore_db/
 
 # IntelliJ data
 *.iml
@@ -12,3 +13,4 @@ build/
 /docs/_build
 
 .DS_Store
+
