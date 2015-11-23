@@ -22,7 +22,7 @@ import java.util.Map;
 
 import io.confluent.connect.hdfs.RecordWriter;
 
-public class MemoryRecordWriter implements RecordWriter<Long, SinkRecord> {
+public class MemoryRecordWriter implements RecordWriter<SinkRecord> {
   private String filename;
   private static final Map<String, List<Object>> data = Data.getData();
   private Failure failure = Failure.noFailure;
@@ -37,7 +37,8 @@ public class MemoryRecordWriter implements RecordWriter<Long, SinkRecord> {
     this.filename = filename;
   }
 
-  public void write(Long key, SinkRecord record) throws IOException {
+  @Override
+  public void write(SinkRecord record) throws IOException {
     if (failure == Failure.writeFailure) {
       failure = Failure.noFailure;
       throw new IOException("write failed.");

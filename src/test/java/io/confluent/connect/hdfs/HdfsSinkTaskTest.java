@@ -29,11 +29,20 @@ import java.util.List;
 import java.util.Map;
 
 import io.confluent.connect.avro.AvroData;
+import io.confluent.connect.hdfs.avro.AvroFileReader;
+import io.confluent.connect.hdfs.storage.Storage;
+import io.confluent.connect.hdfs.storage.StorageFactory;
+import io.confluent.connect.hdfs.wal.WAL;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class HdfsSinkTaskTest extends HdfsSinkConnectorTestBase {
+public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
+
+  private static final String DIRECTORY1 = TOPIC + "/" + "partition=" + String.valueOf(PARTITION);
+  private static final String DIRECTORY2 = TOPIC + "/" + "partition=" + String.valueOf(PARTITION2);
+  private static final String extension = ".avro";
+  private final SchemaFileReader schemaFileReader = new AvroFileReader(avroData);
 
   @Test
   public void testSinkTaskStart() throws Exception {
@@ -48,9 +57,9 @@ public class HdfsSinkTaskTest extends HdfsSinkConnectorTestBase {
     Map<TopicPartition, Long> offsets = context.offsets();
     assertEquals(offsets.size(), 2);
     assertTrue(offsets.containsKey(TOPIC_PARTITION));
-    assertEquals((long) offsets.get(TOPIC_PARTITION), 20);
+    assertEquals(20, (long) offsets.get(TOPIC_PARTITION));
     assertTrue(offsets.containsKey(TOPIC_PARTITION2));
-    assertEquals((long) offsets.get(TOPIC_PARTITION2), 45);
+    assertEquals(45, (long) offsets.get(TOPIC_PARTITION2));
 
     task.stop();
   }
@@ -59,24 +68,24 @@ public class HdfsSinkTaskTest extends HdfsSinkConnectorTestBase {
   public void testSinkTaskStartWithRecovery() throws Exception {
     Map<TopicPartition, List<String>> tempfiles = new HashMap<>();
     List<String> list1 = new ArrayList<>();
-    list1.add(FileUtils.tempFileName(url, topicsDir, TOPIC_PARTITION));
-    list1.add(FileUtils.tempFileName(url, topicsDir, TOPIC_PARTITION));
+    list1.add(FileUtils.tempFileName(url, topicsDir, DIRECTORY1, extension));
+    list1.add(FileUtils.tempFileName(url, topicsDir, DIRECTORY1, extension));
     tempfiles.put(TOPIC_PARTITION, list1);
 
     List<String> list2 = new ArrayList<>();
-    list2.add(FileUtils.tempFileName(url, topicsDir, TOPIC_PARTITION2));
-    list2.add(FileUtils.tempFileName(url, topicsDir, TOPIC_PARTITION2));
+    list2.add(FileUtils.tempFileName(url, topicsDir, DIRECTORY2, extension));
+    list2.add(FileUtils.tempFileName(url, topicsDir, DIRECTORY2, extension));
     tempfiles.put(TOPIC_PARTITION2, list2);
 
     Map<TopicPartition, List<String>> committedFiles = new HashMap<>();
     List<String> list3 = new ArrayList<>();
-    list3.add(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 100, 200));
-    list3.add(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 201, 300));
+    list3.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 100, 200, extension));
+    list3.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 201, 300, extension));
     committedFiles.put(TOPIC_PARTITION, list3);
 
     List<String> list4 = new ArrayList<>();
-    list4.add(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION2, 400, 500));
-    list4.add(FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION2, 501, 800));
+    list4.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY2, TOPIC_PARTITION2, 400, 500, extension));
+    list4.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY2, TOPIC_PARTITION2, 501, 800, extension));
     committedFiles.put(TOPIC_PARTITION2, list4);
 
     for (TopicPartition tp : tempfiles.keySet()) {
@@ -93,11 +102,11 @@ public class HdfsSinkTaskTest extends HdfsSinkConnectorTestBase {
     task.start(props);
 
     Map<TopicPartition, Long> offsets = context.offsets();
-    assertEquals(offsets.size(), 2);
+    assertEquals(2, offsets.size());
     assertTrue(offsets.containsKey(TOPIC_PARTITION));
-    assertEquals((long) offsets.get(TOPIC_PARTITION), 300);
+    assertEquals(300, (long) offsets.get(TOPIC_PARTITION));
     assertTrue(offsets.containsKey(TOPIC_PARTITION2));
-    assertEquals((long) offsets.get(TOPIC_PARTITION2), 800);
+    assertEquals(800, (long) offsets.get(TOPIC_PARTITION2));
 
     task.stop();
   }
@@ -127,11 +136,12 @@ public class HdfsSinkTaskTest extends HdfsSinkConnectorTestBase {
     long[] validOffsets = {-1, 2, 5, 6};
 
     for (TopicPartition tp : assignment) {
+      String directory = tp.topic() + "/" + "partition=" + String.valueOf(tp.partition());
       for (int j = 1; j < validOffsets.length; ++j) {
         long startOffset = validOffsets[j - 1] + 1;
         long endOffset = validOffsets[j];
-        Path path = new Path(FileUtils.committedFileName(url, topicsDir, tp, startOffset, endOffset));
-        Collection<Object> records = readAvroFile(path);
+        Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory, tp, startOffset, endOffset, extension));
+        Collection<Object> records = schemaFileReader.readData(conf, path);
         long size = endOffset - startOffset + 1;
         assertEquals(records.size(), size);
         for (Object avroRecord : records) {
@@ -142,10 +152,10 @@ public class HdfsSinkTaskTest extends HdfsSinkConnectorTestBase {
   }
 
   private void createCommittedFiles() throws IOException {
-    String file1 = FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 0, 10);
-    String file2 = FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION, 11, 20);
-    String file3 = FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION2, 21, 40);
-    String file4 = FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION2, 41, 45);
+    String file1 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 0, 10, extension);
+    String file2 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 11, 20, extension);
+    String file3 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION2, 21, 40, extension);
+    String file4 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION2, 41, 45, extension);
     fs.createNewFile(new Path(file1));
     fs.createNewFile(new Path(file2));
     fs.createNewFile(new Path(file3));
@@ -161,12 +171,14 @@ public class HdfsSinkTaskTest extends HdfsSinkConnectorTestBase {
     Storage storage = StorageFactory.createStorage(storageClass, conf, url);
 
     for (TopicPartition tp: tempfiles.keySet()) {
-      WAL wal = storage.wal(topicsDir, tp);
-      List<String> templist = tempfiles.get(tp);
+      WAL wal = storage.wal(logsDir, tp);
+      List<String> tempList = tempfiles.get(tp);
       List<String> committedList = committedFiles.get(tp);
-      for (int i = 0; i < templist.size(); ++i) {
-        wal.append(templist.get(i), committedList.get(i));
+      wal.append(WAL.beginMarker, "");
+      for (int i = 0; i < tempList.size(); ++i) {
+        wal.append(tempList.get(i), committedList.get(i));
       }
+      wal.append(WAL.endMarker, "");
       wal.close();
     }
   }

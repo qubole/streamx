@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import io.confluent.connect.hdfs.FileUtils;
-import io.confluent.connect.hdfs.WAL;
-import io.confluent.connect.hdfs.Storage;
+import io.confluent.connect.hdfs.storage.Storage;
+import io.confluent.connect.hdfs.wal.WAL;
 
 public class MemoryWAL implements WAL {
 

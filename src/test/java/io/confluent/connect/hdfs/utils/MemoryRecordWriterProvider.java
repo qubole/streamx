@@ -31,8 +31,13 @@ import io.confluent.connect.hdfs.RecordWriterProvider;
 public class MemoryRecordWriterProvider implements RecordWriterProvider {
 
   @Override
-  public RecordWriter<Long, SinkRecord> getRecordWriter(Configuration conf, final String fileName,
-                                                        SinkRecord record, final AvroData avroData)
+  public String getExtension() {
+    return "";
+  }
+
+  @Override
+  public RecordWriter<SinkRecord> getRecordWriter(
+      Configuration conf, final String fileName, SinkRecord record, final AvroData avroData)
       throws IOException {
 
     final Map<String, List<Object>> data = Data.getData();

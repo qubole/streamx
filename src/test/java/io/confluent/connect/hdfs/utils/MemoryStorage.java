@@ -28,8 +28,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import io.confluent.connect.hdfs.WAL;
-import io.confluent.connect.hdfs.Storage;
+import io.confluent.connect.hdfs.storage.Storage;
+import io.confluent.connect.hdfs.wal.WAL;
 
 public class MemoryStorage implements Storage {
 
@@ -52,6 +52,18 @@ public class MemoryStorage implements Storage {
   public MemoryStorage(Configuration conf,  String url) {
     this.conf = conf;
     this.url = url;
+  }
+
+  @Override
+  public FileStatus[] listStatus(String path) throws IOException {
+    List<FileStatus> result = new ArrayList<>();
+    for (String key: data.keySet()) {
+      if (key.startsWith(path)) {
+        FileStatus status = new FileStatus(data.get(key).size(), false, 1, 0, 0, 0, null, null, null, new Path(key));
+        result.add(status);
+      }
+    }
+    return result.toArray(new FileStatus[result.size()]);
   }
 
   @Override

@@ -22,7 +22,6 @@ import java.io.IOException;
 import io.confluent.connect.avro.AvroData;
 
 public interface RecordWriterProvider {
-
-  RecordWriter<Long, SinkRecord> getRecordWriter(Configuration conf, String fileName, SinkRecord record, AvroData avroData) throws
-                                                                                       IOException;
+  String getExtension();
+  RecordWriter<SinkRecord> getRecordWriter(Configuration conf, String fileName, SinkRecord record, AvroData avroData) throws IOException;
 }
