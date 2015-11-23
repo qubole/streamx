@@ -16,16 +16,7 @@
 
 package io.confluent.connect.hdfs;
 
-import org.apache.avro.file.DataFileReader;
-import org.apache.avro.file.FileReader;
-import org.apache.avro.file.SeekableInput;
-import org.apache.avro.generic.GenericDatumReader;
-import org.apache.avro.io.DatumReader;
-import org.apache.avro.mapred.FsInput;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -34,8 +25,6 @@ import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.junit.After;
 import org.junit.Before;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -44,14 +33,13 @@ import java.util.Set;
 import io.confluent.connect.avro.AvroData;
 
 public class HdfsSinkConnectorTestBase {
-  protected MiniDFSCluster cluster;
+
   protected Configuration conf;
   protected String url;
-  protected FileSystem fs;
   protected HdfsSinkConnectorConfig connectorConfig;
   protected String topicsDir;
+  protected String logsDir;
   protected AvroData avroData;
-  protected boolean dfsCluster = true;
 
   protected MockSinkTaskContext context;
   protected static final String TOPIC = "topic";
@@ -63,25 +51,12 @@ public class HdfsSinkConnectorTestBase {
   protected static final TopicPartition TOPIC_PARTITION3 = new TopicPartition(TOPIC, PARTITION3);
   protected static Set<TopicPartition> assignment;
 
-  private MiniDFSCluster createDFSCluster(Configuration conf) throws IOException {
-    MiniDFSCluster cluster;
-    String[] hosts = {"localhost", "localhost", "localhost"};
-    MiniDFSCluster.Builder builder = new MiniDFSCluster.Builder(conf);
-    builder.hosts(hosts).nameNodePort(9000).numDataNodes(3);
-    cluster = builder.build();
-    cluster.waitActive();
-    return cluster;
-  }
 
   protected Map<String, String> createProps() {
     Map<String, String> props = new HashMap<>();
     props.put(HdfsSinkConnectorConfig.HDFS_URL_CONFIG, url);
-    props.put(HdfsSinkConnectorConfig.RECORD_WRITER_PROVIDER_CLASS_CONFIG,
-              AvroRecordWriterProvider.class.getName());
     props.put(HdfsSinkConnectorConfig.FLUSH_SIZE_CONFIG, "3");
     props.put(HdfsSinkConnectorConfig.ROTATE_INTERVAL_CONFIG, "10");
-    props.put(HdfsSinkConnectorConfig.HIVE_HOME_CONFIG, "hive");
-    props.put(HdfsSinkConnectorConfig.HIVE_CONF_DIR_CONFIG, "hive_conf");
     return props;
   }
 
@@ -125,33 +100,14 @@ public class HdfsSinkConnectorTestBase {
         .put("string", "def");
   }
 
-
-  protected ArrayList<Object> readAvroFile(Path path) throws IOException {
-    ArrayList<Object> collection = new ArrayList<>();
-    SeekableInput input = new FsInput(path, conf);
-    DatumReader<Object> reader = new GenericDatumReader<>();
-    FileReader<Object> fileReader = DataFileReader.openReader(input, reader);
-    for (Object object: fileReader) {
-      collection.add(object);
-    }
-    fileReader.close();
-    return collection;
-  }
-
   @Before
   public void setUp() throws Exception {
     conf = new Configuration();
-    if (dfsCluster) {
-      cluster = createDFSCluster(conf);
-      cluster.waitActive();
-      url = "hdfs://" + cluster.getNameNode().getClientNamenodeAddress();
-      fs = cluster.getFileSystem();
-    } else {
-      url = "memory://";
-    }
+    url = "memory://";
     Map<String, String> props = createProps();
     connectorConfig = new HdfsSinkConnectorConfig(props);
-    topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPIC_DIR_CONFIG);
+    topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPICS_DIR_CONFIG);
+    logsDir = connectorConfig.getString(HdfsSinkConnectorConfig.LOGS_DIR_CONFIG);
     int schemaCacheSize = connectorConfig.getInt(HdfsSinkConnectorConfig.SCHEMA_CACHE_SIZE_CONFIG);
     avroData = new AvroData(schemaCacheSize);
     assignment = new HashSet<>();
@@ -161,13 +117,7 @@ public class HdfsSinkConnectorTestBase {
   }
 
   @After
-  public void tearDown() throws IOException {
-    if (fs != null) {
-      fs.close();
-    }
-    if (cluster != null) {
-      cluster.shutdown(true);
-    }
+  public void tearDown() throws Exception {
     if (assignment != null) {
       assignment.clear();
     }
@@ -213,6 +163,11 @@ public class HdfsSinkConnectorTestBase {
     public long timeout() {
       return timeoutMs;
     }
+
+    /**
+     * Get the timeout in milliseconds set by SinkTasks. Used by the Copycat framework.
+     * @return the backoff timeout in milliseconds.
+     */
 
     @Override
     public Set<TopicPartition> assignment() {

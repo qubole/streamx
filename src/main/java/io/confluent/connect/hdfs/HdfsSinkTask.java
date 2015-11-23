@@ -22,18 +22,19 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 import io.confluent.common.config.ConfigException;
 import io.confluent.connect.avro.AvroData;
+import io.confluent.connect.hdfs.schema.Compatibility;
+import io.confluent.connect.hdfs.schema.SchemaUtils;
 
 public class HdfsSinkTask extends SinkTask {
 
   private static final Logger log = LoggerFactory.getLogger(HdfsSinkTask.class);
-  private HdfsWriter hdfsWriter;
+  private DataWriter hdfsWriter;
   private AvroData avroData;
 
   public HdfsSinkTask() {
@@ -49,14 +50,24 @@ public class HdfsSinkTask extends SinkTask {
   public void start(Map<String, String> props) {
     try {
       HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
+      boolean hiveIntegration = connectorConfig.getBoolean(HdfsSinkConnectorConfig.HIVE_INTEGRATION_CONFIG);
+      if (hiveIntegration) {
+        Compatibility compatibility = SchemaUtils.getCompatibility(
+            connectorConfig.getString(HdfsSinkConnectorConfig.SCHEMA_COMPATIBILITY_CONFIG));
+        if (compatibility == Compatibility.NONE) {
+          throw new ConfigException("Hive Integration requires schema compatibility to be BACKWARD, FORWARD or FULL");
+        }
+      }
       int schemaCacheSize = connectorConfig.getInt(HdfsSinkConnectorConfig.SCHEMA_CACHE_SIZE_CONFIG);
       avroData = new AvroData(schemaCacheSize);
-      hdfsWriter = new HdfsWriter(connectorConfig, context, avroData);
+      hdfsWriter = new DataWriter(connectorConfig, context, avroData);
       Set<TopicPartition> assignment = context.assignment();
       recover(assignment);
+      if (hiveIntegration) {
+        syncWithHive();
+      }
     } catch (ConfigException e) {
-      throw new ConnectException(
-          "Couldn't start HdfsSinkConnector due to configuration error.", e);
+      throw new ConnectException("Couldn't start HdfsSinkConnector due to configuration error.", e);
     } catch (ConnectException e) {
       if (hdfsWriter != null) {
         hdfsWriter.close();
@@ -67,14 +78,13 @@ public class HdfsSinkTask extends SinkTask {
   @Override
   public void stop() throws ConnectException {
     hdfsWriter.close();
-
   }
 
   @Override
   public void put(Collection<SinkRecord> records) throws ConnectException {
     try {
       hdfsWriter.write(records);
-    } catch (IOException e) {
+    } catch (ConnectException e) {
       throw new ConnectException(e);
     }
   }
@@ -98,6 +108,10 @@ public class HdfsSinkTask extends SinkTask {
     for (TopicPartition tp: assignment) {
       hdfsWriter.recover(tp);
     }
+  }
+
+  private void syncWithHive() throws ConnectException {
+    hdfsWriter.syncWithHive();
   }
 
   public AvroData getAvroData() {

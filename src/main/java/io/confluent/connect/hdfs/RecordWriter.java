@@ -18,7 +18,7 @@ package io.confluent.connect.hdfs;
 
 import java.io.IOException;
 
-public interface RecordWriter<K, V> {
-  void write(K key, V value) throws IOException;
+public interface RecordWriter<V> {
+  void write(V value) throws IOException;
   void close() throws IOException;
 }

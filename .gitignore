@@ -12,5 +12,9 @@ metastore_db/
 # Documentation build output
 /docs/_build
 
+# Hive metastore
+metastore_db/
+derby.log
+
 .DS_Store
 

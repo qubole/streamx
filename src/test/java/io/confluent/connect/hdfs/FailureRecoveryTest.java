@@ -25,19 +25,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import io.confluent.connect.hdfs.utils.MemoryStorage;
 import io.confluent.connect.hdfs.utils.Data;
+import io.confluent.connect.hdfs.utils.MemoryFormat;
 import io.confluent.connect.hdfs.utils.MemoryRecordWriter;
-import io.confluent.connect.hdfs.utils.MemoryRecordWriterProvider;
+import io.confluent.connect.hdfs.utils.MemoryStorage;
 
 import static org.junit.Assert.assertEquals;
 
-
 public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
+
+  private static final String extension = "";
 
   @Before
   public void setUp() throws Exception {
-    dfsCluster = false;
     super.setUp();
   }
 
@@ -45,8 +45,7 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
   protected Map<String, String> createProps() {
     Map<String, String> props = super.createProps();
     props.put(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG, MemoryStorage.class.getName());
-    props.put(HdfsSinkConnectorConfig.RECORD_WRITER_PROVIDER_CLASS_CONFIG,
-              MemoryRecordWriterProvider.class.getName());
+    props.put(HdfsSinkConnectorConfig.FORMAT_CONFIG, MemoryFormat.class.getName());
     return props;
   }
 
@@ -66,7 +65,7 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
       sinkRecords.add(sinkRecord);
     }
 
-    HdfsWriter hdfsWriter = new HdfsWriter(connectorConfig, context, avroData);
+    DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
     MemoryStorage storage = (MemoryStorage) hdfsWriter.getStorage();
     storage.setFailure(MemoryStorage.Failure.appendFailure);
 
@@ -76,7 +75,7 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
 
     Map<String, List<Object>> data = Data.getData();
 
-    String logFile = FileUtils.logFileName(url, topicsDir, TOPIC_PARTITION);
+    String logFile = FileUtils.logFileName(url, logsDir, TOPIC_PARTITION);
     List<Object> content = data.get(logFile);
     assertEquals(null, content);
 
@@ -87,7 +86,7 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
     Thread.sleep(context.timeout());
     hdfsWriter.write(new ArrayList<SinkRecord>());
     content = data.get(logFile);
-    assertEquals(2, content.size());
+    assertEquals(6, content.size());
 
     hdfsWriter.close();
   }
@@ -95,7 +94,6 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
   @Test
   public void testWriterFailureMultiPartitions() throws Exception {
     Map<String, String> props = createProps();
-
     HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
 
     String key = "key";
@@ -106,7 +104,7 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 0L));
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION2, Schema.STRING_SCHEMA, key, schema, record, 0L));
 
-    HdfsWriter hdfsWriter = new HdfsWriter(connectorConfig, context, avroData);
+    DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
     hdfsWriter.write(sinkRecords);
     sinkRecords.clear();
 
@@ -122,21 +120,21 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
       sinkRecords.add(sinkRecord);
     }
 
-    MemoryRecordWriter writer = (MemoryRecordWriter) hdfsWriter.getRecordWriter(TOPIC_PARTITION);
-    String tempFileName = hdfsWriter.getTempFileNames(TOPIC_PARTITION);
-
+    String encodedPartition = "partition=" + String.valueOf(PARTITION);
+    Map<String, RecordWriter> writers = hdfsWriter.getWriters(TOPIC_PARTITION);
+    MemoryRecordWriter writer = (MemoryRecordWriter) writers.get(encodedPartition);
     writer.setFailure(MemoryRecordWriter.Failure.writeFailure);
     hdfsWriter.write(sinkRecords);
-    assertEquals(context.timeout(), connectorConfig.getLong(
-        HdfsSinkConnectorConfig.RETRY_BACKOFF_CONFIG));
 
+    assertEquals(context.timeout(), connectorConfig.getLong(HdfsSinkConnectorConfig.RETRY_BACKOFF_CONFIG));
 
     Map<String, List<Object>> data = Data.getData();
+    String directory2 = TOPIC + "/" + "partition=" + String.valueOf(PARTITION2);
     long[] validOffsets = {-1, 2, 5};
     for (int i = 1; i < validOffsets.length; i++) {
       long startOffset = validOffsets[i - 1] + 1;
       long endOffset = validOffsets[i];
-      String path = FileUtils.committedFileName(url, topicsDir, TOPIC_PARTITION2, startOffset, endOffset);
+      String path = FileUtils.committedFileName(url, topicsDir, directory2, TOPIC_PARTITION2, startOffset, endOffset, extension);
       long size = endOffset - startOffset + 1;
       List<Object> records = data.get(path);
       assertEquals(size, records.size());
@@ -146,6 +144,8 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
     hdfsWriter.write(new ArrayList<SinkRecord>());
     assertEquals(context.timeout(), connectorConfig.getLong(HdfsSinkConnectorConfig.RETRY_BACKOFF_CONFIG));
 
+    Map<String, String> tempFileNames = hdfsWriter.getTempFileNames(TOPIC_PARTITION);
+    String tempFileName = tempFileNames.get(encodedPartition);
     List<Object> content = data.get(tempFileName);
     assertEquals(1, content.size());
     for (int i = 0; i < content.size(); ++i) {
@@ -177,7 +177,7 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
 
     ArrayList<SinkRecord> sinkRecords = new ArrayList<>();
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 0L));
-    HdfsWriter hdfsWriter = new HdfsWriter(connectorConfig, context, avroData);
+    DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
     hdfsWriter.write(sinkRecords);
 
     sinkRecords.clear();
@@ -187,17 +187,22 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
       sinkRecords.add(sinkRecord);
     }
 
-    MemoryRecordWriter writer = (MemoryRecordWriter) hdfsWriter.getRecordWriter(TOPIC_PARTITION);
+    String encodedPartition = "partition=" + String.valueOf(PARTITION);
+    Map<String, RecordWriter> writers = hdfsWriter.getWriters(TOPIC_PARTITION);
+    MemoryRecordWriter writer = (MemoryRecordWriter) writers.get(encodedPartition);
+
     writer.setFailure(MemoryRecordWriter.Failure.writeFailure);
     hdfsWriter.write(sinkRecords);
-    assertEquals(context.timeout(), connectorConfig.getLong(
-        HdfsSinkConnectorConfig.RETRY_BACKOFF_CONFIG));
+    assertEquals(context.timeout(), connectorConfig.getLong(HdfsSinkConnectorConfig.RETRY_BACKOFF_CONFIG));
 
     writer.setFailure(MemoryRecordWriter.Failure.closeFailure);
     // nothing happens as we the retry back off hasn't yet passed
     hdfsWriter.write(new ArrayList<SinkRecord>());
     Map<String, List<Object>> data = Data.getData();
-    String tempFileName = hdfsWriter.getTempFileNames(TOPIC_PARTITION);
+
+    Map<String, String> tempFileNames = hdfsWriter.getTempFileNames(TOPIC_PARTITION);
+    String tempFileName = tempFileNames.get(encodedPartition);
+
     List<Object> content = data.get(tempFileName);
     assertEquals(1, content.size());
     for (int i = 0; i < content.size(); ++i) {
@@ -208,7 +213,9 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
     Thread.sleep(context.timeout());
     hdfsWriter.write(new ArrayList<SinkRecord>());
 
-    tempFileName = hdfsWriter.getTempFileNames(TOPIC_PARTITION);
+    tempFileNames = hdfsWriter.getTempFileNames(TOPIC_PARTITION);
+    tempFileName = tempFileNames.get(encodedPartition);
+
     content = data.get(tempFileName);
     assertEquals(3, content.size());
     for (int i = 0; i < content.size(); ++i) {
