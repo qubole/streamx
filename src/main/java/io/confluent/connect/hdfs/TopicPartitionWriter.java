@@ -180,6 +180,7 @@ public class TopicPartitionWriter {
     try {
       switch (state) {
         case RECOVERY_STARTED:
+          log.info("Started recovery for topic partition {}", tp);
           pause();
           nextState();
         case RECOVERY_PARTITION_PAUSED:
@@ -194,6 +195,7 @@ public class TopicPartitionWriter {
         case OFFSET_RESET:
           resume();
           nextState();
+          log.info("Finished recovery for topic partition {}", tp);
           break;
         default:
           log.error("{} is not a valid state to perform recovery for topic partition {}.", state, tp);
@@ -237,6 +239,8 @@ public class TopicPartitionWriter {
             SinkRecord record = buffer.peek();
             Schema valueSchema = record.valueSchema();
             if (shouldRotate()) {
+              log.info("Starting commit and rotation for topic partition {} with start offsets {}"
+                       + " and end offsets {}", tp, startOffsets, offsets);
               nextState();
             } else if (SchemaUtils.shouldChangeSchema(valueSchema, currentSchema, compatibility)) {
               currentSchema = valueSchema;
@@ -286,17 +290,21 @@ public class TopicPartitionWriter {
   }
 
   public void close() throws ConnectException {
+    log.debug("Closing TopicPartitionWriter {}", tp);
     List<Exception> exceptions = new ArrayList<>();
     for (String encodedPartition : tempFiles.keySet()) {
       try {
         if (writers.containsKey(encodedPartition)) {
+          log.debug("Trying on-close commit for {} {} offsets {} to {}", tp, encodedPartition,
+                    tempFiles.get(encodedPartition), startOffsets.get(encodedPartition),
+                    offsets.get(encodedPartition));
           closeTempFile(encodedPartition);
           appendToWAL(encodedPartition);
           commitFile(encodedPartition);
         }
       } catch (IOException e) {
-        log.error("Error rotating {} when closing TopicPartitionWriter.",
-                  tempFiles.get(encodedPartition), e);
+        log.error("Error rotating temp file {} for {} {} when closing TopicPartitionWriter:",
+                  tempFiles.get(encodedPartition), tp, encodedPartition, e);
         exceptions.add(e);
       }
     }
@@ -427,6 +435,7 @@ public class TopicPartitionWriter {
     if (!recovered) {
       readOffset();
       if (offset > 0) {
+        log.debug("Resetting offset for {} to {}", tp, offset);
         context.offset(tp, offset);
       }
       recovered = true;
