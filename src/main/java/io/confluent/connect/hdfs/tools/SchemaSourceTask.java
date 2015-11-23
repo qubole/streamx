@@ -37,6 +37,7 @@ public class SchemaSourceTask extends SourceTask {
   public static final String ID_CONFIG = "id";
   public static final String TOPIC_CONFIG = "topic";
   public static final String NUM_MSGS_CONFIG = "num.messages";
+  public static final String THROUGHPUT_CONFIG = "throughput";
 
   private static final String ID_FIELD = "id";
   private static final String SEQNO_FIELD = "seqno";
@@ -49,6 +50,10 @@ public class SchemaSourceTask extends SourceTask {
   private long seqno;
   private long count;
   private long maxNumMsgs;
+  // Until we can use ThroughputThrottler from Kafka, use a fixed sleep interval. This isn't perfect, but close enough
+  // for system testing purposes
+  private long intervalMs;
+  private int intervalNanos;
 
   private static Schema valueSchema = SchemaBuilder.struct().name("record")
       .field("boolean", Schema.BOOLEAN_SCHEMA)
@@ -72,6 +77,16 @@ public class SchemaSourceTask extends SourceTask {
       id = Integer.parseInt(props.get(ID_CONFIG));
       topic = props.get(TOPIC_CONFIG);
       maxNumMsgs = Long.parseLong(props.get(NUM_MSGS_CONFIG));
+      String throughputStr = props.get(THROUGHPUT_CONFIG);
+      if (throughputStr != null) {
+        long throughput = Long.parseLong(throughputStr);
+        long intervalTotalNanos = 1_000_000_000L / throughput;
+        intervalMs = intervalTotalNanos / 1_000_000L;
+        intervalNanos = (int) (intervalTotalNanos % 1_000_000L);
+      } else {
+        intervalMs = 0;
+        intervalNanos = 0;
+      }
     } catch (NumberFormatException e) {
       throw new ConnectException("Invalid SchemaSourceTask configuration", e);
     }
@@ -90,6 +105,12 @@ public class SchemaSourceTask extends SourceTask {
   @Override
   public List<SourceRecord> poll() throws InterruptedException {
     if (count < maxNumMsgs) {
+      if (intervalMs > 0 || intervalNanos > 0) {
+        synchronized (this) {
+          this.wait(intervalMs, intervalNanos);
+        }
+      }
+
       Struct data = new Struct(valueSchema)
           .put("boolean", true)
           .put("int", 12)
@@ -99,24 +120,25 @@ public class SchemaSourceTask extends SourceTask {
           .put("id", id)
           .put("seqno", seqno);
 
-      for (Field field: valueSchema.fields()) {
-        log.debug("Field: {}", field.name());
-        log.debug("Value: {}", data.get(field.name()));
-      }
       Map<String, Long> ccOffset = Collections.singletonMap(SEQNO_FIELD, seqno);
-      SourceRecord srcRecord = new SourceRecord(partition, ccOffset, topic, 0, Schema.STRING_SCHEMA, "key", valueSchema, data);
-      log.debug("Source record: {}", srcRecord.toString());
+      SourceRecord srcRecord = new SourceRecord(partition, ccOffset, topic, id, Schema.STRING_SCHEMA, "key", valueSchema, data);
+      System.out.println("{\"task\": " + id + ", \"seqno\": " + seqno + "}");
       List<SourceRecord> result = Arrays.asList(srcRecord);
       seqno++;
       count++;
       return result;
     } else {
+      synchronized (this) {
+        this.wait();
+      }
       return new ArrayList<>();
     }
   }
 
   @Override
   public void stop() {
-
+    synchronized (this) {
+      this.notifyAll();
+    }
   }
 }
