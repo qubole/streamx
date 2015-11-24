@@ -149,7 +149,8 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
               PATH_FORMAT_DOC)
       .define(LOCALE_CONFIG, Type.STRING, LOCALE_DEFAULT, Importance.MEDIUM, LOCALE_DOC)
       .define(TIMEZONE_CONFIG, Type.STRING, TIMEZONE_DEFAULT, Importance.MEDIUM, TIMEZONE_DOC)
-      .define(FILENAME_OFFSET_ZERO_PAD_WIDTH_CONFIG, Type.INT, FILENAME_OFFSET_ZERO_PAD_WIDTH_DEFAULT,
+      .define(FILENAME_OFFSET_ZERO_PAD_WIDTH_CONFIG, Type.INT,
+              FILENAME_OFFSET_ZERO_PAD_WIDTH_DEFAULT, ConfigDef.Range.atLeast(0),
               Importance.LOW, FILENAME_OFFSET_ZERO_PAD_WIDTH_DOC);
 
 
