@@ -371,7 +371,7 @@ public class TopicPartitionWriter {
       CommittedFileFilter filter = new TopicPartitionCommittedFileFilter(tp);
       FileStatus fileStatusWithMaxOffset = FileUtils.fileStatusWithMaxOffset(storage, new Path(path), filter);
       if (fileStatusWithMaxOffset != null) {
-        offset = FileUtils.extractOffset(fileStatusWithMaxOffset.getPath().getName());
+        offset = FileUtils.extractOffset(fileStatusWithMaxOffset.getPath().getName()) + 1;
       }
     } catch (IOException e) {
       throw new ConnectException(e);
@@ -446,13 +446,13 @@ public class TopicPartitionWriter {
     RecordWriter<SinkRecord> writer = getWriter(record, encodedPartition);
     writer.write(record);
     if (offset == -1) {
-      offset = record.kafkaOffset() - 1;
+      offset = record.kafkaOffset();
     }
     if (!startOffsets.containsKey(encodedPartition)) {
-      startOffsets.put(encodedPartition, record.kafkaOffset() - 1);
-      offsets.put(encodedPartition, record.kafkaOffset() - 1);
+      startOffsets.put(encodedPartition, record.kafkaOffset());
+      offsets.put(encodedPartition, record.kafkaOffset());
     } else {
-      offsets.put(encodedPartition, record.kafkaOffset() - 1);
+      offsets.put(encodedPartition, record.kafkaOffset());
     }
     recordCounter++;
   }
@@ -479,8 +479,8 @@ public class TopicPartitionWriter {
     if (!startOffsets.containsKey(encodedPartition)) {
       return;
     }
-    long startOffset = startOffsets.get(encodedPartition) + 1;
-    long endOffset = offsets.get(encodedPartition) + 1;
+    long startOffset = startOffsets.get(encodedPartition);
+    long endOffset = offsets.get(encodedPartition);
     String directory = getDirectory(encodedPartition);
     String committedFile = FileUtils.committedFileName(url, topicsDir, directory, tp, startOffset, endOffset, extension);
     wal.append(tempFile, committedFile);
@@ -518,8 +518,8 @@ public class TopicPartitionWriter {
     if (!startOffsets.containsKey(encodedPartiton)) {
       return;
     }
-    long startOffset = startOffsets.get(encodedPartiton) + 1;
-    long endOffset = offsets.get(encodedPartiton) + 1;
+    long startOffset = startOffsets.get(encodedPartiton);
+    long endOffset = offsets.get(encodedPartiton);
     String tempFile = tempFiles.get(encodedPartiton);
     String directory = getDirectory(encodedPartiton);
     String committedFile = FileUtils.committedFileName(url, topicsDir, directory, tp, startOffset, endOffset, extension);

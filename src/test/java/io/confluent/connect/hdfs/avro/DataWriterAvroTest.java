@@ -124,7 +124,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.recover(TOPIC_PARTITION);
     Map<TopicPartition, Long> offsets = context.offsets();
     assertTrue(offsets.containsKey(TOPIC_PARTITION));
-    assertEquals(49L, (long) offsets.get(TOPIC_PARTITION));
+    assertEquals(50L, (long) offsets.get(TOPIC_PARTITION));
 
     String key = "key";
     Schema schema = createSchema();
@@ -210,7 +210,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 
     assertTrue(committedOffsets.containsKey(TOPIC_PARTITION));
     long previousOffset = committedOffsets.get(TOPIC_PARTITION);
-    assertEquals(previousOffset, 5L);
+    assertEquals(previousOffset, 6L);
 
     hdfsWriter.close();
   }
