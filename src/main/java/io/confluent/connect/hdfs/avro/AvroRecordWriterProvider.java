@@ -24,6 +24,8 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -33,6 +35,7 @@ import io.confluent.connect.hdfs.RecordWriterProvider;
 
 public class AvroRecordWriterProvider implements RecordWriterProvider {
 
+  private static final Logger log = LoggerFactory.getLogger(AvroRecordWriterProvider.class);
   private final static String EXTENSION = ".avro";
 
   @Override
@@ -56,6 +59,7 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
     return new RecordWriter<SinkRecord>(){
       @Override
       public void write(SinkRecord record) throws IOException {
+        log.debug("Sink record: {}", record.toString());
         Object value = avroData.fromConnectData(schema, record.value());
         writer.append(value);
       }

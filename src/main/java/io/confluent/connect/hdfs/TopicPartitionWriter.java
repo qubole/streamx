@@ -295,15 +295,18 @@ public class TopicPartitionWriter {
           commitFile(encodedPartition);
         }
       } catch (IOException e) {
-        log.error("Error rotating {} when closing TopicPartitionWriter.", tempFiles.get(encodedPartition));
+        log.error("Error rotating {} when closing TopicPartitionWriter.",
+                  tempFiles.get(encodedPartition), e);
         exceptions.add(e);
       }
     }
+
     writers.clear();
+
     try {
       wal.close();
     } catch (ConnectException e) {
-      log.error("Error closing {}.", wal.getLogFile());
+      log.error("Error closing {}.", wal.getLogFile(), e);
       exceptions.add(e);
     }
     startOffsets.clear();

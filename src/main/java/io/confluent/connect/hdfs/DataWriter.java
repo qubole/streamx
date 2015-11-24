@@ -78,11 +78,21 @@ public class DataWriter {
   @SuppressWarnings("unchecked")
   public DataWriter(HdfsSinkConnectorConfig connectorConfig, SinkTaskContext context, AvroData avroData) {
     try {
+
+      String hadoopHome = connectorConfig.getString(HdfsSinkConnectorConfig.HADOOP_HOME_CONFIG);
+      System.setProperty("hadoop.home.dir", hadoopHome);
+
       this.connectorConfig = connectorConfig;
       this.avroData = avroData;
       this.context = context;
 
+      String hadoopConfDir = connectorConfig.getString(HdfsSinkConnectorConfig.HADOOP_CONF_DIR_CONFIG);
+      log.info("Hadoop configuration directory {}", hadoopConfDir);
       conf = new Configuration();
+      conf.addResource(new Path(hadoopConfDir + "/core-site.xml"));
+      conf.addResource(new Path(hadoopConfDir + "/hdfs-site.xml"));
+      log.info(conf.toString());
+
       url = connectorConfig.getString(HdfsSinkConnectorConfig.HDFS_URL_CONFIG);
       topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPICS_DIR_CONFIG);
       String logsDir = connectorConfig.getString(HdfsSinkConnectorConfig.LOGS_DIR_CONFIG);

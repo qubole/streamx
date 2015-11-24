@@ -12,6 +12,20 @@
     <dependencySets>
         <dependencySet>
             <outputDirectory>share/java/kafka-connect-hdfs/</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <excludes>
+                <!-- Exclude these jars during packaging. This avoids conflicts of jars
+                shipped with Confluent platform and other dependencies such as Hadoop and Avro.
+                This allows correctly setup of CLASSPATH in kafka-run-class.sh when running
+                kafka connect hdfs connector. -->
+                <exclude>io.confluent:common-*</exclude>
+                <exclude>org.apache.kafka:connect-api</exclude>
+                <exclude>org.mortbay.jetty:*</exclude>
+                <exclude>com.sun.jersey:*</exclude>
+                <exclude>org.eclipse.jetty.aggregate:jetty-all</exclude>
+                <exclude>com.sun.jersey.contribs:jersey-guice</exclude>
+            </excludes>
         </dependencySet>
     </dependencySets>
 </assembly>
