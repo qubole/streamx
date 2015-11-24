@@ -50,6 +50,7 @@ import static org.junit.Assert.fail;
 public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 
   private static final String extension = ".avro";
+  private static final String ZERO_PAD_FMT = "%010d";
   private SchemaFileReader schemaFileReader = new AvroFileReader(avroData);
   
   @Test
@@ -82,7 +83,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
       Path path =
           new Path(FileUtils
                        .committedFileName(url, topicsDir, directory, TOPIC_PARTITION, startOffset,
-                                          endOffset, extension));
+                                          endOffset, extension, ZERO_PAD_FMT));
       Collection<Object> records = schemaFileReader.readData(conf, path);
       long size = endOffset - startOffset + 1;
       assertEquals(size, records.size());
@@ -114,7 +115,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
       String tempfile = FileUtils.tempFileName(url, topicsDir, directory, extension);
       fs.createNewFile(new Path(tempfile));
       String committedFile = FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, startOffset,
-                                                         endOffset, extension);
+                                                         endOffset, extension, ZERO_PAD_FMT);
       committedFiles.add(committedFile);
       wal.append(tempfile, committedFile);
     }
@@ -137,7 +138,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
 
-    committedFiles.add(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 50, 50, extension));
+    committedFiles.add(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION,
+                                                   50, 50, extension, ZERO_PAD_FMT));
     FileStatus[] statuses = fs.listStatus(new Path(FileUtils.directoryName(url, topicsDir, directory)),
                       new TopicPartitionCommittedFileFilter(TOPIC_PARTITION));
     assertEquals(committedFiles.size(), statuses.length);
@@ -176,7 +178,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
         long startOffset = validOffsets[j - 1] + 1;
         long endOffset = validOffsets[j];
         Path path = new Path(
-            FileUtils.committedFileName(url, topicsDir, directory, tp, startOffset, endOffset, extension));
+            FileUtils.committedFileName(url, topicsDir, directory, tp, startOffset, endOffset,
+                                        extension, ZERO_PAD_FMT));
         Collection<Object> records = schemaFileReader.readData(conf, path);
         long size = endOffset - startOffset + 1;
         assertEquals(records.size(), size);
@@ -195,7 +198,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 
     for (int i = 0; i < startOffsets.length; ++i) {
       Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, startOffsets[i],
-                                                       endOffsets[i], extension));
+                                                       endOffsets[i], extension, ZERO_PAD_FMT));
       fs.createNewFile(path);
     }
     Path path = new Path(FileUtils.tempFileName(url, topicsDir, directory, extension));
@@ -241,7 +244,9 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     for (int i = 1; i < validOffsets.length; i++) {
       long startOffset = validOffsets[i - 1] + 1;
       long endOffset = validOffsets[i];
-      Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, startOffset, endOffset, extension));
+      Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory,
+                                                       TOPIC_PARTITION, startOffset, endOffset,
+                                                       extension, ZERO_PAD_FMT));
       Collection<Object> records = schemaFileReader.readData(conf, path);
       long size = endOffset - startOffset + 1;
       assertEquals(size, records.size());
@@ -293,7 +298,9 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     for (int j = 1; j < validOffsetsTopicPartition2.length; ++j) {
       long startOffset = validOffsetsTopicPartition2[j - 1] + 1;
       long endOffset = validOffsetsTopicPartition2[j];
-      Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory2, TOPIC_PARTITION2, startOffset, endOffset, extension));
+      Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory2,
+                                                       TOPIC_PARTITION2, startOffset, endOffset,
+                                                       extension, ZERO_PAD_FMT));
       Collection<Object> records = schemaFileReader.readData(conf, path);
       long size = endOffset - startOffset + 1;
       assertEquals(records.size(), size);
@@ -319,7 +326,9 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     for (int j = 1; j < validOffsetsTopicPartition1.length; ++j) {
       long startOffset = validOffsetsTopicPartition1[j - 1] + 1;
       long endOffset = validOffsetsTopicPartition1[j];
-      Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory1 , TOPIC_PARTITION, startOffset, endOffset, extension));
+      Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory1 ,
+                                                       TOPIC_PARTITION, startOffset, endOffset,
+                                                       extension, ZERO_PAD_FMT));
       Collection<Object> records = schemaFileReader.readData(conf, path);
       long size = endOffset - startOffset + 1;
       assertEquals(records.size(), size);
@@ -333,7 +342,9 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     for (int j = 1; j < validOffsetsTopicPartition3.length; ++j) {
       long startOffset = validOffsetsTopicPartition3[j - 1] + 1;
       long endOffset = validOffsetsTopicPartition3[j];
-      Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory3, TOPIC_PARTITION3, startOffset, endOffset, extension));
+      Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory3,
+                                                       TOPIC_PARTITION3, startOffset, endOffset,
+                                                       extension, ZERO_PAD_FMT));
       Collection<Object> records = schemaFileReader.readData(conf, path);
       long size = endOffset - startOffset + 1;
       assertEquals(records.size(), size);
@@ -369,7 +380,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.close();
 
     String DIRECTORY = TOPIC + "/" + "partition=" + String.valueOf(PARTITION);
-    Path path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 0L, 1L, extension));
+    Path path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION,
+                                                     0L, 1L, extension, ZERO_PAD_FMT));
     ArrayList<Object> records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
     assertEquals(2, records.size());
 
@@ -387,7 +399,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
 
-    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 2L, 2L, extension));
+    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 2L,
+                                                2L, extension, ZERO_PAD_FMT));
     records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
     assertEquals(1, records.size());
 
@@ -414,14 +427,16 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.close();
 
     String DIRECTORY = TOPIC + "/" + "partition=" + String.valueOf(PARTITION);
-    Path path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 0L, 0L, extension));
+    Path path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION,
+                                                     0L, 0L, extension, ZERO_PAD_FMT));
     ArrayList<Object> records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
     assertEquals(1, records.size());
 
 
     assertEquals(avroData.fromConnectData(newSchema, newRecord), records.get(0));
 
-    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 1L, 1L, extension));
+    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 1L,
+                                                1L, extension, ZERO_PAD_FMT));
     records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
     assertEquals(avroData.fromConnectData(schema, record), records.get(0));
 
@@ -434,7 +449,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
 
-    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 2L, 2L, extension));
+    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 2L,
+                                                2L, extension, ZERO_PAD_FMT));
     records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
     assertEquals(1, records.size());
 
@@ -465,13 +481,15 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.close();
 
     String DIRECTORY = TOPIC + "/" + "partition=" + String.valueOf(PARTITION);
-    Path path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 0L, 0L, extension));
+    Path path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION,
+                                                     0L, 0L, extension, ZERO_PAD_FMT));
     ArrayList<Object> records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
     assertEquals(1, records.size());
 
     assertEquals(avroData.fromConnectData(newSchema, newRecord), records.get(0));
 
-    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 1L, 1L, extension));
+    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 1L,
+                                                1L, extension, ZERO_PAD_FMT));
     records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
     assertEquals(avroData.fromConnectData(schema, record), records.get(0));
 
@@ -484,7 +502,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
 
-    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 2L, 2L, extension));
+    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 2L,
+                                                2L, extension, ZERO_PAD_FMT));
     records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
     assertEquals(1, records.size());
 

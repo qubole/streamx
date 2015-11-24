@@ -25,6 +25,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -39,6 +40,7 @@ import io.confluent.connect.hdfs.SchemaFileReader;
 import io.confluent.connect.hdfs.TestWithMiniDFSCluster;
 import io.confluent.connect.hdfs.TopicPartitionWriter;
 import io.confluent.connect.hdfs.filter.CommittedFileFilter;
+import io.confluent.connect.hdfs.partitioner.DefaultPartitioner;
 import io.confluent.connect.hdfs.partitioner.FieldPartitioner;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
 import io.confluent.connect.hdfs.partitioner.TimeBasedPartitioner;
@@ -50,6 +52,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
+  // The default based on default configuration of 10
+  private static final String ZERO_PAD_FMT = "%010d";
+
   private RecordWriterProvider writerProvider;
   private SchemaFileReader schemaFileReader;
   private Storage storage;
@@ -70,6 +75,40 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     createTopicDir(url, topicsDir, TOPIC);
     createLogsDir(url, logsDir);
   }
+
+  @Test
+  public void testWriteRecordDefaultWithPadding() throws Exception {
+    Partitioner partitioner = new DefaultPartitioner();
+    partitioner.configure(Collections.<String, Object>emptyMap());
+    connectorProps.put(HdfsSinkConnectorConfig.FILENAME_OFFSET_ZERO_PAD_WIDTH_CONFIG, "2");
+    configureConnector();
+    TopicPartitionWriter topicPartitionWriter = new TopicPartitionWriter(
+        TOPIC_PARTITION, storage, writerProvider, partitioner,  connectorConfig, context, avroData);
+
+    String key = "key";
+    Schema schema = createSchema();
+    Struct[] records = createRecords(schema);
+
+    Collection<SinkRecord> sinkRecords = createSinkRecords(records, key, schema);
+
+    for (SinkRecord record : sinkRecords) {
+      topicPartitionWriter.buffer(record);
+    }
+
+    topicPartitionWriter.recover();
+    topicPartitionWriter.write();
+    topicPartitionWriter.close();
+
+    Set<Path> expectedFiles = new HashSet<>();
+    expectedFiles.add(new Path(url + "/" + topicsDir + "/" + TOPIC + "/partition=" + PARTITION +
+                               "/" + TOPIC + "+" + PARTITION + "+00+02" + extension));
+    expectedFiles.add(new Path(url + "/" + topicsDir + "/" + TOPIC + "/partition=" + PARTITION +
+                               "/" + TOPIC + "+" + PARTITION + "+03+05" + extension));
+    expectedFiles.add(new Path(url + "/" + topicsDir + "/" + TOPIC + "/partition=" + PARTITION +
+                               "/" + TOPIC + "+" + PARTITION + "+06+08" + extension));
+    verify(expectedFiles, records, schema);
+  }
+
 
   @Test
   public void testWriteRecordFieldPartitioner() throws Exception {
@@ -102,10 +141,9 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     String directory3 = partitioner.generatePartitionedPath(TOPIC, partitionField + "=" + String.valueOf(18));
 
     Set<Path> expectedFiles = new HashSet<>();
-    expectedFiles.add(new Path(
-        FileUtils.committedFileName(url, topicsDir, directory1, TOPIC_PARTITION, 0, 2, extension)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory2, TOPIC_PARTITION, 3, 5, extension)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory3, TOPIC_PARTITION, 6, 8, extension)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory1, TOPIC_PARTITION, 0, 2, extension, ZERO_PAD_FMT)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory2, TOPIC_PARTITION, 3, 5, extension, ZERO_PAD_FMT)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory3, TOPIC_PARTITION, 6, 8, extension, ZERO_PAD_FMT)));
 
     verify(expectedFiles, records, schema);
   }
@@ -144,9 +182,9 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     String directory = partitioner.generatePartitionedPath(TOPIC, encodedPartition);
 
     Set<Path> expectedFiles = new HashSet<>();
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 0, 2, extension)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 3, 5, extension)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 6, 8, extension)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 0, 2, extension, ZERO_PAD_FMT)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 3, 5, extension, ZERO_PAD_FMT)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 6, 8, extension, ZERO_PAD_FMT)));
 
     verify(expectedFiles, records, schema);
   }

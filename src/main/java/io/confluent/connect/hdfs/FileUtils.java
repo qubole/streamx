@@ -72,7 +72,7 @@ public class FileUtils {
 
   public static String committedFileName(String url, String topicsDir, String directory,
                                          TopicPartition topicPart, long startOffset, long endOffset,
-                                         String extension) {
+                                         String extension, String zeroPadFormat) {
     String topic = topicPart.topic();
     int partition = topicPart.partition();
     StringBuilder sb = new StringBuilder();
@@ -80,9 +80,9 @@ public class FileUtils {
     sb.append(HdfsSinkConnecorConstants.COMMMITTED_FILENAME_SEPARATOR);
     sb.append(partition);
     sb.append(HdfsSinkConnecorConstants.COMMMITTED_FILENAME_SEPARATOR);
-    sb.append(startOffset);
+    sb.append(String.format(zeroPadFormat, startOffset));
     sb.append(HdfsSinkConnecorConstants.COMMMITTED_FILENAME_SEPARATOR);
-    sb.append(endOffset);
+    sb.append(String.format(zeroPadFormat, endOffset));
     sb.append(extension);
     String name = sb.toString();
     return fileName(url, topicsDir, directory, name);

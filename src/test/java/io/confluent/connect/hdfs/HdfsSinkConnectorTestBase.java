@@ -36,6 +36,7 @@ public class HdfsSinkConnectorTestBase {
 
   protected Configuration conf;
   protected String url;
+  protected Map<String, String> connectorProps;
   protected HdfsSinkConnectorConfig connectorConfig;
   protected String topicsDir;
   protected String logsDir;
@@ -104,12 +105,10 @@ public class HdfsSinkConnectorTestBase {
   public void setUp() throws Exception {
     conf = new Configuration();
     url = "memory://";
-    Map<String, String> props = createProps();
-    connectorConfig = new HdfsSinkConnectorConfig(props);
-    topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPICS_DIR_CONFIG);
-    logsDir = connectorConfig.getString(HdfsSinkConnectorConfig.LOGS_DIR_CONFIG);
-    int schemaCacheSize = connectorConfig.getInt(HdfsSinkConnectorConfig.SCHEMA_CACHE_SIZE_CONFIG);
-    avroData = new AvroData(schemaCacheSize);
+    connectorProps = createProps();
+    // Configure immediately in setup for common case of just using this default. Subclasses can
+    // re-call this safely.
+    configureConnector();
     assignment = new HashSet<>();
     assignment.add(TOPIC_PARTITION);
     assignment.add(TOPIC_PARTITION2);
@@ -121,6 +120,14 @@ public class HdfsSinkConnectorTestBase {
     if (assignment != null) {
       assignment.clear();
     }
+  }
+
+  protected void configureConnector() {
+    connectorConfig = new HdfsSinkConnectorConfig(connectorProps);
+    topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPICS_DIR_CONFIG);
+    logsDir = connectorConfig.getString(HdfsSinkConnectorConfig.LOGS_DIR_CONFIG);
+    int schemaCacheSize = connectorConfig.getInt(HdfsSinkConnectorConfig.SCHEMA_CACHE_SIZE_CONFIG);
+    avroData = new AvroData(schemaCacheSize);
   }
 
   protected static class MockSinkTaskContext implements SinkTaskContext {

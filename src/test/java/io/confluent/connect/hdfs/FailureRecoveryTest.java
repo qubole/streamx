@@ -33,7 +33,7 @@ import io.confluent.connect.hdfs.utils.MemoryStorage;
 import static org.junit.Assert.assertEquals;
 
 public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
-
+  private static final String ZERO_PAD_FMT = "%010d";
   private static final String extension = "";
 
   @Before
@@ -134,7 +134,8 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
     for (int i = 1; i < validOffsets.length; i++) {
       long startOffset = validOffsets[i - 1] + 1;
       long endOffset = validOffsets[i];
-      String path = FileUtils.committedFileName(url, topicsDir, directory2, TOPIC_PARTITION2, startOffset, endOffset, extension);
+      String path = FileUtils.committedFileName(url, topicsDir, directory2, TOPIC_PARTITION2,
+                                                startOffset, endOffset, extension, ZERO_PAD_FMT);
       long size = endOffset - startOffset + 1;
       List<Object> records = data.get(path);
       assertEquals(size, records.size());
