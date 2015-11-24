@@ -110,7 +110,7 @@ public class DataWriter {
 
       partitioner = createPartitioner(connectorConfig);
 
-      assignment = context.assignment();
+      assignment = new HashSet<>(context.assignment());
       offsets = new HashMap<>();
       lastAssignment = new HashSet<>();
 
@@ -204,8 +204,7 @@ public class DataWriter {
   }
 
   public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-    assignment.clear();
-    assignment.addAll(partitions);
+    assignment = new HashSet<>(partitions);
 
     // handle partitions that no longer assigned to the task
     for (TopicPartition tp: lastAssignment) {
@@ -234,8 +233,7 @@ public class DataWriter {
   }
 
   public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-    lastAssignment.clear();
-    lastAssignment.addAll(partitions);
+    lastAssignment = new HashSet<>(partitions);
   }
 
   public void close() {
