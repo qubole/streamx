@@ -43,6 +43,7 @@ import io.confluent.connect.hdfs.storage.StorageFactory;
 import io.confluent.connect.hdfs.wal.WAL;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -279,13 +280,13 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     Set<TopicPartition> newAssignment = new HashSet<>();
     newAssignment.add(TOPIC_PARTITION);
     newAssignment.add(TOPIC_PARTITION3);
-
     hdfsWriter.onPartitionsRevoked(assignment);
-
+    assignment = newAssignment;
     hdfsWriter.onPartitionsAssigned(newAssignment);
-    assertEquals(newAssignment, assignment);
 
     assertEquals(null, hdfsWriter.getBucketWriter(TOPIC_PARTITION2));
+    assertNotNull(hdfsWriter.getBucketWriter(TOPIC_PARTITION));
+    assertNotNull(hdfsWriter.getBucketWriter(TOPIC_PARTITION3));
 
     long[] validOffsetsTopicPartition2 = {5, 6};
     String directory2 = TOPIC + "/" + "partition=" + String.valueOf(PARTITION2);
