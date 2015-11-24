@@ -28,6 +28,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class WALTest extends TestWithMiniDFSCluster {
+  private static final String ZERO_PAD_FMT = "%010d";
 
   private boolean closed;
   private static final String extension = ".avro";
@@ -46,7 +47,9 @@ public class WALTest extends TestWithMiniDFSCluster {
 
     String directory = TOPIC + "/" + String.valueOf(PARTITION);
     final String tempfile = FileUtils.tempFileName(url, topicsDir, directory, extension);
-    final String commitedFile = FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 0, 10, extension);
+    final String commitedFile = FileUtils.committedFileName(url, topicsDir, directory,
+                                                            TOPIC_PARTITION, 0, 10, extension,
+                                                            ZERO_PAD_FMT);
 
     fs.createNewFile(new Path(tempfile));
 

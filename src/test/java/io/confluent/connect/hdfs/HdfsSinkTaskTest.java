@@ -42,6 +42,7 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
   private static final String DIRECTORY1 = TOPIC + "/" + "partition=" + String.valueOf(PARTITION);
   private static final String DIRECTORY2 = TOPIC + "/" + "partition=" + String.valueOf(PARTITION2);
   private static final String extension = ".avro";
+  private static final String ZERO_PAD_FMT = "%010d";
   private final SchemaFileReader schemaFileReader = new AvroFileReader(avroData);
 
   @Test
@@ -79,13 +80,17 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
 
     Map<TopicPartition, List<String>> committedFiles = new HashMap<>();
     List<String> list3 = new ArrayList<>();
-    list3.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 100, 200, extension));
-    list3.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 201, 300, extension));
+    list3.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 100, 200,
+                                          extension, ZERO_PAD_FMT));
+    list3.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 201, 300,
+                                          extension, ZERO_PAD_FMT));
     committedFiles.put(TOPIC_PARTITION, list3);
 
     List<String> list4 = new ArrayList<>();
-    list4.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY2, TOPIC_PARTITION2, 400, 500, extension));
-    list4.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY2, TOPIC_PARTITION2, 501, 800, extension));
+    list4.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY2, TOPIC_PARTITION2, 400, 500,
+                                          extension, ZERO_PAD_FMT));
+    list4.add(FileUtils.committedFileName(url, topicsDir, DIRECTORY2, TOPIC_PARTITION2, 501, 800,
+                                          extension, ZERO_PAD_FMT));
     committedFiles.put(TOPIC_PARTITION2, list4);
 
     for (TopicPartition tp : tempfiles.keySet()) {
@@ -140,7 +145,9 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
       for (int j = 1; j < validOffsets.length; ++j) {
         long startOffset = validOffsets[j - 1] + 1;
         long endOffset = validOffsets[j];
-        Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory, tp, startOffset, endOffset, extension));
+        Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory, tp,
+                                                         startOffset, endOffset, extension,
+                                                         ZERO_PAD_FMT));
         Collection<Object> records = schemaFileReader.readData(conf, path);
         long size = endOffset - startOffset + 1;
         assertEquals(records.size(), size);
@@ -152,10 +159,14 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
   }
 
   private void createCommittedFiles() throws IOException {
-    String file1 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 0, 10, extension);
-    String file2 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 11, 20, extension);
-    String file3 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION2, 21, 40, extension);
-    String file4 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION2, 41, 45, extension);
+    String file1 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 0,
+                                               10, extension, ZERO_PAD_FMT);
+    String file2 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION, 11,
+                                               20, extension, ZERO_PAD_FMT);
+    String file3 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION2, 21,
+                                               40, extension, ZERO_PAD_FMT);
+    String file4 = FileUtils.committedFileName(url, topicsDir, DIRECTORY1, TOPIC_PARTITION2, 41,
+                                               45, extension, ZERO_PAD_FMT);
     fs.createNewFile(new Path(file1));
     fs.createNewFile(new Path(file2));
     fs.createNewFile(new Path(file3));

@@ -81,6 +81,7 @@ public class TopicPartitionWriter {
   private Schema currentSchema;
   private HdfsSinkConnectorConfig connectorConfig;
   private String extension;
+  private final String zeroPadOffsetFormat;
 
   private final boolean hiveIntegration;
   private String hiveDatabase;
@@ -145,6 +146,10 @@ public class TopicPartitionWriter {
     failureTime = -1L;
     offset = -1L;
     extension = writerProvider.getExtension();
+    zeroPadOffsetFormat
+        = "%0" +
+          connectorConfig.getInt(HdfsSinkConnectorConfig.FILENAME_OFFSET_ZERO_PAD_WIDTH_CONFIG) +
+          "d";
 
     hiveIntegration = connectorConfig.getBoolean(HdfsSinkConnectorConfig.HIVE_INTEGRATION_CONFIG);
     if (hiveIntegration) {
@@ -482,7 +487,9 @@ public class TopicPartitionWriter {
     long startOffset = startOffsets.get(encodedPartition);
     long endOffset = offsets.get(encodedPartition);
     String directory = getDirectory(encodedPartition);
-    String committedFile = FileUtils.committedFileName(url, topicsDir, directory, tp, startOffset, endOffset, extension);
+    String committedFile = FileUtils.committedFileName(url, topicsDir, directory, tp,
+                                                       startOffset, endOffset, extension,
+                                                       zeroPadOffsetFormat);
     wal.append(tempFile, committedFile);
     appended.add(tempFile);
   }
@@ -522,7 +529,9 @@ public class TopicPartitionWriter {
     long endOffset = offsets.get(encodedPartiton);
     String tempFile = tempFiles.get(encodedPartiton);
     String directory = getDirectory(encodedPartiton);
-    String committedFile = FileUtils.committedFileName(url, topicsDir, directory, tp, startOffset, endOffset, extension);
+    String committedFile = FileUtils.committedFileName(url, topicsDir, directory, tp,
+                                                       startOffset, endOffset, extension,
+                                                       zeroPadOffsetFormat);
     storage.commit(tempFile, committedFile);
     startOffsets.remove(encodedPartiton);
     offset = offset + recordCounter;

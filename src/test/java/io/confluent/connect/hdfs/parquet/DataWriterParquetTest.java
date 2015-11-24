@@ -35,7 +35,7 @@ import io.confluent.connect.hdfs.partitioner.Partitioner;
 import static org.junit.Assert.assertEquals;
 
 public class DataWriterParquetTest extends TestWithMiniDFSCluster {
-
+  private static final String ZERO_PAD_FMT = "%010d";
   private static final String extension = ".parquet";
   private final SchemaFileReader schemaFileReader = new ParquetFileReader(avroData);
 
@@ -75,7 +75,7 @@ public class DataWriterParquetTest extends TestWithMiniDFSCluster {
       long endOffset = validOffsets[i];
       Path path = new Path(
           FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, startOffset,
-                                      endOffset, extension));
+                                      endOffset, extension, ZERO_PAD_FMT));
       Collection<Object> records = schemaFileReader.readData(conf, path);
       long size = endOffset - startOffset + 1;
       assertEquals(size, records.size());

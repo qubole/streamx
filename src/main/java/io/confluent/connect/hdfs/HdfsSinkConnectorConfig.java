@@ -112,6 +112,13 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static final String TIMEZONE_DOC = "The timezone to use.";
   public static final String TIMEZONE_DEFAULT = "";
 
+  public static final String FILENAME_OFFSET_ZERO_PAD_WIDTH_CONFIG = "filename.offset.zero.pad.width";
+  private static final String FILENAME_OFFSET_ZERO_PAD_WIDTH_DOC =
+      "Width to zero pad offsets in HDFS filenames to if the offsets is too short in order to "
+      + "provide fixed width filenames that can be ordered by simple lexicographic sorting.";
+  public static final int FILENAME_OFFSET_ZERO_PAD_WIDTH_DEFAULT = 10;
+
+
   static ConfigDef config = new ConfigDef()
       .define(HDFS_URL_CONFIG, Type.STRING, Importance.HIGH, HDFS_URL_DOC)
       .define(HADOOP_CONF_DIR_CONFIG, Type.STRING, HADOOP_CONF_DIR_DEFAULT, Importance.HIGH,
@@ -141,7 +148,10 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       .define(PATH_FORMAT_CONFIG, Type.STRING, PATH_FORMAT_DEFAULT, Importance.MEDIUM,
               PATH_FORMAT_DOC)
       .define(LOCALE_CONFIG, Type.STRING, LOCALE_DEFAULT, Importance.MEDIUM, LOCALE_DOC)
-      .define(TIMEZONE_CONFIG, Type.STRING, TIMEZONE_DEFAULT, Importance.MEDIUM, TIMEZONE_DOC);
+      .define(TIMEZONE_CONFIG, Type.STRING, TIMEZONE_DEFAULT, Importance.MEDIUM, TIMEZONE_DOC)
+      .define(FILENAME_OFFSET_ZERO_PAD_WIDTH_CONFIG, Type.INT,
+              FILENAME_OFFSET_ZERO_PAD_WIDTH_DEFAULT, ConfigDef.Range.atLeast(0),
+              Importance.LOW, FILENAME_OFFSET_ZERO_PAD_WIDTH_DOC);
 
 
   public HdfsSinkConnectorConfig(Map<String, String> props) {
