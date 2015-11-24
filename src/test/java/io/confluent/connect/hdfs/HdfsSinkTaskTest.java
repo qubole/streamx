@@ -57,9 +57,9 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
     Map<TopicPartition, Long> offsets = context.offsets();
     assertEquals(offsets.size(), 2);
     assertTrue(offsets.containsKey(TOPIC_PARTITION));
-    assertEquals(20, (long) offsets.get(TOPIC_PARTITION));
+    assertEquals(21, (long) offsets.get(TOPIC_PARTITION));
     assertTrue(offsets.containsKey(TOPIC_PARTITION2));
-    assertEquals(45, (long) offsets.get(TOPIC_PARTITION2));
+    assertEquals(46, (long) offsets.get(TOPIC_PARTITION2));
 
     task.stop();
   }
@@ -104,9 +104,9 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
     Map<TopicPartition, Long> offsets = context.offsets();
     assertEquals(2, offsets.size());
     assertTrue(offsets.containsKey(TOPIC_PARTITION));
-    assertEquals(300, (long) offsets.get(TOPIC_PARTITION));
+    assertEquals(301, (long) offsets.get(TOPIC_PARTITION));
     assertTrue(offsets.containsKey(TOPIC_PARTITION2));
-    assertEquals(800, (long) offsets.get(TOPIC_PARTITION2));
+    assertEquals(801, (long) offsets.get(TOPIC_PARTITION2));
 
     task.stop();
   }
