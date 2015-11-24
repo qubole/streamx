@@ -296,8 +296,7 @@ public class TopicPartitionWriter {
       try {
         if (writers.containsKey(encodedPartition)) {
           log.debug("Trying on-close commit for {} {} offsets {} to {}", tp, encodedPartition,
-                    tempFiles.get(encodedPartition), startOffsets.get(encodedPartition),
-                    offsets.get(encodedPartition));
+                    startOffsets.get(encodedPartition), offsets.get(encodedPartition));
           closeTempFile(encodedPartition);
           appendToWAL(encodedPartition);
           commitFile(encodedPartition);
