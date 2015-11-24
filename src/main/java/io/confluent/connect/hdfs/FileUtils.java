@@ -21,6 +21,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +32,7 @@ import io.confluent.connect.hdfs.filter.CommittedFileFilter;
 import io.confluent.connect.hdfs.storage.Storage;
 
 public class FileUtils {
+  private static final Logger log = LoggerFactory.getLogger(FileUtils.class);
 
   public static String logFileName(String url, String logsDir, TopicPartition topicPart) {
     return fileName(url, logsDir, topicPart, "log");
@@ -134,6 +137,7 @@ public class FileUtils {
         }
       } else {
         String filename = status.getPath().getName();
+        log.trace("Checked for max offset: {}", status.getPath());
         if (filter.accept(status.getPath())) {
           long offset = extractOffset(filename);
           if (offset > maxOffset) {
