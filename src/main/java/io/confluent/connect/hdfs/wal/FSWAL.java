@@ -72,8 +72,8 @@ public class FSWAL implements WAL {
         if (writer == null) {
           writer = WALFile.createWriter(conf, Writer.file(new Path(logFile)),
                                         Writer.appendIfExists(true));
+          log.info("Successfully acquired lease for {}", logFile);
         }
-        log.info("Successfully acquired lease for {}", logFile);
         break;
       } catch (RemoteException e) {
         if (e.getClassName().equals(leaseException)) {
@@ -147,7 +147,6 @@ public class FSWAL implements WAL {
   public void close() throws ConnectException {
     try {
       if (writer != null) {
-        writer.hsync();
         writer.close();
       }
       if (reader != null) {

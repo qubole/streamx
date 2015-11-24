@@ -69,6 +69,8 @@ public class HdfsSinkTask extends SinkTask {
     } catch (ConfigException e) {
       throw new ConnectException("Couldn't start HdfsSinkConnector due to configuration error.", e);
     } catch (ConnectException e) {
+      log.info("Couldn't start HdfsSinkConnector:", e);
+      log.info("Shutting down HdfsSinkConnector.");
       if (hdfsWriter != null) {
         hdfsWriter.close();
       }
@@ -77,7 +79,9 @@ public class HdfsSinkTask extends SinkTask {
 
   @Override
   public void stop() throws ConnectException {
-    hdfsWriter.close();
+    if (hdfsWriter != null) {
+      hdfsWriter.close();
+    }
   }
 
   @Override

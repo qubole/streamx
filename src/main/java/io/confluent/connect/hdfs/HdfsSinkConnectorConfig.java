@@ -26,6 +26,14 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   public static final String HDFS_URL_CONFIG = "hdfs.url";
   private static final String HDFS_URL_DOC = "HDFS connection URL.";
 
+  public static final String HADOOP_CONF_DIR_CONFIG = "hadoop.conf.dir";
+  private static final String HADOOP_CONF_DIR_DOC = "The hadoop configuration directory.";
+  public static final String HADOOP_CONF_DIR_DEFAULT = "";
+
+  public static final String HADOOP_HOME_CONFIG = "hadoop.home";
+  private static final String HADOOP_HOME_DOC = "The hadoop configuration directory.";
+  public static final String HADOOP_HOME_DEFAULT = "";
+
   public static final String FORMAT_CONFIG = "format";
   private static final String FORMAT_DOC = "The format class to use when writing data to HDFS.";
   public static final String FORMAT_DEFAULT = "io.confluent.connect.hdfs.avro.AvroFormat";
@@ -106,6 +114,9 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
 
   static ConfigDef config = new ConfigDef()
       .define(HDFS_URL_CONFIG, Type.STRING, Importance.HIGH, HDFS_URL_DOC)
+      .define(HADOOP_CONF_DIR_CONFIG, Type.STRING, HADOOP_CONF_DIR_DEFAULT, Importance.HIGH,
+              HADOOP_CONF_DIR_DOC)
+      .define(HADOOP_HOME_CONFIG, Type.STRING, HADOOP_HOME_DEFAULT, Importance.HIGH, HADOOP_HOME_DOC)
       .define(FORMAT_CONFIG, Type.STRING, FORMAT_DEFAULT, Importance.HIGH,
               FORMAT_DOC)
       .define(FLUSH_SIZE_CONFIG, Type.INT, Importance.HIGH, FLUSH_SIZE_DOC)
