@@ -60,7 +60,7 @@ public class SchemaUtils {
       case FORWARD:
         Schema sourceSchema = record.valueSchema();
         Object value = record.value();
-        if (sourceSchema.equals(currentSchema)) {
+        if (sourceSchema == currentSchema || sourceSchema.equals(currentSchema)) {
           return record;
         }
         Object projected = SchemaProjector.project(sourceSchema, value, currentSchema);
