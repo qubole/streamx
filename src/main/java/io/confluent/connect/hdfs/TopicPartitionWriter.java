@@ -535,6 +535,7 @@ public class TopicPartitionWriter {
     storage.commit(tempFile, committedFile);
     startOffsets.remove(encodedPartiton);
     offset = offset + recordCounter;
+    log.info("Committed {} for {}", committedFile, tp);
   }
 
   private void setRetryTimeout(long timeoutMs) {
