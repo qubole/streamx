@@ -14,7 +14,6 @@
 
 package io.confluent.connect.hdfs.tools;
 
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -38,6 +37,7 @@ public class SchemaSourceTask extends SourceTask {
   public static final String TOPIC_CONFIG = "topic";
   public static final String NUM_MSGS_CONFIG = "num.messages";
   public static final String THROUGHPUT_CONFIG = "throughput";
+  public static final String MULTIPLE_SCHEMA_CONFIG = "multiple.schema";
 
   private static final String ID_FIELD = "id";
   private static final String SEQNO_FIELD = "seqno";
@@ -50,12 +50,13 @@ public class SchemaSourceTask extends SourceTask {
   private long seqno;
   private long count;
   private long maxNumMsgs;
+  private boolean multipleSchema;
   // Until we can use ThroughputThrottler from Kafka, use a fixed sleep interval. This isn't perfect, but close enough
   // for system testing purposes
   private long intervalMs;
   private int intervalNanos;
 
-  private static Schema valueSchema = SchemaBuilder.struct().name("record")
+  private static Schema valueSchema = SchemaBuilder.struct().version(1).name("record")
       .field("boolean", Schema.BOOLEAN_SCHEMA)
       .field("int", Schema.INT32_SCHEMA)
       .field("long", Schema.INT64_SCHEMA)
@@ -65,7 +66,17 @@ public class SchemaSourceTask extends SourceTask {
       .field("seqno", Schema.INT64_SCHEMA)
       .build();
 
-  @Override
+  private static Schema valueSchema2 = SchemaBuilder.struct().version(2).name("record")
+      .field("boolean", Schema.BOOLEAN_SCHEMA)
+      .field("int", Schema.INT32_SCHEMA)
+      .field("long", Schema.INT64_SCHEMA)
+      .field("float", Schema.FLOAT32_SCHEMA)
+      .field("double", Schema.FLOAT64_SCHEMA)
+      .field("string", SchemaBuilder.string().defaultValue("abc").build())
+      .field("id", Schema.INT32_SCHEMA)
+      .field("seqno", Schema.INT64_SCHEMA)
+      .build();
+
   public String version() {
     return new SchemaSourceConnector().version();
   }
@@ -77,6 +88,7 @@ public class SchemaSourceTask extends SourceTask {
       id = Integer.parseInt(props.get(ID_CONFIG));
       topic = props.get(TOPIC_CONFIG);
       maxNumMsgs = Long.parseLong(props.get(NUM_MSGS_CONFIG));
+      multipleSchema = Boolean.parseBoolean(props.get(MULTIPLE_SCHEMA_CONFIG));
       String throughputStr = props.get(THROUGHPUT_CONFIG);
       if (throughputStr != null) {
         long throughput = Long.parseLong(throughputStr);
@@ -110,7 +122,6 @@ public class SchemaSourceTask extends SourceTask {
           this.wait(intervalMs, intervalNanos);
         }
       }
-
       Struct data = new Struct(valueSchema)
           .put("boolean", true)
           .put("int", 12)
@@ -122,6 +133,21 @@ public class SchemaSourceTask extends SourceTask {
 
       Map<String, Long> ccOffset = Collections.singletonMap(SEQNO_FIELD, seqno);
       SourceRecord srcRecord = new SourceRecord(partition, ccOffset, topic, id, Schema.STRING_SCHEMA, "key", valueSchema, data);
+
+      if (multipleSchema && count % 2 == 1) {
+        data = new Struct(valueSchema2)
+            .put("boolean", true)
+            .put("int", 12)
+            .put("long", 12L)
+            .put("float", 12.2f)
+            .put("double", 12.2)
+            .put("string", "def")
+            .put("id", id)
+            .put("seqno", seqno);
+
+        srcRecord = new SourceRecord(partition, ccOffset, topic, id, Schema.STRING_SCHEMA, "key", valueSchema2, data);
+      }
+      
       System.out.println("{\"task\": " + id + ", \"seqno\": " + seqno + "}");
       List<SourceRecord> result = Arrays.asList(srcRecord);
       seqno++;
