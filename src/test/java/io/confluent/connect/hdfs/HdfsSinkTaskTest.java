@@ -138,7 +138,8 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
     task.stop();
 
     AvroData avroData = task.getAvroData();
-    long[] validOffsets = {-1, 2, 5, 6};
+    // Last file (offset 6) doesn't satisfy size requirement and gets discarded on close
+    long[] validOffsets = {-1, 2, 5};
 
     for (TopicPartition tp : assignment) {
       String directory = tp.topic() + "/" + "partition=" + String.valueOf(tp.partition());

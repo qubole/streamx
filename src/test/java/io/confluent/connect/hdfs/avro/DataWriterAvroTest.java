@@ -76,7 +76,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     String encodedPartition = "partition=" + String.valueOf(PARTITION);
     String directory = partitioner.generatePartitionedPath(TOPIC, encodedPartition);
 
-    long[] validOffsets = {-1, 2, 5, 6};
+    // Last file (offset 6) doesn't satisfy size requirement and gets discarded on close
+    long[] validOffsets = {-1, 2, 5};
     for (int i = 1; i < validOffsets.length; i++) {
       long startOffset = validOffsets[i - 1] + 1;
       long endOffset = validOffsets[i];
@@ -132,14 +133,17 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     Schema schema = createSchema();
     Struct record = createRecord(schema);
 
-    SinkRecord sinkRecord = new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 50);
+    // Need enough records to trigger file rotation
+    ArrayList<SinkRecord> sinkRecords = new ArrayList<>();
+    for (int i = 0; i < 3; i++)
+      sinkRecords.add(
+          new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 50 + i));
 
-    Collection<SinkRecord> sinkRecords = Collections.singletonList(sinkRecord);
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
 
     committedFiles.add(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION,
-                                                   50, 50, extension, ZERO_PAD_FMT));
+                                                   50, 52, extension, ZERO_PAD_FMT));
     FileStatus[] statuses = fs.listStatus(new Path(FileUtils.directoryName(url, topicsDir, directory)),
                       new TopicPartitionCommittedFileFilter(TOPIC_PARTITION));
     assertEquals(committedFiles.size(), statuses.length);
@@ -170,7 +174,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
 
-    long[] validOffsets = {-1, 2, 5, 6};
+    // Last file (offset 6) doesn't satisfy size requirement and gets discarded on close
+    long[] validOffsets = {-1, 2, 5};
 
     for (TopicPartition tp : assignment) {
       String directory = tp.topic() + "/" + "partition=" + String.valueOf(tp.partition());
@@ -240,7 +245,9 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.close();
 
     String directory = partitioner.generatePartitionedPath(TOPIC, "partition=" + String.valueOf(PARTITION));
-    long[] validOffsets = {2, 5, 8, 9};
+
+    // Last file (offset 9) doesn't satisfy size requirement and gets discarded on close
+    long[] validOffsets = {2, 5, 8};
     for (int i = 1; i < validOffsets.length; i++) {
       long startOffset = validOffsets[i - 1] + 1;
       long endOffset = validOffsets[i];
@@ -260,6 +267,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
   public void testRebalance() throws Exception {
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
 
+    // Initial assignment is {TP1, TP2}
     for (TopicPartition tp: assignment) {
       hdfsWriter.recover(tp);
     }
@@ -277,10 +285,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     }
     hdfsWriter.write(sinkRecords);
 
-    Set<TopicPartition> oldAssignment = new HashSet<>();
-    for (TopicPartition tp: assignment) {
-      oldAssignment.add(tp);
-    }
+    Set<TopicPartition> oldAssignment = new HashSet<>(assignment);
 
     Set<TopicPartition> newAssignment = new HashSet<>();
     newAssignment.add(TOPIC_PARTITION);
@@ -293,7 +298,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     assertNotNull(hdfsWriter.getBucketWriter(TOPIC_PARTITION));
     assertNotNull(hdfsWriter.getBucketWriter(TOPIC_PARTITION3));
 
-    long[] validOffsetsTopicPartition2 = {5, 6};
+    // Last file (offset 6) doesn't satisfy size requirement and gets discarded on close
+    long[] validOffsetsTopicPartition2 = {-1, 2, 5};
     String directory2 = TOPIC + "/" + "partition=" + String.valueOf(PARTITION2);
     for (int j = 1; j < validOffsetsTopicPartition2.length; ++j) {
       long startOffset = validOffsetsTopicPartition2[j - 1] + 1;
@@ -311,7 +317,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 
     sinkRecords.clear();
     for (TopicPartition tp: assignment) {
-      for (long offset = 7; offset < 10; offset++) {
+      // Message offsets start at 6 because we discarded the in-progress temp file on rebalance
+      for (long offset = 6; offset < 10; offset++) {
         SinkRecord sinkRecord =
             new SinkRecord(tp.topic(), tp.partition(), Schema.STRING_SCHEMA, key, schema, record, offset);
         sinkRecords.add(sinkRecord);
@@ -321,7 +328,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
 
-    long[] validOffsetsTopicPartition1 = {5, 8, 9};
+    // Last file (offset 9) doesn't satisfy size requirement and gets discarded on close
+    long[] validOffsetsTopicPartition1 = {5, 8};
     String directory1 = TOPIC + "/" + "partition=" + String.valueOf(PARTITION);
     for (int j = 1; j < validOffsetsTopicPartition1.length; ++j) {
       long startOffset = validOffsetsTopicPartition1[j - 1] + 1;
@@ -337,7 +345,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
       }
     }
 
-    long[] validOffsetsTopicPartition3 = {6, 9};
+    long[] validOffsetsTopicPartition3 = {5, 8};
     String directory3 = TOPIC + "/" + "partition=" + String.valueOf(PARTITION3);
     for (int j = 1; j < validOffsetsTopicPartition3.length; ++j) {
       long startOffset = validOffsetsTopicPartition3[j - 1] + 1;
@@ -359,6 +367,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
   @Test
   public void testProjectBackWard() throws Exception {
     Map<String, String> props = createProps();
+    props.put(HdfsSinkConnectorConfig.FLUSH_SIZE_CONFIG, "2");
     props.put(HdfsSinkConnectorConfig.SCHEMA_COMPATIBILITY_CONFIG, "BACKWARD");
     HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
 
@@ -395,20 +404,27 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 
     sinkRecords.clear();
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 2L));
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema,
+                                   newRecord, 3L));
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
 
     path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 2L,
-                                                2L, extension, ZERO_PAD_FMT));
+                                                3L, extension, ZERO_PAD_FMT));
     records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
-    assertEquals(1, records.size());
+    assertEquals(2, records.size());
 
     assertEquals(avroData.fromConnectData(newSchema, projected), records.get(0));
+    assertEquals(avroData.fromConnectData(newSchema, newRecord), records.get(1));
   }
 
   @Test
   public void testProjectNone() throws Exception {
+    Map<String, String> props = createProps();
+    props.put(HdfsSinkConnectorConfig.FLUSH_SIZE_CONFIG, "2");
+    HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
+
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
     hdfsWriter.recover(TOPIC_PARTITION);
 
@@ -422,6 +438,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     Collection<SinkRecord> sinkRecords = new ArrayList<>();
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 0L));
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 1L));
+    // Include one more to get to forced file rotation
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 2L));
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
@@ -436,30 +454,34 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     assertEquals(avroData.fromConnectData(newSchema, newRecord), records.get(0));
 
     path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 1L,
-                                                1L, extension, ZERO_PAD_FMT));
+                                                2L, extension, ZERO_PAD_FMT));
     records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
     assertEquals(avroData.fromConnectData(schema, record), records.get(0));
+    assertEquals(avroData.fromConnectData(schema, record), records.get(1));
 
     hdfsWriter = new DataWriter(connectorConfig, context, avroData);
     hdfsWriter.recover(TOPIC_PARTITION);
 
     sinkRecords.clear();
-    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 2L));
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 3L));
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 4L));
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
 
-    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 2L,
-                                                2L, extension, ZERO_PAD_FMT));
+    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 3L,
+                                                4L, extension, ZERO_PAD_FMT));
     records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
-    assertEquals(1, records.size());
+    assertEquals(2, records.size());
 
     assertEquals(avroData.fromConnectData(newSchema, newRecord), records.get(0));
+    assertEquals(avroData.fromConnectData(newSchema, newRecord), records.get(1));
   }
 
   @Test
   public void testProjectForward() throws Exception {
     Map<String, String> props = createProps();
+    props.put(HdfsSinkConnectorConfig.FLUSH_SIZE_CONFIG, "2");
     props.put(HdfsSinkConnectorConfig.SCHEMA_COMPATIBILITY_CONFIG, "FORWARD");
     HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
 
@@ -476,6 +498,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     Collection<SinkRecord> sinkRecords = new ArrayList<>();
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 0L));
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 1L));
+    // Include one more to get to forced file rotation
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 2L));
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
@@ -489,25 +513,28 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     assertEquals(avroData.fromConnectData(newSchema, newRecord), records.get(0));
 
     path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 1L,
-                                                1L, extension, ZERO_PAD_FMT));
+                                                2L, extension, ZERO_PAD_FMT));
     records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
     assertEquals(avroData.fromConnectData(schema, record), records.get(0));
+    assertEquals(avroData.fromConnectData(schema, record), records.get(1));
 
     hdfsWriter = new DataWriter(connectorConfig, context, avroData);
     hdfsWriter.recover(TOPIC_PARTITION);
 
     sinkRecords.clear();
-    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 2L));
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 3L));
+    sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 4L));
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close();
 
-    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 2L,
-                                                2L, extension, ZERO_PAD_FMT));
+    path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 3L,
+                                                4L, extension, ZERO_PAD_FMT));
     records = (ArrayList<Object>) schemaFileReader.readData(conf, path);
-    assertEquals(1, records.size());
+    assertEquals(2, records.size());
 
     assertEquals(avroData.fromConnectData(schema, record), records.get(0));
+    assertEquals(avroData.fromConnectData(schema, record), records.get(1));
   }
 
   @Test

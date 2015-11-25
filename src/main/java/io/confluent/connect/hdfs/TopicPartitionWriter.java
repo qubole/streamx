@@ -243,11 +243,7 @@ public class TopicPartitionWriter {
             }
             SinkRecord record = buffer.peek();
             Schema valueSchema = record.valueSchema();
-            if (shouldRotate()) {
-              log.info("Starting commit and rotation for topic partition {} with start offsets {}"
-                       + " and end offsets {}", tp, startOffsets, offsets);
-              nextState();
-            } else if (SchemaUtils.shouldChangeSchema(valueSchema, currentSchema, compatibility)) {
+            if (SchemaUtils.shouldChangeSchema(valueSchema, currentSchema, compatibility)) {
               currentSchema = valueSchema;
               if (hiveIntegration) {
                 createHiveTable();
@@ -262,7 +258,14 @@ public class TopicPartitionWriter {
               SinkRecord projectedRecord = SchemaUtils.project(record, currentSchema, compatibility);
               writeRecord(projectedRecord);
               buffer.poll();
-              break;
+              if (shouldRotate()) {
+                log.info("Starting commit and rotation for topic partition {} with start offsets {}"
+                         + " and end offsets {}", tp, startOffsets, offsets);
+                nextState();
+                // Fall through and try to rotate immediately
+              } else {
+                break;
+              }
             }
           case SHOULD_ROTATE:
             closeTempFile();
@@ -300,11 +303,10 @@ public class TopicPartitionWriter {
     for (String encodedPartition : tempFiles.keySet()) {
       try {
         if (writers.containsKey(encodedPartition)) {
-          log.debug("Trying on-close commit for {} {} offsets {} to {}", tp, encodedPartition,
-                    startOffsets.get(encodedPartition), offsets.get(encodedPartition));
+          log.debug("Discarding in progress tempfile {} for {} {}",
+                    tempFiles.get(encodedPartition), tp, encodedPartition);
           closeTempFile(encodedPartition);
-          appendToWAL(encodedPartition);
-          commitFile(encodedPartition);
+          deleteTempFile(encodedPartition);
         }
       } catch (IOException e) {
         log.error("Error rotating temp file {} for {} {} when closing TopicPartitionWriter:",
@@ -476,6 +478,7 @@ public class TopicPartitionWriter {
       closeTempFile(encodedPartition);
     }
   }
+
   private void appendToWAL(String encodedPartition) throws IOException {
     String tempFile = tempFiles.get(encodedPartition);
     if (appended.contains(tempFile)) {
@@ -536,6 +539,10 @@ public class TopicPartitionWriter {
     startOffsets.remove(encodedPartiton);
     offset = offset + recordCounter;
     log.info("Committed {} for {}", committedFile, tp);
+  }
+
+  private void deleteTempFile(String encodedPartiton) throws IOException {
+    storage.delete(tempFiles.get(encodedPartiton));
   }
 
   private void setRetryTimeout(long timeoutMs) {

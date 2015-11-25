@@ -88,7 +88,8 @@ public class ParquetHiveUtilTest extends HiveTestBase {
     String[] expectedResult = {"true", "12", "12", "12.2", "12.2", "12"};
     String result = HiveTestUtils.runHive(hiveExec, "SELECT * FROM " + TOPIC);
     String[] rows = result.split("\n");
-    assertEquals(7, rows.length);
+    // Only 6 of the 7 records should have been delivered due to flush_size = 3
+    assertEquals(6, rows.length);
     for (String row: rows) {
       String[] parts = HiveTestUtils.parseOutput(row);
       for (int j = 0; j < expectedResult.length; ++j) {
@@ -127,7 +128,8 @@ public class ParquetHiveUtilTest extends HiveTestBase {
     String[] expectedResult = {"true", "12", "12", "12.2", "12.2", "NULL", "12"};
     String result = HiveTestUtils.runHive(hiveExec, "SELECT * from " + TOPIC);
     String[] rows = result.split("\n");
-    assertEquals(7, rows.length);
+    // Only 6 of the 7 records should have been delivered due to flush_size = 3
+    assertEquals(6, rows.length);
     for (String row: rows) {
       String[] parts = HiveTestUtils.parseOutput(row);
       for (int j = 0; j < expectedResult.length; ++j) {

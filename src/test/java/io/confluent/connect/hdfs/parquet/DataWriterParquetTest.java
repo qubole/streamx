@@ -69,7 +69,8 @@ public class DataWriterParquetTest extends TestWithMiniDFSCluster {
     String encodedPartition = "partition=" + String.valueOf(PARTITION);
     String directory = partitioner.generatePartitionedPath(TOPIC, encodedPartition);
 
-    long[] validOffsets = {-1, 2, 5, 6};
+    // Last file (offset 6) doesn't satisfy size requirement and gets discarded on close
+    long[] validOffsets = {-1, 2, 5};
     for (int i = 1; i < validOffsets.length; i++) {
       long startOffset = validOffsets[i - 1] + 1;
       long endOffset = validOffsets[i];
