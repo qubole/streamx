@@ -208,6 +208,9 @@ public class DataWriter {
           tp, storage, writerProvider, partitioner, connectorConfig, context, avroData,
           hiveMetaStore, hive, schemaFileReader, executorService, hiveUpdateFutures);
       topicPartitionWriters.put(tp, topicPartitionWriter);
+      // We need to immediately start recovery to ensure we pause consumption of messages for the
+      // assigned topics while we try to recover offsets and rewind.
+      recover(tp);
     }
   }
 
