@@ -64,7 +64,6 @@ public class DataWriter {
   private RecordWriterProvider writerProvider;
   private SchemaFileReader schemaFileReader;
   private Map<TopicPartition, Long> offsets;
-  private Set<TopicPartition> lastAssignment;
   private HdfsSinkConnectorConfig connectorConfig;
   private AvroData avroData;
   private SinkTaskContext context;
@@ -112,7 +111,6 @@ public class DataWriter {
 
       assignment = new HashSet<>(context.assignment());
       offsets = new HashMap<>();
-      lastAssignment = new HashSet<>();
 
       hiveIntegration = connectorConfig.getBoolean(HdfsSinkConnectorConfig.HIVE_INTEGRATION_CONFIG);
       if (hiveIntegration) {
@@ -205,35 +203,35 @@ public class DataWriter {
 
   public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
     assignment = new HashSet<>(partitions);
-
-    // handle partitions that no longer assigned to the task
-    for (TopicPartition tp: lastAssignment) {
-      if (!assignment.contains(tp)) {
-        try {
-          if (topicPartitionWriters.containsKey(tp)) {
-            topicPartitionWriters.get(tp).close();
-          }
-        } catch (ConnectException e) {
-          log.error("Error closing writer for {}. Error: {]", tp, e.getMessage());
-        } finally {
-          topicPartitionWriters.remove(tp);
-        }
-      }
-    }
-
-    // handle new partitions
     for (TopicPartition tp: assignment) {
-      if (!lastAssignment.contains(tp)) {
-        TopicPartitionWriter topicPartitionWriter = new TopicPartitionWriter(
-            tp, storage, writerProvider, partitioner, connectorConfig, context, avroData, hiveMetaStore, hive, schemaFileReader, executorService,
-            hiveUpdateFutures);
-        topicPartitionWriters.put(tp, topicPartitionWriter);
-      }
+      TopicPartitionWriter topicPartitionWriter = new TopicPartitionWriter(
+          tp, storage, writerProvider, partitioner, connectorConfig, context, avroData,
+          hiveMetaStore, hive, schemaFileReader, executorService, hiveUpdateFutures);
+      topicPartitionWriters.put(tp, topicPartitionWriter);
+      // We need to immediately start recovery to ensure we pause consumption of messages for the
+      // assigned topics while we try to recover offsets and rewind.
+      recover(tp);
     }
   }
 
   public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-    lastAssignment = new HashSet<>(partitions);
+    // Close any writers we have. We may get assigned the same partitions and end up duplicating
+    // some effort since we'll have to reprocess those messages. It may be possible to hold on to
+    // the TopicPartitionWriter and continue to use the temp file, but this can get significantly
+    // more complex due to potential failures and network partitions. For example, we may get
+    // this onPartitionsRevoked, then miss a few generations of group membership, during which
+    // data may have continued to be processed and we'd have to restart from the recovery stage,
+    // make sure we apply the WAL, and only reuse the temp file if the starting offset is still
+    // valid. For now, we prefer the simpler solution that may result in a bit of wasted effort.
+    for (TopicPartition tp: assignment) {
+      try {
+        topicPartitionWriters.get(tp).close();
+      } catch (ConnectException e) {
+        log.error("Error closing writer for {}. Error: {]", tp, e.getMessage());
+      } finally {
+        topicPartitionWriters.remove(tp);
+      }
+    }
   }
 
   public void close() {

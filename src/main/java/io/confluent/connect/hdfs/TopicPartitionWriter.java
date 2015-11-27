@@ -73,6 +73,7 @@ public class TopicPartitionWriter {
   private AvroData avroData;
   private Set<String> appended;
   private long offset;
+  private boolean sawInvalidOffset;
   private Map<String, Long> startOffsets;
   private Map<String, Long> offsets;
   private long timeoutMs;
@@ -145,6 +146,7 @@ public class TopicPartitionWriter {
     state = State.RECOVERY_STARTED;
     failureTime = -1L;
     offset = -1L;
+    sawInvalidOffset = false;
     extension = writerProvider.getExtension();
     zeroPadOffsetFormat
         = "%0" +
@@ -243,11 +245,7 @@ public class TopicPartitionWriter {
             }
             SinkRecord record = buffer.peek();
             Schema valueSchema = record.valueSchema();
-            if (shouldRotate()) {
-              log.info("Starting commit and rotation for topic partition {} with start offsets {}"
-                       + " and end offsets {}", tp, startOffsets, offsets);
-              nextState();
-            } else if (SchemaUtils.shouldChangeSchema(valueSchema, currentSchema, compatibility)) {
+            if (SchemaUtils.shouldChangeSchema(valueSchema, currentSchema, compatibility)) {
               currentSchema = valueSchema;
               if (hiveIntegration) {
                 createHiveTable();
@@ -262,7 +260,14 @@ public class TopicPartitionWriter {
               SinkRecord projectedRecord = SchemaUtils.project(record, currentSchema, compatibility);
               writeRecord(projectedRecord);
               buffer.poll();
-              break;
+              if (shouldRotate()) {
+                log.info("Starting commit and rotation for topic partition {} with start offsets {}"
+                         + " and end offsets {}", tp, startOffsets, offsets);
+                nextState();
+                // Fall through and try to rotate immediately
+              } else {
+                break;
+              }
             }
           case SHOULD_ROTATE:
             closeTempFile();
@@ -300,14 +305,13 @@ public class TopicPartitionWriter {
     for (String encodedPartition : tempFiles.keySet()) {
       try {
         if (writers.containsKey(encodedPartition)) {
-          log.debug("Trying on-close commit for {} {} offsets {} to {}", tp, encodedPartition,
-                    startOffsets.get(encodedPartition), offsets.get(encodedPartition));
+          log.debug("Discarding in progress tempfile {} for {} {}",
+                    tempFiles.get(encodedPartition), tp, encodedPartition);
           closeTempFile(encodedPartition);
-          appendToWAL(encodedPartition);
-          commitFile(encodedPartition);
+          deleteTempFile(encodedPartition);
         }
       } catch (IOException e) {
-        log.error("Error rotating temp file {} for {} {} when closing TopicPartitionWriter:",
+        log.error("Error discarding temp file {} for {} {} when closing TopicPartitionWriter:",
                   tempFiles.get(encodedPartition), tp, encodedPartition, e);
         exceptions.add(e);
       }
@@ -447,12 +451,32 @@ public class TopicPartitionWriter {
   }
 
   private void writeRecord(SinkRecord record) throws IOException {
+    long expectedOffset = offset + recordCounter;
+    if (offset == -1) {
+      offset = record.kafkaOffset();
+    } else if (record.kafkaOffset() != expectedOffset) {
+      // Currently it's possible to see stale data with the wrong offset after a rebalance when you
+      // rewind, which we do since we manage our own offsets. See KAFKA-2894.
+      if (!sawInvalidOffset) {
+        log.info(
+            "Ignoring stale out-of-order record in {}-{}. Has offset {} instead of expected offset {}",
+            record.topic(), record.kafkaPartition(), record.kafkaOffset(), expectedOffset);
+      }
+      sawInvalidOffset = true;
+      return;
+    }
+
+    if (sawInvalidOffset) {
+      log.info(
+          "Recovered from stale out-of-order records in {}-{} with offset {}",
+          record.topic(), record.kafkaPartition(), expectedOffset);
+      sawInvalidOffset = false;
+    }
+
     String encodedPartition = partitioner.encodePartition(record);
     RecordWriter<SinkRecord> writer = getWriter(record, encodedPartition);
     writer.write(record);
-    if (offset == -1) {
-      offset = record.kafkaOffset();
-    }
+
     if (!startOffsets.containsKey(encodedPartition)) {
       startOffsets.put(encodedPartition, record.kafkaOffset());
       offsets.put(encodedPartition, record.kafkaOffset());
@@ -468,7 +492,6 @@ public class TopicPartitionWriter {
       writer.close();
       writers.remove(encodedPartition);
     }
-    recordCounter = 0;
   }
 
   private void closeTempFile() throws IOException {
@@ -476,6 +499,7 @@ public class TopicPartitionWriter {
       closeTempFile(encodedPartition);
     }
   }
+
   private void appendToWAL(String encodedPartition) throws IOException {
     String tempFile = tempFiles.get(encodedPartition);
     if (appended.contains(tempFile)) {
@@ -535,7 +559,12 @@ public class TopicPartitionWriter {
     storage.commit(tempFile, committedFile);
     startOffsets.remove(encodedPartiton);
     offset = offset + recordCounter;
+    recordCounter = 0;
     log.info("Committed {} for {}", committedFile, tp);
+  }
+
+  private void deleteTempFile(String encodedPartiton) throws IOException {
+    storage.delete(tempFiles.get(encodedPartiton));
   }
 
   private void setRetryTimeout(long timeoutMs) {
