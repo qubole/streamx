@@ -41,10 +41,11 @@ public class TimeBasedPartitioner implements Partitioner {
   private static String patternString = "'year'=Y{1,5}/('month'=M{1,5}/)?('day'=d{1,3}/)?('hour'=H{1,3}/)?('minute'=m{1,3}/)?";
   private static Pattern pattern = Pattern.compile(patternString);
 
-  protected void init(long partitionDurationMs, String pathFormat, Locale locale, DateTimeZone timeZone) {
+  protected void init(long partitionDurationMs, String pathFormat, Locale locale,
+                      DateTimeZone timeZone, boolean hiveIntegration) {
     this.partitionDurationMs = partitionDurationMs;
     this.formatter = getDateTimeFormatter(pathFormat, timeZone).withLocale(locale);
-    addToPartitionFields(pathFormat);
+    addToPartitionFields(pathFormat, hiveIntegration);
   }
 
   private static DateTimeFormatter getDateTimeFormatter(String str, DateTimeZone timeZone) {
@@ -81,9 +82,13 @@ public class TimeBasedPartitioner implements Partitioner {
       throw new ConfigException(HdfsSinkConnectorConfig.TIMEZONE_CONFIG,
                                 timeZoneString, "Timezone cannot be empty.");
     }
+
+    String hiveIntString = (String) config.get(HdfsSinkConnectorConfig.HIVE_INTEGRATION_CONFIG);
+    boolean hiveIntegration = hiveIntString != null && hiveIntString.toLowerCase().equals("true");
+
     Locale locale = new Locale(localeString);
     DateTimeZone timeZone = DateTimeZone.forID(timeZoneString);
-    init(partitionDurationMs, pathFormat, locale, timeZone);
+    init(partitionDurationMs, pathFormat, locale, timeZone, hiveIntegration);
   }
 
   @Override
@@ -109,9 +114,11 @@ public class TimeBasedPartitioner implements Partitioner {
     return m.matches();
   }
 
-  private void addToPartitionFields(String pathFormat) {
-    if (!verifyDateTimeFormat(pathFormat)) {
-      throw new ConfigException(HdfsSinkConnectorConfig.PATH_FORMAT_CONFIG, pathFormat, "Path doesn't meet the requirement.");
+  private void addToPartitionFields(String pathFormat, boolean hiveIntegration) {
+    if (hiveIntegration && !verifyDateTimeFormat(pathFormat)) {
+      throw new ConfigException(HdfsSinkConnectorConfig.PATH_FORMAT_CONFIG, pathFormat,
+                                "Path format doesn't meet the requirements for Hive integration, "
+                                + "which require prefixing each DateTime component with its name.");
     }
     for (String field: pathFormat.split("/")) {
       String[] parts = field.split("=");

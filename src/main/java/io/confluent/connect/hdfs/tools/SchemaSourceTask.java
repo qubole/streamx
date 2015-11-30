@@ -38,6 +38,7 @@ public class SchemaSourceTask extends SourceTask {
   public static final String NUM_MSGS_CONFIG = "num.messages";
   public static final String THROUGHPUT_CONFIG = "throughput";
   public static final String MULTIPLE_SCHEMA_CONFIG = "multiple.schema";
+  public static final String PARTITION_COUNT_CONFIG = "partition.count";
 
   private static final String ID_FIELD = "id";
   private static final String SEQNO_FIELD = "seqno";
@@ -51,6 +52,8 @@ public class SchemaSourceTask extends SourceTask {
   private long count;
   private long maxNumMsgs;
   private boolean multipleSchema;
+  private int partitionCount;
+
   // Until we can use ThroughputThrottler from Kafka, use a fixed sleep interval. This isn't perfect, but close enough
   // for system testing purposes
   private long intervalMs;
@@ -62,6 +65,7 @@ public class SchemaSourceTask extends SourceTask {
       .field("long", Schema.INT64_SCHEMA)
       .field("float", Schema.FLOAT32_SCHEMA)
       .field("double", Schema.FLOAT64_SCHEMA)
+      .field("partitioning", Schema.INT32_SCHEMA)
       .field("id", Schema.INT32_SCHEMA)
       .field("seqno", Schema.INT64_SCHEMA)
       .build();
@@ -72,6 +76,7 @@ public class SchemaSourceTask extends SourceTask {
       .field("long", Schema.INT64_SCHEMA)
       .field("float", Schema.FLOAT32_SCHEMA)
       .field("double", Schema.FLOAT64_SCHEMA)
+      .field("partitioning", Schema.INT32_SCHEMA)
       .field("string", SchemaBuilder.string().defaultValue("abc").build())
       .field("id", Schema.INT32_SCHEMA)
       .field("seqno", Schema.INT64_SCHEMA)
@@ -89,6 +94,8 @@ public class SchemaSourceTask extends SourceTask {
       topic = props.get(TOPIC_CONFIG);
       maxNumMsgs = Long.parseLong(props.get(NUM_MSGS_CONFIG));
       multipleSchema = Boolean.parseBoolean(props.get(MULTIPLE_SCHEMA_CONFIG));
+      partitionCount = Integer.parseInt(props.containsKey(PARTITION_COUNT_CONFIG) ?
+                                        props.get(PARTITION_COUNT_CONFIG) : "1");
       String throughputStr = props.get(THROUGHPUT_CONFIG);
       if (throughputStr != null) {
         long throughput = Long.parseLong(throughputStr);
@@ -122,25 +129,32 @@ public class SchemaSourceTask extends SourceTask {
           this.wait(intervalMs, intervalNanos);
         }
       }
-      Struct data = new Struct(valueSchema)
-          .put("boolean", true)
-          .put("int", 12)
-          .put("long", 12L)
-          .put("float", 12.2f)
-          .put("double", 12.2)
-          .put("id", id)
-          .put("seqno", seqno);
 
       Map<String, Long> ccOffset = Collections.singletonMap(SEQNO_FIELD, seqno);
-      SourceRecord srcRecord = new SourceRecord(partition, ccOffset, topic, id, Schema.STRING_SCHEMA, "key", valueSchema, data);
+      int partitionVal = (int) (seqno % partitionCount);
+      final Struct data;
+      final SourceRecord srcRecord;
+      if (!multipleSchema || count % 2 == 0) {
+        data = new Struct(valueSchema)
+            .put("boolean", true)
+            .put("int", 12)
+            .put("long", 12L)
+            .put("float", 12.2f)
+            .put("double", 12.2)
+            .put("partitioning", partitionVal)
+            .put("id", id)
+            .put("seqno", seqno);
 
-      if (multipleSchema && count % 2 == 1) {
+        srcRecord = new SourceRecord(partition, ccOffset, topic, id, Schema.STRING_SCHEMA, "key",
+                             valueSchema, data);
+      } else {
         data = new Struct(valueSchema2)
             .put("boolean", true)
             .put("int", 12)
             .put("long", 12L)
             .put("float", 12.2f)
             .put("double", 12.2)
+            .put("partitioning", partitionVal)
             .put("string", "def")
             .put("id", id)
             .put("seqno", seqno);
