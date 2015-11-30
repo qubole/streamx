@@ -60,7 +60,7 @@ public class TimeBasedPartitionerTest {
 
     @Override
     public void configure(Map<String, Object> config) {
-      init(partitionDurationMs, pathFormat, Locale.FRENCH, DATE_TIME_ZONE);
+      init(partitionDurationMs, pathFormat, Locale.FRENCH, DATE_TIME_ZONE, true);
     }
 
     public String getPathFormat() {

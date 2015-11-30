@@ -40,9 +40,11 @@ public class DailyPartitioner extends TimeBasedPartitioner {
       throw new ConfigException(HdfsSinkConnectorConfig.TIMEZONE_CONFIG,
                                 timeZoneString, "Timezone cannot be empty.");
     }
+    String hiveIntString = (String) config.get(HdfsSinkConnectorConfig.HIVE_INTEGRATION_CONFIG);
+    boolean hiveIntegration = hiveIntString != null && hiveIntString.toLowerCase().equals("true");
     Locale locale = new Locale(localeString);
     DateTimeZone timeZone = DateTimeZone.forID(timeZoneString);
-    init(partitionDurationMs, pathFormat, locale, timeZone);
+    init(partitionDurationMs, pathFormat, locale, timeZone, hiveIntegration);
   }
 
   public String getPathFormat() {
