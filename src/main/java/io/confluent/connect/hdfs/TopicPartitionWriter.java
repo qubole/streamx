@@ -313,7 +313,6 @@ public class TopicPartitionWriter {
       } catch (IOException e) {
         log.error("Error discarding temp file {} for {} {} when closing TopicPartitionWriter:",
                   tempFiles.get(encodedPartition), tp, encodedPartition, e);
-        exceptions.add(e);
       }
     }
 
