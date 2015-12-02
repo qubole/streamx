@@ -80,6 +80,11 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static final String HIVE_DATABASE_DOC = "The database to use when writing to hive.";
   private static final String HIVE_DATABASE_DEFAULT = "default";
 
+  public static final String HIVE_METASTORE_URIS_CONFIG = "hive.metastore.uris";
+  private static final String HIVE_METASTORE_URIS_DOC =
+      "The hive metastore URIs, can be IP address (or fully-qualified domain name) and port of the metastore host";
+  public static final String HIVE_METASTORE_URIS_DEFAULT = "";
+
   public static final String SHUTDOWN_TIMEOUT_CONFIG = "shutdown.timeout.ms";
   private static final String SHUTDOWN_TIMEOUT_DOC = "Hive executor clean shutdown timeout.";
   private static final long SHUTDOWN_TIMEOUT_DEFAULT = 3000L;
@@ -136,8 +141,10 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       .define(RETRY_BACKOFF_CONFIG, Type.LONG, RETRY_BACKOFF_DEFAULT, Importance.HIGH, RETRY_BACKOFF_DOC)
       .define(HIVE_INTEGRATION_CONFIG, Type.BOOLEAN, HIVE_INTEGRATION_DEFAULT, Importance.HIGH, HIVE_INTEGRAtiON_DOC)
       .define(HIVE_HOME_CONFIG, Type.STRING, HIVE_HOME_DEFAULT, Importance.HIGH, HIVE_HOME_DOC)
-      .define(HIVE_CONF_DIR_CONFIG, Type.STRING, HIVE_CONF_DIR_DEFAULT, Importance.HIGH, HIVE_CONF_DIR_DOC)
+      .define(HIVE_CONF_DIR_CONFIG, Type.STRING, HIVE_CONF_DIR_DEFAULT, Importance.HIGH,
+              HIVE_CONF_DIR_DOC)
       .define(HIVE_DATABASE_CONFIG, Type.STRING, HIVE_DATABASE_DEFAULT, Importance.LOW, HIVE_DATABASE_DOC)
+      .define(HIVE_METASTORE_URIS_CONFIG, Type.STRING, HIVE_METASTORE_URIS_DEFAULT, Importance.HIGH, HIVE_METASTORE_URIS_DOC)
       .define(SHUTDOWN_TIMEOUT_CONFIG, Type.LONG, SHUTDOWN_TIMEOUT_DEFAULT,
               Importance.MEDIUM, SHUTDOWN_TIMEOUT_DOC)
       .define(SCHEMA_COMPATIBILITY_CONFIG, Type.STRING, SCHEMA_COMPATIBILITY_DEFAULT,
