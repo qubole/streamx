@@ -17,6 +17,8 @@ package io.confluent.connect.hdfs;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -26,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import io.confluent.common.config.ConfigException;
 import io.confluent.connect.avro.AvroData;
 import io.confluent.connect.hdfs.filter.CommittedFileFilter;
 import io.confluent.connect.hdfs.filter.TopicCommittedFileFilter;
@@ -73,11 +77,12 @@ public class DataWriter {
   private HiveUtil hive;
   private Queue<Future> hiveUpdateFutures;
   private boolean hiveIntegration;
+  private Thread ticketRenewThread;
+  private volatile boolean isRunning;
 
   @SuppressWarnings("unchecked")
   public DataWriter(HdfsSinkConnectorConfig connectorConfig, SinkTaskContext context, AvroData avroData) {
     try {
-
       String hadoopHome = connectorConfig.getString(HdfsSinkConnectorConfig.HADOOP_HOME_CONFIG);
       System.setProperty("hadoop.home.dir", hadoopHome);
 
@@ -88,9 +93,66 @@ public class DataWriter {
       String hadoopConfDir = connectorConfig.getString(HdfsSinkConnectorConfig.HADOOP_CONF_DIR_CONFIG);
       log.info("Hadoop configuration directory {}", hadoopConfDir);
       conf = new Configuration();
-      conf.addResource(new Path(hadoopConfDir + "/core-site.xml"));
-      conf.addResource(new Path(hadoopConfDir + "/hdfs-site.xml"));
-      log.info(conf.toString());
+      if (!hadoopConfDir.equals("")) {
+        conf.addResource(new Path(hadoopConfDir + "/core-site.xml"));
+        conf.addResource(new Path(hadoopConfDir + "/hdfs-site.xml"));
+      }
+
+      boolean secureHadoop = connectorConfig.getBoolean(HdfsSinkConnectorConfig.HDFS_AUTHENTICATION_KERBEROS_CONFIG);
+      if (secureHadoop) {
+        String principalConfig = connectorConfig.getString(HdfsSinkConnectorConfig.CONNECT_HDFS_PRINCIPAL_CONFIG);
+        String keytab = connectorConfig.getString(HdfsSinkConnectorConfig.CONNECT_HDFS_KEYTAB_CONFIG);
+
+        if (principalConfig == null || keytab == null) {
+          throw new ConfigException(
+              "Hadoop is using Kerboros for authentication, you need to provide both a connect principal and "
+              + "the path to the keytab of the principal.");
+        }
+
+        String hostname = InetAddress.getLocalHost().getCanonicalHostName();
+        // replace the _HOST specified in the principal config to the actual host
+        String principal = SecurityUtil.getServerPrincipal(principalConfig, hostname);
+        String namenodePrincipalConfig = connectorConfig.getString(HdfsSinkConnectorConfig.CONNECT_HDFS_PRINCIPAL_CONFIG);
+        String namenodePrincipal = SecurityUtil.getServerPrincipal(namenodePrincipalConfig, hostname);
+
+        // namenode principal is needed for multi-node hadoop cluster
+        if (conf.get("dfs.namenode.kerberos.principal") == null) {
+          conf.set("dfs.namenode.kerberos.principal", namenodePrincipal);
+        }
+
+        final UserGroupInformation ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(principal,
+                                                                                              keytab);
+        log.info("Login as: " + ugi.getUserName());
+
+        final long renewPeriod = connectorConfig.getLong(HdfsSinkConnectorConfig.KERBEROS_TICKET_RENEW_PERIOD_MS_CONFIG);
+
+        isRunning = true;
+        ticketRenewThread = new Thread(new Runnable() {
+          @Override
+          public void run() {
+            synchronized (DataWriter.this) {
+              while (isRunning) {
+                try {
+                  DataWriter.this.wait(renewPeriod);
+                  if (isRunning) {
+                    ugi.reloginFromKeytab();
+                  }
+                } catch (IOException e) {
+                  // We ignore this exception during relogin as each successful relogin gives
+                  // additional 24 hours of authentication in the default config. In normal
+                  // situations, the probability of failing relogin 24 times is low and if
+                  // that happens, the task will fail eventually.
+                  log.error("Error renewing the ticket", e);
+                } catch (InterruptedException e) {
+                  // ignored
+                }
+              }
+            }
+          }
+        });
+        log.info("Starting the Kerberos ticket renew thread with period {}.", renewPeriod);
+        ticketRenewThread.start();
+      }
 
       url = connectorConfig.getString(HdfsSinkConnectorConfig.HDFS_URL_CONFIG);
       topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPICS_DIR_CONFIG);
@@ -262,6 +324,12 @@ public class DataWriter {
       storage.close();
     } catch (IOException e) {
       throw new ConnectException(e);
+    }
+    if (ticketRenewThread != null) {
+      synchronized (this) {
+        isRunning = false;
+        this.notifyAll();
+      }
     }
   }
 

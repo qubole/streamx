@@ -123,12 +123,37 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       + "provide fixed width filenames that can be ordered by simple lexicographic sorting.";
   public static final int FILENAME_OFFSET_ZERO_PAD_WIDTH_DEFAULT = 10;
 
+  public static final String HDFS_AUTHENTICATION_KERBEROS_CONFIG = "hdfs.authentication.kerberos";
+  private static final String HDFS_AUTHENTICATION_KERBEROS_DOC =
+      "Config indicating whether the HDFS cluster is using Kerberos to perform authentication.";
+  private static boolean HDFS_AUTHENTICATION_KERBEROS_DEFAULT = false;
+
+  public static final String CONNECT_HDFS_PRINCIPAL_CONFIG = "connect.hdfs.principal";
+  private static final String CONNECT_HDFS_PRINCIPAL_DOC =
+      "The principal to use when the HDFS cluster is using Kerberos to perform authentication.";
+  public static final String CONNECT_HDFS_PRINCIPAL_DEFAULT = "";
+
+  public static final String CONNECT_HDFS_KEYTAB_CONFIG = "connect.keytab";
+  private static final String CONNECT_HDFS_KEYTAB_DOC =
+      "The path to the keytab file for the HDFS connector principal. "
+      + "This keytab file should only be readable by the connector user";
+  public static final String CONNECT_HDFS_KEYTAB_DEFAULT = "";
+
+  public static final String HDFS_NAMENODE_PRINCIPAL_CONFIG = "hdfs.namenode.principal";
+  private static final String HDFS_NAMENODE_PRINCIPAL_DOC = "The principal for hdfs namenode.";
+  public static final String HDFS_NAMENODE_PRINCIPAL_DEFAULT = "";
+
+  public static final String KERBEROS_TICKET_RENEW_PERIOD_MS_CONFIG = "kerberos.ticket.renew.period.ms";
+  private static final String KERBEROS_TICKET_RENEW_PERIOD_MS_DOC =
+      "The period in milliseconds to renew the Kerberos ticket.";
+  public static final long KERBEROS_TICKET_RENEW_PERIOD_MS_DEFAULT = 60000 * 60;
 
   static ConfigDef config = new ConfigDef()
       .define(HDFS_URL_CONFIG, Type.STRING, Importance.HIGH, HDFS_URL_DOC)
       .define(HADOOP_CONF_DIR_CONFIG, Type.STRING, HADOOP_CONF_DIR_DEFAULT, Importance.HIGH,
               HADOOP_CONF_DIR_DOC)
-      .define(HADOOP_HOME_CONFIG, Type.STRING, HADOOP_HOME_DEFAULT, Importance.HIGH, HADOOP_HOME_DOC)
+      .define(HADOOP_HOME_CONFIG, Type.STRING, HADOOP_HOME_DEFAULT, Importance.HIGH,
+              HADOOP_HOME_DOC)
       .define(FORMAT_CONFIG, Type.STRING, FORMAT_DEFAULT, Importance.HIGH,
               FORMAT_DOC)
       .define(FLUSH_SIZE_CONFIG, Type.INT, Importance.HIGH, FLUSH_SIZE_DOC)
@@ -158,8 +183,19 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       .define(TIMEZONE_CONFIG, Type.STRING, TIMEZONE_DEFAULT, Importance.MEDIUM, TIMEZONE_DOC)
       .define(FILENAME_OFFSET_ZERO_PAD_WIDTH_CONFIG, Type.INT,
               FILENAME_OFFSET_ZERO_PAD_WIDTH_DEFAULT, ConfigDef.Range.atLeast(0),
-              Importance.LOW, FILENAME_OFFSET_ZERO_PAD_WIDTH_DOC);
-
+              Importance.LOW, FILENAME_OFFSET_ZERO_PAD_WIDTH_DOC)
+      .define(HDFS_AUTHENTICATION_KERBEROS_CONFIG, Type.BOOLEAN,
+              HDFS_AUTHENTICATION_KERBEROS_DEFAULT, Importance.HIGH,
+              HDFS_AUTHENTICATION_KERBEROS_DOC)
+      .define(CONNECT_HDFS_PRINCIPAL_CONFIG, Type.STRING, CONNECT_HDFS_PRINCIPAL_DEFAULT,
+              Importance.HIGH, CONNECT_HDFS_PRINCIPAL_DOC)
+      .define(CONNECT_HDFS_KEYTAB_CONFIG, Type.STRING, CONNECT_HDFS_KEYTAB_DEFAULT,
+              Importance.HIGH, CONNECT_HDFS_KEYTAB_DOC)
+      .define(HDFS_NAMENODE_PRINCIPAL_CONFIG, Type.STRING, HDFS_NAMENODE_PRINCIPAL_DEFAULT,
+              Importance.HIGH, HDFS_NAMENODE_PRINCIPAL_DOC)
+      .define(KERBEROS_TICKET_RENEW_PERIOD_MS_CONFIG, Type.LONG,
+              KERBEROS_TICKET_RENEW_PERIOD_MS_DEFAULT, Importance.LOW,
+              KERBEROS_TICKET_RENEW_PERIOD_MS_DOC);
 
   public HdfsSinkConnectorConfig(Map<String, String> props) {
     super(config, props);
