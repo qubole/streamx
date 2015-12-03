@@ -90,7 +90,7 @@ public class TopicPartitionWriter {
   private SchemaFileReader schemaFileReader;
   private HiveUtil hive;
   private ExecutorService executorService;
-  private Queue<Future> futures;
+  private Queue<Future> hiveUpdateFutures;
   private Set<String> hivePartitions;
 
   public TopicPartitionWriter(
@@ -116,7 +116,7 @@ public class TopicPartitionWriter {
       HiveUtil hive,
       SchemaFileReader schemaFileReader,
       ExecutorService executorService,
-      Queue<Future> futures) {
+      Queue<Future> hiveUpdateFutures) {
     this.tp = tp;
     this.connectorConfig = connectorConfig;
     this.context = context;
@@ -159,7 +159,7 @@ public class TopicPartitionWriter {
       this.hiveMetaStore = hiveMetaStore;
       this.hive = hive;
       this.executorService = executorService;
-      this.futures = futures;
+      this.hiveUpdateFutures = hiveUpdateFutures;
       hivePartitions = new HashSet<>();
     }
   }
@@ -578,7 +578,7 @@ public class TopicPartitionWriter {
         return null;
       }
     });
-    futures.add(future);
+    hiveUpdateFutures.add(future);
   }
 
   private void alterHiveSchema() {
@@ -589,7 +589,7 @@ public class TopicPartitionWriter {
         return null;
       }
     });
-    futures.add(future);
+    hiveUpdateFutures.add(future);
   }
 
   private void addHivePartition(final String location) {
@@ -600,6 +600,6 @@ public class TopicPartitionWriter {
         return null;
       }
     });
-    futures.add(future);
+    hiveUpdateFutures.add(future);
   }
 }
