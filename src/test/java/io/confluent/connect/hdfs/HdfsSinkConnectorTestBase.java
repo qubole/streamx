@@ -57,7 +57,6 @@ public class HdfsSinkConnectorTestBase {
     Map<String, String> props = new HashMap<>();
     props.put(HdfsSinkConnectorConfig.HDFS_URL_CONFIG, url);
     props.put(HdfsSinkConnectorConfig.FLUSH_SIZE_CONFIG, "3");
-    props.put(HdfsSinkConnectorConfig.ROTATE_INTERVAL_CONFIG, "10");
     return props;
   }
 

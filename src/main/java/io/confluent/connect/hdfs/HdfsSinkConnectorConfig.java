@@ -41,8 +41,9 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   public static final String FLUSH_SIZE_CONFIG = "flush.size";
   private static final String FLUSH_SIZE_DOC = "The number of records needed to rotate files.";
 
-  public static final String ROTATE_INTERVAL_CONFIG = "rotate.interval.ms";
-  private static final String ROTATE_INTERVAL_DOC = "The interval to rotate files.";
+  public static final String ROTATE_INTERVAL_MS_CONFIG = "rotate.interval.ms";
+  private static final String ROTATE_INTERVAL_MS_DOC = "The interval to rotate files.";
+  private static final long ROTATE_INTERVAL_MS_DEFAULT = -1;
 
   public static final String TOPICS_DIR_CONFIG = "topics.dir";
   private static final String TOPICS_DIR_DOC = "HDFS directory to store data.";
@@ -157,7 +158,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       .define(FORMAT_CONFIG, Type.STRING, FORMAT_DEFAULT, Importance.HIGH,
               FORMAT_DOC)
       .define(FLUSH_SIZE_CONFIG, Type.INT, Importance.HIGH, FLUSH_SIZE_DOC)
-      .define(ROTATE_INTERVAL_CONFIG, Type.INT, Importance.HIGH, ROTATE_INTERVAL_DOC)
+      .define(ROTATE_INTERVAL_MS_CONFIG, Type.LONG, ROTATE_INTERVAL_MS_DEFAULT,Importance.HIGH, ROTATE_INTERVAL_MS_DOC)
       .define(TOPICS_DIR_CONFIG, Type.STRING, TOPICS_DIR_DEFAULT, Importance.HIGH, TOPICS_DIR_DOC)
       .define(LOGS_DIR_CONFIG, Type.STRING, LOGS_DIR_DEFAULT, Importance.HIGH, LOGS_DIR_DOC)
       .define(SCHEMA_CACHE_SIZE_CONFIG, Type.INT, SCHEMA_CACHE_SIZE_DEFAULT, Importance.MEDIUM,
