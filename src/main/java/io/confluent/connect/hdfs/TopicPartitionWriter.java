@@ -68,6 +68,8 @@ public class TopicPartitionWriter {
   private SinkTaskContext context;
   private int recordCounter;
   private int flushSize;
+  private long rotateIntervalMs;
+  private long lastRotate;
   private RecordWriterProvider writerProvider;
   private Configuration conf;
   private AvroData avroData;
@@ -130,6 +132,7 @@ public class TopicPartitionWriter {
 
     topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPICS_DIR_CONFIG);
     flushSize = connectorConfig.getInt(HdfsSinkConnectorConfig.FLUSH_SIZE_CONFIG);
+    rotateIntervalMs = connectorConfig.getLong(HdfsSinkConnectorConfig.ROTATE_INTERVAL_MS_CONFIG);
     timeoutMs = connectorConfig.getLong(HdfsSinkConnectorConfig.RETRY_BACKOFF_CONFIG);
     compatibility = SchemaUtils.getCompatibility(
         connectorConfig.getString(HdfsSinkConnectorConfig.SCHEMA_COMPATIBILITY_CONFIG));
@@ -260,7 +263,7 @@ public class TopicPartitionWriter {
               SinkRecord projectedRecord = SchemaUtils.project(record, currentSchema, compatibility);
               writeRecord(projectedRecord);
               buffer.poll();
-              if (shouldRotate()) {
+              if (shouldRotate(now)) {
                 log.info("Starting commit and rotation for topic partition {} with start offsets {}"
                          + " and end offsets {}", tp, startOffsets, offsets);
                 nextState();
@@ -270,6 +273,7 @@ public class TopicPartitionWriter {
               }
             }
           case SHOULD_ROTATE:
+            lastRotate = System.currentTimeMillis();
             closeTempFile();
             nextState();
           case TEMP_FILE_CLOSED:
@@ -369,8 +373,14 @@ public class TopicPartitionWriter {
     this.state = state;
   }
 
-  private boolean shouldRotate() {
-    return recordCounter >= flushSize;
+  private boolean shouldRotate(long now) {
+    if (recordCounter >= flushSize) {
+      return true;
+    } else if (rotateIntervalMs <= 0) {
+      return false;
+    } else {
+      return now - lastRotate >= rotateIntervalMs;
+    }
   }
 
   private void readOffset() throws ConnectException {
