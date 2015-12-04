@@ -429,7 +429,7 @@ public class TopicPartitionWriter {
     if (tempFiles.containsKey(encodedPartition)) {
       tempFile = tempFiles.get(encodedPartition);
     } else {
-      String directory = getDirectory(encodedPartition);
+      String directory = HdfsSinkConnecorConstants.TEMPFILE_DIRECTORY + getDirectory(encodedPartition);
       tempFile = FileUtils.tempFileName(url, topicsDir, directory, extension);
       tempFiles.put(encodedPartition, tempFile);
     }
@@ -565,6 +565,11 @@ public class TopicPartitionWriter {
     String committedFile = FileUtils.committedFileName(url, topicsDir, directory, tp,
                                                        startOffset, endOffset, extension,
                                                        zeroPadOffsetFormat);
+
+    String directoryName = FileUtils.directoryName(url, topicsDir, directory);
+    if (!storage.exists(directoryName)) {
+      storage.mkdirs(directoryName);
+    }
     storage.commit(tempFile, committedFile);
     startOffsets.remove(encodedPartiton);
     offset = offset + recordCounter;
