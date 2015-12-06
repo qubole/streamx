@@ -148,7 +148,7 @@ public class HiveIntegrationAvroTest extends HiveTestBase {
     Map<String, String> props = createProps();
     props.put(HdfsSinkConnectorConfig.HIVE_INTEGRATION_CONFIG, "true");
     props.put(HdfsSinkConnectorConfig.PARTITIONER_CLASS_CONFIG, FieldPartitioner.class.getName());
-    props.put(HdfsSinkConnectorConfig.PARTITION_FIELD_CONFIG, "int");
+    props.put(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG, "int");
 
     HdfsSinkConnectorConfig config = new HdfsSinkConnectorConfig(props);
     DataWriter hdfsWriter = new DataWriter(config, context, avroData);
@@ -185,7 +185,7 @@ public class HiveIntegrationAvroTest extends HiveTestBase {
     assertEquals(expectedColumnNames, actualColumnNames);
 
 
-    String partitionFieldName = config.getString(HdfsSinkConnectorConfig.PARTITION_FIELD_CONFIG);
+    String partitionFieldName = config.getString(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG);
     String directory1 = TOPIC + "/" + partitionFieldName + "=" + String.valueOf(16);
     String directory2 = TOPIC + "/" + partitionFieldName + "=" + String.valueOf(17);
     String directory3 = TOPIC + "/" + partitionFieldName + "=" + String.valueOf(18);

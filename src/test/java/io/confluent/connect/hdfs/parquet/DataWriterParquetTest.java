@@ -42,7 +42,7 @@ public class DataWriterParquetTest extends TestWithMiniDFSCluster {
   @Override
   protected Map<String, String> createProps() {
     Map<String, String> props = super.createProps();
-    props.put(HdfsSinkConnectorConfig.FORMAT_CONFIG, ParquetFormat.class.getName());
+    props.put(HdfsSinkConnectorConfig.FORMAT_CLASS_CONFIG, ParquetFormat.class.getName());
     return props;
   }
 
