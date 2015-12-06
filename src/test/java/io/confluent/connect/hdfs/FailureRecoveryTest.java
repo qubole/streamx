@@ -45,7 +45,7 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
   protected Map<String, String> createProps() {
     Map<String, String> props = super.createProps();
     props.put(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG, MemoryStorage.class.getName());
-    props.put(HdfsSinkConnectorConfig.FORMAT_CONFIG, MemoryFormat.class.getName());
+    props.put(HdfsSinkConnectorConfig.FORMAT_CLASS_CONFIG, MemoryFormat.class.getName());
     return props;
   }
 

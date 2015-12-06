@@ -109,19 +109,23 @@ public class DataWriter {
               + "the path to the keytab of the principal.");
         }
 
+        conf.set("hadoop.security.authentication", "kerberos");
+        conf.set("hadoop.security.authorization", "true");
         String hostname = InetAddress.getLocalHost().getCanonicalHostName();
         // replace the _HOST specified in the principal config to the actual host
         String principal = SecurityUtil.getServerPrincipal(principalConfig, hostname);
-        String namenodePrincipalConfig = connectorConfig.getString(HdfsSinkConnectorConfig.CONNECT_HDFS_PRINCIPAL_CONFIG);
-        String namenodePrincipal = SecurityUtil.getServerPrincipal(namenodePrincipalConfig, hostname);
+        String namenodePrincipalConfig = connectorConfig.getString(HdfsSinkConnectorConfig.HDFS_NAMENODE_PRINCIPAL_CONFIG);
 
+        String namenodePrincipal = SecurityUtil.getServerPrincipal(namenodePrincipalConfig, hostname);
         // namenode principal is needed for multi-node hadoop cluster
         if (conf.get("dfs.namenode.kerberos.principal") == null) {
           conf.set("dfs.namenode.kerberos.principal", namenodePrincipal);
         }
+        log.info("Hadoop namenode principal: " + conf.get("dfs.namenode.kerberos.principal"));
 
-        final UserGroupInformation ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(principal,
-                                                                                              keytab);
+        UserGroupInformation.setConfiguration(conf);
+        UserGroupInformation.loginUserFromKeytab(principal, keytab);
+        final UserGroupInformation ugi = UserGroupInformation.getLoginUser();
         log.info("Login as: " + ugi.getUserName());
 
         final long renewPeriod = connectorConfig.getLong(HdfsSinkConnectorConfig.KERBEROS_TICKET_RENEW_PERIOD_MS_CONFIG);
@@ -150,7 +154,7 @@ public class DataWriter {
             }
           }
         });
-        log.info("Starting the Kerberos ticket renew thread with period {}.", renewPeriod);
+        log.info("Starting the Kerberos ticket renew thread with period {}ms.", renewPeriod);
         ticketRenewThread.start();
       }
 
@@ -371,7 +375,7 @@ public class DataWriter {
 
   @SuppressWarnings("unchecked")
   private Format getFormat() throws ClassNotFoundException, IllegalAccessException, InstantiationException{
-    return  ((Class<Format>) Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.FORMAT_CONFIG))).newInstance();
+    return  ((Class<Format>) Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.FORMAT_CLASS_CONFIG))).newInstance();
   }
 
   private String getPartitionValue(String path) {
@@ -400,8 +404,8 @@ public class DataWriter {
 
   private Map<String, Object> copyConfig(HdfsSinkConnectorConfig config) {
     Map<String, Object> map = new HashMap<>();
-    map.put(HdfsSinkConnectorConfig.PARTITION_FIELD_CONFIG, config.getString(HdfsSinkConnectorConfig.PARTITION_FIELD_CONFIG));
-    map.put(HdfsSinkConnectorConfig.PARTITION_DURATION_CONFIG, config.getLong(HdfsSinkConnectorConfig.PARTITION_DURATION_CONFIG));
+    map.put(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG, config.getString(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG));
+    map.put(HdfsSinkConnectorConfig.PARTITION_DURATION_MS_CONFIG, config.getLong(HdfsSinkConnectorConfig.PARTITION_DURATION_MS_CONFIG));
     map.put(HdfsSinkConnectorConfig.PATH_FORMAT_CONFIG, config.getString(HdfsSinkConnectorConfig.PATH_FORMAT_CONFIG));
     map.put(HdfsSinkConnectorConfig.LOCALE_CONFIG, config.getString(HdfsSinkConnectorConfig.LOCALE_CONFIG));
     map.put(HdfsSinkConnectorConfig.TIMEZONE_CONFIG, config.getString(HdfsSinkConnectorConfig.TIMEZONE_CONFIG));

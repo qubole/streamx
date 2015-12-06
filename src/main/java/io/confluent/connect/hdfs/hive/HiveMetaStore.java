@@ -50,7 +50,9 @@ public class HiveMetaStore {
     HiveConf hiveConf = new HiveConf(conf, HiveConf.class);
     String hiveConfDir = connectorConfig.getString(HdfsSinkConnectorConfig.HIVE_CONF_DIR_CONFIG);
     String hiveMetaStoreURIs = connectorConfig.getString(HdfsSinkConnectorConfig.HIVE_METASTORE_URIS_CONFIG);
-    hiveConf.addResource(new Path(hiveConfDir, "hive-site.xml"));
+    if (!hiveConfDir.equals("")) {
+      hiveConf.addResource(new Path(hiveConfDir, "/hive-site.xml"));
+    }
     hiveConf.set("hive.metastore.uris", hiveMetaStoreURIs);
     try {
       client = HCatUtil.getHiveMetastoreClient(hiveConf);

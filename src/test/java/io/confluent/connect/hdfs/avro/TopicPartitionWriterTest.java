@@ -65,7 +65,7 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
   public void setUp() throws Exception {
     super.setUp();
 
-    Format format = ((Class<Format>) Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.FORMAT_CONFIG))).newInstance();
+    Format format = ((Class<Format>) Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.FORMAT_CLASS_CONFIG))).newInstance();
     writerProvider = format.getRecordWriterProvider();
     schemaFileReader = format.getSchemaFileReader(avroData);
     extension = writerProvider.getExtension();
@@ -116,7 +116,7 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     Partitioner partitioner = new FieldPartitioner();
     partitioner.configure(config);
 
-    String partitionField = (String) config.get(HdfsSinkConnectorConfig.PARTITION_FIELD_CONFIG);
+    String partitionField = (String) config.get(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG);
 
     TopicPartitionWriter topicPartitionWriter = new TopicPartitionWriter(
         TOPIC_PARTITION, storage, writerProvider, partitioner, connectorConfig, context, avroData);
@@ -172,7 +172,7 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     topicPartitionWriter.close();
 
 
-    long partitionDurationMs = (Long) config.get(HdfsSinkConnectorConfig.PARTITION_DURATION_CONFIG);
+    long partitionDurationMs = (Long) config.get(HdfsSinkConnectorConfig.PARTITION_DURATION_MS_CONFIG);
     String pathFormat = (String) config.get(HdfsSinkConnectorConfig.PATH_FORMAT_CONFIG);
     String timeZoneString = (String) config.get(HdfsSinkConnectorConfig.TIMEZONE_CONFIG);
     long timestamp = System.currentTimeMillis();
@@ -191,8 +191,8 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
 
   private Map<String, Object> createConfig() {
     Map<String, Object> config = new HashMap<>();
-    config.put(HdfsSinkConnectorConfig.PARTITION_FIELD_CONFIG, "int");
-    config.put(HdfsSinkConnectorConfig.PARTITION_DURATION_CONFIG, TimeUnit.HOURS.toMillis(1));
+    config.put(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG, "int");
+    config.put(HdfsSinkConnectorConfig.PARTITION_DURATION_MS_CONFIG, TimeUnit.HOURS.toMillis(1));
     config.put(HdfsSinkConnectorConfig.PATH_FORMAT_CONFIG, "'year'=YYYY/'month'=MM/'day'=dd/'hour'=HH/");
     config.put(HdfsSinkConnectorConfig.LOCALE_CONFIG, "en");
     config.put(HdfsSinkConnectorConfig.TIMEZONE_CONFIG, "America/Los_Angeles");

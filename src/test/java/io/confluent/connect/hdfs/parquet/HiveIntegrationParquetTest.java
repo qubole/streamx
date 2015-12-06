@@ -46,7 +46,7 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
   protected Map<String, String> createProps() {
     Map<String, String> props = super.createProps();
     props.put(HdfsSinkConnectorConfig.SHUTDOWN_TIMEOUT_CONFIG, "10000");
-    props.put(HdfsSinkConnectorConfig.FORMAT_CONFIG, ParquetFormat.class.getName());
+    props.put(HdfsSinkConnectorConfig.FORMAT_CLASS_CONFIG, ParquetFormat.class.getName());
     return props;
   }
 
@@ -151,7 +151,7 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     Map<String, String> props = createProps();
     props.put(HdfsSinkConnectorConfig.HIVE_INTEGRATION_CONFIG, "true");
     props.put(HdfsSinkConnectorConfig.PARTITIONER_CLASS_CONFIG, FieldPartitioner.class.getName());
-    props.put(HdfsSinkConnectorConfig.PARTITION_FIELD_CONFIG, "int");
+    props.put(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG, "int");
 
     HdfsSinkConnectorConfig config = new HdfsSinkConnectorConfig(props);
     DataWriter hdfsWriter = new DataWriter(config, context, avroData);
@@ -188,7 +188,7 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     assertEquals(expectedColumnNames, actualColumnNames);
 
 
-    String partitionFieldName = config.getString(HdfsSinkConnectorConfig.PARTITION_FIELD_CONFIG);
+    String partitionFieldName = config.getString(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG);
     String directory1 = TOPIC + "/" + partitionFieldName + "=" + String.valueOf(16);
     String directory2 = TOPIC + "/" + partitionFieldName + "=" + String.valueOf(17);
     String directory3 = TOPIC + "/" + partitionFieldName + "=" + String.valueOf(18);

@@ -37,7 +37,7 @@ public class FieldPartitioner implements Partitioner {
 
   @Override
   public void configure(Map<String, Object> config) {
-    fieldName = (String) config.get(HdfsSinkConnectorConfig.PARTITION_FIELD_CONFIG);
+    fieldName = (String) config.get(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG);
     partitionFields.add(new FieldSchema(fieldName, TypeInfoFactory.stringTypeInfo.toString(), ""));
   }
 
