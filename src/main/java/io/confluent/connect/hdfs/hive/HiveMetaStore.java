@@ -34,6 +34,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +52,12 @@ public class HiveMetaStore {
     String hiveConfDir = connectorConfig.getString(HdfsSinkConnectorConfig.HIVE_CONF_DIR_CONFIG);
     String hiveMetaStoreURIs = connectorConfig.getString(HdfsSinkConnectorConfig.HIVE_METASTORE_URIS_CONFIG);
     if (!hiveConfDir.equals("")) {
-      hiveConf.addResource(new Path(hiveConfDir, "/hive-site.xml"));
+      String hiveSitePath = hiveConfDir + "/hive-site.xml";
+      File hiveSite = new File(hiveSitePath);
+      if (!hiveSite.exists()) {
+        log.warn("hive-site.xml does not in provided Hive configuration directory {}.", hiveConf);
+      }
+      hiveConf.addResource(new Path(hiveSitePath));
     }
     hiveConf.set("hive.metastore.uris", hiveMetaStoreURIs);
     try {
