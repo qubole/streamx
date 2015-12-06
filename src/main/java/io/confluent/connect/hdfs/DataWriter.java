@@ -371,7 +371,7 @@ public class DataWriter {
 
   @SuppressWarnings("unchecked")
   private Format getFormat() throws ClassNotFoundException, IllegalAccessException, InstantiationException{
-    return  ((Class<Format>) Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.FORMAT_CONFIG))).newInstance();
+    return  ((Class<Format>) Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.FORMAT_CLASS_CONFIG))).newInstance();
   }
 
   private String getPartitionValue(String path) {
@@ -400,8 +400,8 @@ public class DataWriter {
 
   private Map<String, Object> copyConfig(HdfsSinkConnectorConfig config) {
     Map<String, Object> map = new HashMap<>();
-    map.put(HdfsSinkConnectorConfig.PARTITION_FIELD_CONFIG, config.getString(HdfsSinkConnectorConfig.PARTITION_FIELD_CONFIG));
-    map.put(HdfsSinkConnectorConfig.PARTITION_DURATION_CONFIG, config.getLong(HdfsSinkConnectorConfig.PARTITION_DURATION_CONFIG));
+    map.put(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG, config.getString(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG));
+    map.put(HdfsSinkConnectorConfig.PARTITION_DURATION_MS_CONFIG, config.getLong(HdfsSinkConnectorConfig.PARTITION_DURATION_MS_CONFIG));
     map.put(HdfsSinkConnectorConfig.PATH_FORMAT_CONFIG, config.getString(HdfsSinkConnectorConfig.PATH_FORMAT_CONFIG));
     map.put(HdfsSinkConnectorConfig.LOCALE_CONFIG, config.getString(HdfsSinkConnectorConfig.LOCALE_CONFIG));
     map.put(HdfsSinkConnectorConfig.TIMEZONE_CONFIG, config.getString(HdfsSinkConnectorConfig.TIMEZONE_CONFIG));

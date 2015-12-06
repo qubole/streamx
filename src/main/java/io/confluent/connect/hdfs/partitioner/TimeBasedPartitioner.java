@@ -60,9 +60,9 @@ public class TimeBasedPartitioner implements Partitioner {
 
   @Override
   public void configure(Map<String, Object> config) {
-    long partitionDurationMs = (long) config.get(HdfsSinkConnectorConfig.PARTITION_DURATION_CONFIG);
+    long partitionDurationMs = (long) config.get(HdfsSinkConnectorConfig.PARTITION_DURATION_MS_CONFIG);
     if (partitionDurationMs < 0) {
-      throw new ConfigException(HdfsSinkConnectorConfig.PARTITION_DURATION_CONFIG,
+      throw new ConfigException(HdfsSinkConnectorConfig.PARTITION_DURATION_MS_CONFIG,
                                 partitionDurationMs, "Partition duration needs to be a positive.");
     }
 
