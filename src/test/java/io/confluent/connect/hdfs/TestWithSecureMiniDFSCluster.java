@@ -150,8 +150,14 @@ public class TestWithSecureMiniDFSCluster extends HdfsSinkConnectorTestBase {
     Map<String, String> props = super.createProps();
     props.put(HdfsSinkConnectorConfig.HDFS_URL_CONFIG, url);
     props.put(HdfsSinkConnectorConfig.HDFS_AUTHENTICATION_KERBEROS_CONFIG, "true");
-    props.put(HdfsSinkConnectorConfig.CONNECT_HDFS_PRINCIPAL_CONFIG, connectorPrincipal);
-    props.put(HdfsSinkConnectorConfig.CONNECT_HDFS_KEYTAB_CONFIG, connectorKeytab);
+    // if we use the connect principal to authenticate with secure Hadoop, the following
+    // error shows up: Auth failed for 127.0.0.1:63101:null (GSS initiate failed).
+    // As a workaround, we temporarily use namenode principal to authenticate the connector
+    // with Hadoop.  The error is probably due to the issue of FQDN in Kerberos.
+    // As we have tested the connector on secure multi-node cluster, we will figure out
+    // the root cause later.
+    props.put(HdfsSinkConnectorConfig.CONNECT_HDFS_PRINCIPAL_CONFIG, hdfsPrincipal);
+    props.put(HdfsSinkConnectorConfig.CONNECT_HDFS_KEYTAB_CONFIG, keytab);
     props.put(HdfsSinkConnectorConfig.HDFS_NAMENODE_PRINCIPAL_CONFIG, hdfsPrincipal);
     return props;
   }

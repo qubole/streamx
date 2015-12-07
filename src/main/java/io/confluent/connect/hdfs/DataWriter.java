@@ -100,6 +100,7 @@ public class DataWriter {
 
       boolean secureHadoop = connectorConfig.getBoolean(HdfsSinkConnectorConfig.HDFS_AUTHENTICATION_KERBEROS_CONFIG);
       if (secureHadoop) {
+        SecurityUtil.setAuthenticationMethod(UserGroupInformation.AuthenticationMethod.KERBEROS, conf);
         String principalConfig = connectorConfig.getString(HdfsSinkConnectorConfig.CONNECT_HDFS_PRINCIPAL_CONFIG);
         String keytab = connectorConfig.getString(HdfsSinkConnectorConfig.CONNECT_HDFS_KEYTAB_CONFIG);
 

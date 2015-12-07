@@ -55,7 +55,7 @@ public class HiveMetaStore {
       String hiveSitePath = hiveConfDir + "/hive-site.xml";
       File hiveSite = new File(hiveSitePath);
       if (!hiveSite.exists()) {
-        log.warn("hive-site.xml does not in provided Hive configuration directory {}.", hiveConf);
+        log.warn("hive-site.xml does not exist in provided Hive configuration directory {}.", hiveConf);
       }
       hiveConf.addResource(new Path(hiveSitePath));
     }
