@@ -211,7 +211,7 @@ public class TopicPartitionWriter {
           log.error("{} is not a valid state to perform recovery for topic partition {}.", state, tp);
       }
     } catch (ConnectException e) {
-      log.error("Recovery failed.");
+      log.error("Recovery failed at state {}", state, e);
       setRetryTimeout(timeoutMs);
       return false;
     }
