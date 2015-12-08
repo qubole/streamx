@@ -132,8 +132,8 @@ The HDFS connector offers a bunch of features as follows:
   your own partitioner by extending the ``Partitioner`` class. Plus, you can customize time based
   partitioner by extending the ``TimebasedPartitioner`` class.
 
-Configurations
---------------
+Configuration
+-------------
 This section gives example configuration files that cover common scenarios, then provides an
 exhaustive description of the available configuration options.
 
@@ -205,53 +205,6 @@ has read access to the keytab file.
 .. note:: Currently, the connector requires that the principal and the keytab path to be the same
    on all the hosts running the connector. The host part of the ``hdfs.namenode.prinicipal`` needs
    to be the actual FQDN of the Namenode host instead of the ``_HOST`` placeholder.
-
-Schema Evolution
-----------------
-The HDFS connector supports schema evolution and reacts to schema changes of data according to the
-``schema.compatibility`` configuration. In this section, we will explain how the
-connector reacts to schema evolution under different values of ``schema.compatibility``. The
-``schema.compatibility`` can be set to ``NONE``, ``BACKWARD``, ``FORWARD`` and ``FULL``, which means
-NO compatibility, BACKWARD compatibility, FORWARD compatibility and FULL compatibility respectively.
-
-* **NO Compatibility**: By default, the ``schema.compatibility`` is set to ``NONE``. In this case,
-  the connector ensures that each file written to HDFS has the proper schema. When the connector
-  observes a schema change in data, it commits the current set of files for the affected topic
-  partitions and writes the data with new schema in new files.
-
-* **BACKWARD Compatibility**: If a schema is evolved in a backward compatible way, we can always
-  use the latest schema to query all the data uniformly. For example, removing fields is backward
-  compatible change to a schema, since when we encounter records written with the old schema that
-  contain these fields we can just ignore them. Adding a field with a default value is also backward
-  compatible.
-
-  If ``BACKWARD`` is specified in the ``schema.compatibility``, the connector keeps track
-  of the latest schema used in writing data to HDFS, and if a data record with a schema version
-  larger than current latest schema arrives, the connector commits the current set of files
-  and writes the data record with new schema to new files. For data records arriving at a later time
-  with schema of an earlier version, the connector projects the data record to the latest schema
-  before writing to the same set of files in HDFS.
-
-* **FORWARD Compatibility**: If a schema is evolved in a forward compatible way, we can always
-  use the oldest schema to query all the data uniformly. Removing a field that had a default value
-  is forward compatible, since the old schema will use the default value when the field is missing.
-
-  If ``FORWARD`` is specified in the ``schema.compatibility``, the connector projects the data to
-  the oldest schema before writing to the same set of files in HDFS.
-
-* **Full Compatibility**: Full compatibility means that old data can be read with the new schema
-  and new data can also be read with the old schema.
-
-  If ``FULL`` is specified in the ``schema.compatibility``, the connector performs the same action
-  as ``BACKWARD``.
-
-If Hive integration is enabled, we need to specify the ``schema.compatibility`` to be ``BACKWARD``,
-``FORWARD`` or ``FULL``. This ensures that the Hive table schema is able to query all the data under
-a topic written with different schemas. If the ``schema.compatibility`` is set to ``BACKWARD`` or
-``FULL``, the Hive table schema for a topic will be equivalent to the latest schema in the HDFS files
-under that topic that can query the whole data of that topic. If the ``schema.compatibility`` is
-set to ``FORWARD``, the Hive table schema of a topic is equivalent to the oldest schema of the HFDS
-files under that topic that can query the whole data of that topic.
 
 Configuration Options
 ~~~~~~~~~~~~~~~~~~~~~
@@ -483,4 +436,51 @@ Configuration Options
   * Type: string
   * Default: "io.confluent.connect.hdfs.storage.HdfsStorage"
   * Importance: low
+
+Schema Evolution
+----------------
+The HDFS connector supports schema evolution and reacts to schema changes of data according to the
+``schema.compatibility`` configuration. In this section, we will explain how the
+connector reacts to schema evolution under different values of ``schema.compatibility``. The
+``schema.compatibility`` can be set to ``NONE``, ``BACKWARD``, ``FORWARD`` and ``FULL``, which means
+NO compatibility, BACKWARD compatibility, FORWARD compatibility and FULL compatibility respectively.
+
+* **NO Compatibility**: By default, the ``schema.compatibility`` is set to ``NONE``. In this case,
+  the connector ensures that each file written to HDFS has the proper schema. When the connector
+  observes a schema change in data, it commits the current set of files for the affected topic
+  partitions and writes the data with new schema in new files.
+
+* **BACKWARD Compatibility**: If a schema is evolved in a backward compatible way, we can always
+  use the latest schema to query all the data uniformly. For example, removing fields is backward
+  compatible change to a schema, since when we encounter records written with the old schema that
+  contain these fields we can just ignore them. Adding a field with a default value is also backward
+  compatible.
+
+  If ``BACKWARD`` is specified in the ``schema.compatibility``, the connector keeps track
+  of the latest schema used in writing data to HDFS, and if a data record with a schema version
+  larger than current latest schema arrives, the connector commits the current set of files
+  and writes the data record with new schema to new files. For data records arriving at a later time
+  with schema of an earlier version, the connector projects the data record to the latest schema
+  before writing to the same set of files in HDFS.
+
+* **FORWARD Compatibility**: If a schema is evolved in a forward compatible way, we can always
+  use the oldest schema to query all the data uniformly. Removing a field that had a default value
+  is forward compatible, since the old schema will use the default value when the field is missing.
+
+  If ``FORWARD`` is specified in the ``schema.compatibility``, the connector projects the data to
+  the oldest schema before writing to the same set of files in HDFS.
+
+* **Full Compatibility**: Full compatibility means that old data can be read with the new schema
+  and new data can also be read with the old schema.
+
+  If ``FULL`` is specified in the ``schema.compatibility``, the connector performs the same action
+  as ``BACKWARD``.
+
+If Hive integration is enabled, we need to specify the ``schema.compatibility`` to be ``BACKWARD``,
+``FORWARD`` or ``FULL``. This ensures that the Hive table schema is able to query all the data under
+a topic written with different schemas. If the ``schema.compatibility`` is set to ``BACKWARD`` or
+``FULL``, the Hive table schema for a topic will be equivalent to the latest schema in the HDFS files
+under that topic that can query the whole data of that topic. If the ``schema.compatibility`` is
+set to ``FORWARD``, the Hive table schema of a topic is equivalent to the oldest schema of the HFDS
+files under that topic that can query the whole data of that topic.
 
