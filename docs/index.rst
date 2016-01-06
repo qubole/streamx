@@ -130,7 +130,7 @@ The HDFS connector offers a bunch of features as follows:
 * **Pluggable Partitioner**: The connector supports default partitioner, field partitioner, and
   time based partitioner including daily and hourly partitioner out of the box. You can implement
   your own partitioner by extending the ``Partitioner`` class. Plus, you can customize time based
-  partitioner by extending the ``TimebasedPartitioner`` class.
+  partitioner by extending the ``TimeBasedPartitioner`` class.
 
 Configuration
 -------------
@@ -320,7 +320,7 @@ Configuration Options
   The partitioner to use when writing data to HDFS. You can use ``DefaultPartitioner``, which
   preserves the Kafka partitions; ``FieldPartitioner``, which partitions the data to different
   directories according to the value of the partitioning field specified in
-  ``partition.field.name``; ``TimebasedPartitioner``, which partitions data according to the time
+  ``partition.field.name``; ``TimeBasedPartitioner``, which partitions data according to the time
   ingested to HDFS.
 
   * Type: string
@@ -361,7 +361,7 @@ Configuration Options
 
 ``partition.duration.ms``
   The duration of a partition milliseconds used by ``TimeBasedPartitioner``. The default value -1
-  means that we are not using ``TimebasedPartitioner``.
+  means that we are not using ``TimeBasedPartitioner``.
 
   * Type: long
   * Default: -1
