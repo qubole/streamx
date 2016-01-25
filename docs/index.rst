@@ -201,7 +201,7 @@ keytab file to all hosts that running the connector and ensures that only the co
 has read access to the keytab file.
 
 .. note:: When security is enabled, you need to use FQDN for the host part of
-   ``hdfs.url`` and``hive.metastore.uris``.
+   ``hdfs.url`` and ``hive.metastore.uris``.
 .. note:: Currently, the connector requires that the principal and the keytab path to be the same
    on all the hosts running the connector. The host part of the ``hdfs.namenode.prinicipal`` needs
    to be the actual FQDN of the Namenode host instead of the ``_HOST`` placeholder.
