@@ -30,7 +30,7 @@ import java.util.Map;
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.errors.PartitionException;
 
-public class FieldPartitioner implements Partitioner {
+public final class FieldPartitioner implements Partitioner {
   private static final Logger log = LoggerFactory.getLogger(FieldPartitioner.class);
   private static String fieldName;
   private List<FieldSchema> partitionFields = new ArrayList<>();

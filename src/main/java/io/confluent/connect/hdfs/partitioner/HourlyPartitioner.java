@@ -14,13 +14,13 @@
 
 package io.confluent.connect.hdfs.partitioner;
 
+import org.apache.kafka.common.config.ConfigException;
 import org.joda.time.DateTimeZone;
 
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.confluent.common.config.ConfigException;
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 
 public class HourlyPartitioner extends TimeBasedPartitioner {

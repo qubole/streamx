@@ -20,6 +20,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -44,7 +45,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import io.confluent.common.config.ConfigException;
 import io.confluent.connect.avro.AvroData;
 import io.confluent.connect.hdfs.filter.CommittedFileFilter;
 import io.confluent.connect.hdfs.filter.TopicCommittedFileFilter;
