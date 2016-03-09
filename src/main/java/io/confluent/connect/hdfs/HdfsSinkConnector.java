@@ -15,6 +15,7 @@
 package io.confluent.connect.hdfs;
 
 
+import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.connector.Connector;
 import org.apache.kafka.connect.connector.Task;
@@ -23,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,10 +37,6 @@ public class HdfsSinkConnector extends Connector {
   private static final Logger log = LoggerFactory.getLogger(HdfsSinkConnector.class);
   private Map<String, String> configProperties;
   private HdfsSinkConnectorConfig config;
-
-  static {
-    configDef = HdfsSinkConnectorConfig.config;
-  }
 
   @Override
   public String version() {
@@ -74,5 +72,21 @@ public class HdfsSinkConnector extends Connector {
   @Override
   public void stop() throws ConnectException {
 
+  }
+
+  @Override
+  protected ConfigDef defineConfig() {
+    return HdfsSinkConnectorConfig.getConfig();
+  }
+
+  @Override
+  protected List<String> defineGroup() {
+    return Arrays.asList(
+        HdfsSinkConnectorConfig.HDFS_GROUP,
+        HdfsSinkConnectorConfig.CONNECTOR_GROUP,
+        HdfsSinkConnectorConfig.HIVE_GROUP,
+        HdfsSinkConnectorConfig.SECURITY_GROUP,
+        HdfsSinkConnectorConfig.SCHEMA_GROUP,
+        HdfsSinkConnectorConfig.INTERNAL_GROUP);
   }
 }

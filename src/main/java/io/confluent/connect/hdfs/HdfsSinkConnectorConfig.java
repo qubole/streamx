@@ -32,6 +32,7 @@ import java.util.Map;
 import io.confluent.connect.hdfs.partitioner.DailyPartitioner;
 import io.confluent.connect.hdfs.partitioner.FieldPartitioner;
 import io.confluent.connect.hdfs.partitioner.HourlyPartitioner;
+import io.confluent.connect.hdfs.partitioner.Partitioner;
 import io.confluent.connect.hdfs.partitioner.TimeBasedPartitioner;
 import io.confluent.connect.hdfs.storage.HdfsStorage;
 import io.confluent.connect.hdfs.storage.Storage;
@@ -50,13 +51,13 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static final String HADOOP_CONF_DIR_DOC =
       "The Hadoop configuration directory.";
   public static final String HADOOP_CONF_DIR_DEFAULT = "";
-  private static final String HADOOP_CONF_DIR_DISPLAY = "HADOOP Configuration Directory";
+  private static final String HADOOP_CONF_DIR_DISPLAY = "Hadoop Configuration Directory";
 
   public static final String HADOOP_HOME_CONFIG = "hadoop.home";
   private static final String HADOOP_HOME_DOC =
       "The Hadoop home directory.";
   public static final String HADOOP_HOME_DEFAULT = "";
-  private static final String HADOOP_HOME_DISPLAY = "HADOOP home directory";
+  private static final String HADOOP_HOME_DISPLAY = "Haddop home directory";
 
   public static final String TOPICS_DIR_CONFIG = "topics.dir";
   private static final String TOPICS_DIR_DOC =
@@ -135,7 +136,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static final String KERBEROS_TICKET_RENEW_PERIOD_MS_DOC =
       "The period in milliseconds to renew the Kerberos ticket.";
   public static final long KERBEROS_TICKET_RENEW_PERIOD_MS_DEFAULT = 60000 * 60;
-  private static final String KERBEROS_TICKET_RENEW_PERIOD_MS_DISPLAY = "Kerberos Ticket Renew Period in Milliseconds";
+  private static final String KERBEROS_TICKET_RENEW_PERIOD_MS_DISPLAY = "Kerberos Ticket Renew Period (ms)";
 
   // Connector group
   public static final String FLUSH_SIZE_CONFIG = "flush.size";
@@ -150,7 +151,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       + "ingestion rate is low and the connector didn't write enough messages to commit files."
       + "The default value -1 means that this feature is disabled.";
   private static final long ROTATE_INTERVAL_MS_DEFAULT = -1L;
-  private static final String ROTATE_INTERVAL_MS_DISPLAY = "Rotate Interval in Milliseconds";
+  private static final String ROTATE_INTERVAL_MS_DISPLAY = "Rotate Interval (ms)";
 
   public static final String RETRY_BACKOFF_CONFIG = "retry.backoff.ms";
   private static final String RETRY_BACKOFF_DOC =
@@ -158,14 +159,14 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       + "notify Kafka connect to retry delivering a message batch or performing recovery in case "
       + "of transient exceptions.";
   public static final long RETRY_BACKOFF_DEFAULT = 5000L;
-  private static final String RETRY_BACKOFF_DISPLAY = "Retry Backoff in Milliseconds";
+  private static final String RETRY_BACKOFF_DISPLAY = "Retry Backoff (ms)";
 
   public static final String SHUTDOWN_TIMEOUT_CONFIG = "shutdown.timeout.ms";
   private static final String SHUTDOWN_TIMEOUT_DOC =
       "Clean shutdown timeout. This makes sure that asynchronous Hive metastore updates are "
       + "completed during connector shutdown.";
   private static final long SHUTDOWN_TIMEOUT_DEFAULT = 3000L;
-  private static final String SHUTDOWN_TIMEOUT_DISPLAY = "Shutdown Timeout in Milliseconds";
+  private static final String SHUTDOWN_TIMEOUT_DISPLAY = "Shutdown Timeout (ms)";
 
   public static final String PARTITIONER_CLASS_CONFIG = "partitioner.class";
   private static final String PARTITIONER_CLASS_DOC =
@@ -189,7 +190,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       "The duration of a partition milliseconds used by ``TimeBasedPartitioner``. "
       + "The default value -1 means that we are not using ``TimebasedPartitioner``.";
   public static final long PARTITION_DURATION_MS_DEFAULT = -1L;
-  private static final String PARTITION_DURATION_MS_DISPLAY = "Partition Duration in Milliseconds";
+  private static final String PARTITION_DURATION_MS_DISPLAY = "Partition Duration (ms)";
 
   public static final String PATH_FORMAT_CONFIG = "path.format";
   private static final String PATH_FORMAT_DOC =
@@ -241,32 +242,31 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   public static final String STORAGE_CLASS_DEFAULT = "io.confluent.connect.hdfs.storage.HdfsStorage";
   private static final String STORAGE_CLASS_DISPLAY = "Storage Class";
 
-  private static final String HDFS_GROUP = "hdfs";
-  private static final String HIVE_GROUP = "hive";
-  private static final String SECURITY_GROUP = "security";
-  private static final String CONNECTOR_GROUP = "connector";
-  private static final String INTERNAL_GROUP = "internal";
-  private static final String SCHEMA_GROUP = "schema";
+  public static final String HDFS_GROUP = "HDFS";
+  public static final String HIVE_GROUP = "Hive";
+  public static final String SECURITY_GROUP = "Security";
+  public static final String SCHEMA_GROUP = "Schema";
+  public static final String CONNECTOR_GROUP = "Connector";
+  public static final String INTERNAL_GROUP = "Internal";
 
   private static final ConfigDef.Recommender hiveIntegrationDependentsRecommender = new BooleanParentRecommender(HIVE_INTEGRATION_CONFIG);
   private static final ConfigDef.Recommender hdfsAuthenticationKerberosDependentsRecommender = new BooleanParentRecommender(HDFS_AUTHENTICATION_KERBEROS_CONFIG);
   private static final ConfigDef.Recommender partitionerClassDependentsRecommender = new PartitionerClassDependentsRecommender();
   private static final ConfigDef.Recommender schemaCompatibilityRecommender = new SchemaCompatibilityRecommender();
 
-  public static ConfigDef config = new ConfigDef();
+  private static ConfigDef config = new ConfigDef();
 
-  // Define HDFS configuration group
   static {
+
+    // Define HDFS configuration group
     config.define(HDFS_URL_CONFIG, Type.STRING, "", new HdfsUrlValidator(), Importance.HIGH, HDFS_URL_DOC, HDFS_GROUP, 1, Width.MEDIUM, HDFS_URL_DISPLAY)
         .define(HADOOP_CONF_DIR_CONFIG, Type.STRING, HADOOP_CONF_DIR_DEFAULT, Importance.HIGH, HADOOP_CONF_DIR_DOC, HDFS_GROUP, 2, Width.MEDIUM, HADOOP_CONF_DIR_DISPLAY)
         .define(HADOOP_HOME_CONFIG, Type.STRING, HADOOP_HOME_DEFAULT, Importance.HIGH, HADOOP_HOME_DOC, HDFS_GROUP, 3, Width.SHORT, HADOOP_HOME_DISPLAY)
         .define(TOPICS_DIR_CONFIG, Type.STRING, TOPICS_DIR_DEFAULT, Importance.HIGH, TOPICS_DIR_DOC, HDFS_GROUP, 4, Width.SHORT, TOPICS_DIR_DISPLAY)
         .define(LOGS_DIR_CONFIG, Type.STRING, LOGS_DIR_DEFAULT, Importance.HIGH, LOGS_DIR_DOC, HDFS_GROUP, 5, Width.SHORT, LOGS_DIR_DISPLAY)
         .define(FORMAT_CLASS_CONFIG, Type.STRING, FORMAT_CLASS_DEFAULT, Importance.HIGH, FORMAT_CLASS_DOC, HDFS_GROUP, 6, Width.SHORT, FORMAT_CLASS_DISPLAY);
-  }
 
-  // Define Hive configuration group
-  static {
+    // Define Hive configuration group
     config.define(HIVE_INTEGRATION_CONFIG, Type.BOOLEAN, HIVE_INTEGRATION_DEFAULT, Importance.HIGH, HIVE_INTEGRATION_DOC, HIVE_GROUP, 1, Width.SHORT, HIVE_INTEGRATION_DISPLAY,
                   Arrays.asList(HIVE_METASTORE_URIS_CONFIG, HIVE_CONF_DIR_CONFIG, HIVE_HOME_CONFIG, HIVE_DATABASE_CONFIG, SCHEMA_COMPATIBILITY_CONFIG))
         .define(HIVE_METASTORE_URIS_CONFIG, Type.STRING, HIVE_METASTORE_URIS_DEFAULT, Importance.HIGH, HIVE_METASTORE_URIS_DOC, HIVE_GROUP, 2, Width.MEDIUM,
@@ -274,32 +274,26 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
         .define(HIVE_CONF_DIR_CONFIG, Type.STRING, HIVE_CONF_DIR_DEFAULT, Importance.HIGH, HIVE_CONF_DIR_DOC, HIVE_GROUP, 3, Width.MEDIUM, HIVE_CONF_DIR_DISPLAY, hiveIntegrationDependentsRecommender)
         .define(HIVE_HOME_CONFIG, Type.STRING, HIVE_HOME_DEFAULT, Importance.HIGH, HIVE_HOME_DOC, HIVE_GROUP, 4, Width.MEDIUM, HIVE_HOME_DISPLAY, hiveIntegrationDependentsRecommender)
         .define(HIVE_DATABASE_CONFIG, Type.STRING, HIVE_DATABASE_DEFAULT, Importance.HIGH, HIVE_DATABASE_DOC, HIVE_GROUP, 5, Width.SHORT, HIVE_DATABASE_DISPLAY, hiveIntegrationDependentsRecommender);
-  }
 
-  // Define Security configuration group
-  static {
+    // Define Security configuration group
     config.define(HDFS_AUTHENTICATION_KERBEROS_CONFIG, Type.BOOLEAN, HDFS_AUTHENTICATION_KERBEROS_DEFAULT, Importance.HIGH, HDFS_AUTHENTICATION_KERBEROS_DOC,
                   SECURITY_GROUP, 1, Width.SHORT, HDFS_AUTHENTICATION_KERBEROS_DISPLAY,
                   Arrays.asList(CONNECT_HDFS_PRINCIPAL_CONFIG, CONNECT_HDFS_KEYTAB_CONFIG, HDFS_NAMENODE_PRINCIPAL_CONFIG, KERBEROS_TICKET_RENEW_PERIOD_MS_CONFIG))
         .define(CONNECT_HDFS_PRINCIPAL_CONFIG, Type.STRING, CONNECT_HDFS_PRINCIPAL_DEFAULT, Importance.HIGH, CONNECT_HDFS_PRINCIPAL_DOC,
-                SECURITY_GROUP, 2, Width.MEDIUM, CONNECT_HDFS_KEYTAB_DISPLAY, hdfsAuthenticationKerberosDependentsRecommender)
+                SECURITY_GROUP, 2, Width.MEDIUM, CONNECT_HDFS_PRINCIPAL_DISPLAY, hdfsAuthenticationKerberosDependentsRecommender)
         .define(CONNECT_HDFS_KEYTAB_CONFIG, Type.STRING, CONNECT_HDFS_KEYTAB_DEFAULT, Importance.HIGH, CONNECT_HDFS_KEYTAB_DOC,
                 SECURITY_GROUP, 3, Width.MEDIUM, CONNECT_HDFS_KEYTAB_DISPLAY, hdfsAuthenticationKerberosDependentsRecommender)
         .define(HDFS_NAMENODE_PRINCIPAL_CONFIG, Type.STRING, HDFS_NAMENODE_PRINCIPAL_DEFAULT, Importance.HIGH, HDFS_NAMENODE_PRINCIPAL_DOC,
                 SECURITY_GROUP, 4, Width.MEDIUM, HDFS_NAMENODE_PRINCIPAL_DISPLAY, hdfsAuthenticationKerberosDependentsRecommender)
         .define(KERBEROS_TICKET_RENEW_PERIOD_MS_CONFIG, Type.LONG, KERBEROS_TICKET_RENEW_PERIOD_MS_DEFAULT, Importance.LOW, KERBEROS_TICKET_RENEW_PERIOD_MS_DOC,
                 SECURITY_GROUP, 5, Width.SHORT, KERBEROS_TICKET_RENEW_PERIOD_MS_DISPLAY, hdfsAuthenticationKerberosDependentsRecommender);
-  }
 
-  // Define Schema configuration group
-  static {
+    // Define Schema configuration group
     config.define(SCHEMA_COMPATIBILITY_CONFIG, Type.STRING, SCHEMA_COMPATIBILITY_DEFAULT, Importance.HIGH, SCHEMA_COMPATIBILITY_DOC, SCHEMA_GROUP, 1, Width.SHORT,
                   SCHEMA_COMPATIBILITY_DISPLAY, schemaCompatibilityRecommender)
         .define(SCHEMA_CACHE_SIZE_CONFIG, Type.INT, SCHEMA_CACHE_SIZE_DEFAULT, Importance.LOW, SCHEMA_CACHE_SIZE_DOC, SCHEMA_GROUP, 2, Width.SHORT, SCHEMA_CACHE_SIZE_DISPLAY);
-  }
 
-  // Define Connector configuration group
-  static {
+    // Define Connector configuration group
     config.define(FLUSH_SIZE_CONFIG, Type.INT, Importance.HIGH, FLUSH_SIZE_DOC, CONNECTOR_GROUP, 1, Width.SHORT, FLUSH_SIZE_DISPLAY)
         .define(ROTATE_INTERVAL_MS_CONFIG, Type.LONG, ROTATE_INTERVAL_MS_DEFAULT,Importance.HIGH, ROTATE_INTERVAL_MS_DOC, CONNECTOR_GROUP, 2, Width.SHORT, ROTATE_INTERVAL_MS_DISPLAY)
         .define(RETRY_BACKOFF_CONFIG, Type.LONG, RETRY_BACKOFF_DEFAULT, Importance.LOW, RETRY_BACKOFF_DOC, CONNECTOR_GROUP, 3, Width.SHORT, RETRY_BACKOFF_DISPLAY)
@@ -316,10 +310,8 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
         .define(TIMEZONE_CONFIG, Type.STRING, TIMEZONE_DEFAULT, Importance.MEDIUM, TIMEZONE_DOC, CONNECTOR_GROUP, 10, Width.MEDIUM, TIMEZONE_DISPLAY, partitionerClassDependentsRecommender)
         .define(FILENAME_OFFSET_ZERO_PAD_WIDTH_CONFIG, Type.INT, FILENAME_OFFSET_ZERO_PAD_WIDTH_DEFAULT, ConfigDef.Range.atLeast(0), Importance.LOW, FILENAME_OFFSET_ZERO_PAD_WIDTH_DOC,
                 CONNECTOR_GROUP, 11, Width.SHORT, FILENAME_OFFSET_ZERO_PAD_WIDTH_DISPLAY);
-  }
 
-  // Define Internal configuration group
-  static {
+    // Define Internal configuration group
     config.define(STORAGE_CLASS_CONFIG, Type.STRING, STORAGE_CLASS_DEFAULT, Importance.LOW, STORAGE_CLASS_DOC, INTERNAL_GROUP, 1, Width.MEDIUM, STORAGE_CLASS_DISPLAY);
   }
 
@@ -367,24 +359,24 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static class PartitionerClassDependentsRecommender implements ConfigDef.Recommender {
 
     @Override
-    public List<Object> validValues(String name, Map<String, String> connectorConfigs) {
+    public List<Object> validValues(String name, Map<String, String> props) {
       return new LinkedList<>();
     }
 
     @Override
-    public boolean visible(String name, Map<String, String> connectorConfigs) {
-      String partitionerName = connectorConfigs.get(PARTITIONER_CLASS_CONFIG);
-      if (partitionerName == null) {
-        partitionerName = DefaultPartitioner.class.getName();
-      }
+    public boolean visible(String name, Map<String, String> props) {
+      HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
+      String partitionerName = connectorConfig.getString(PARTITIONER_CLASS_CONFIG);
       try {
-        Class partitioner = Class.forName(partitionerName);
-        if (partitionerName.equals(DefaultPartitioner.class.getName())) {
+        Class<? extends Partitioner> partitioner = (Class<? extends Partitioner>) Class.forName(partitionerName);
+        if (classNameEquals(partitionerName, DefaultPartitioner.class)) {
           return false;
-        } else if (partitionerName.equals(FieldPartitioner.class.getName())) {
+        } else if (FieldPartitioner.class.isAssignableFrom(partitioner)) {
+          // subclass of FieldPartitioner
           return name.equals(PARTITION_FIELD_NAME_CONFIG);
         } else if (TimeBasedPartitioner.class.isAssignableFrom(partitioner)) {
-          if (!partitionerName.equals(DailyPartitioner.class.getName()) && !partitioner.equals(HourlyPartitioner.class.getName())) {
+          // subclass of TimeBasedPartitioner
+          if (!classNameEquals(partitionerName, DailyPartitioner.class) && !classNameEquals(partitionerName, HourlyPartitioner.class)) {
             return name.equals(LOCALE_CONFIG) || name.equals(TIMEZONE_CONFIG);
           } else {
             return name.equals(PARTITION_DURATION_MS_CONFIG) || name.equals(PATH_FORMAT_CONFIG) || name.equals(LOCALE_CONFIG) || name.equals(TIMEZONE_CONFIG);
@@ -398,6 +390,10 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
     }
   }
 
+  private static boolean classNameEquals(String className, Class<?> clazz) {
+    return className.equals(clazz.getSimpleName()) || className.equals(clazz.getCanonicalName());
+  }
+
   private static class HdfsUrlValidator implements ConfigDef.Validator {
 
     @Override
@@ -407,13 +403,19 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       if (url.equals("") || url.startsWith("memory")) {
         return;
       }
-      Storage storage = StorageFactory.createStorage(HdfsStorage.class, conf, url);
       try {
+        Storage storage = StorageFactory.createStorage(HdfsStorage.class, conf, url);
         storage.listStatus("/");
       } catch (IOException e) {
         throw new ConfigException("Cannot connect to HDFS.");
+      } catch (Throwable t) {
+        throw new ConfigException("Exception:", t);
       }
     }
+  }
+
+  public static ConfigDef getConfig() {
+    return config;
   }
 
   public HdfsSinkConnectorConfig(Map<String, String> props) {
