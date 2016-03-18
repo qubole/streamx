@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,18 +74,7 @@ public class HdfsSinkConnector extends Connector {
   }
 
   @Override
-  protected ConfigDef defineConfig() {
+  public ConfigDef config() {
     return HdfsSinkConnectorConfig.getConfig();
-  }
-
-  @Override
-  protected List<String> defineGroup() {
-    return Arrays.asList(
-        HdfsSinkConnectorConfig.HDFS_GROUP,
-        HdfsSinkConnectorConfig.CONNECTOR_GROUP,
-        HdfsSinkConnectorConfig.HIVE_GROUP,
-        HdfsSinkConnectorConfig.SECURITY_GROUP,
-        HdfsSinkConnectorConfig.SCHEMA_GROUP,
-        HdfsSinkConnectorConfig.INTERNAL_GROUP);
   }
 }

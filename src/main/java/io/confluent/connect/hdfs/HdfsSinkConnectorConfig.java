@@ -322,8 +322,8 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
     }
       
     @Override
-    public List<Object> validValues(String name, Map<String, String> connectorConfigs) {
-      boolean hiveIntegration = Boolean.parseBoolean(connectorConfigs.get(parentConfigName));
+    public List<Object> validValues(String name, Map<String, Object> connectorConfigs) {
+      boolean hiveIntegration = (Boolean) connectorConfigs.get(parentConfigName);
       if (hiveIntegration) {
         return Arrays.<Object>asList("BACKWARD", "FORWARD", "FULL");
       } else {
@@ -332,7 +332,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
     }
 
     @Override
-    public boolean visible(String name, Map<String, String> connectorConfigs) {
+    public boolean visible(String name, Map<String, Object> connectorConfigs) {
       return true;
     }
   }
@@ -346,27 +346,27 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
     }
     
     @Override
-    public List<Object> validValues(String name, Map<String, String> connectorConfigs) {
+    public List<Object> validValues(String name, Map<String, Object> connectorConfigs) {
       return new LinkedList<>();
     }
 
     @Override
-    public boolean visible(String name, Map<String, String> connectorConfigs) {
-      return Boolean.parseBoolean(connectorConfigs.get(parentConfigName));
+    public boolean visible(String name, Map<String, Object> connectorConfigs) {
+      return (Boolean) connectorConfigs.get(parentConfigName);
     }
   }
 
   private static class PartitionerClassDependentsRecommender implements ConfigDef.Recommender {
 
     @Override
-    public List<Object> validValues(String name, Map<String, String> props) {
+    public List<Object> validValues(String name, Map<String, Object> props) {
       return new LinkedList<>();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public boolean visible(String name, Map<String, String> props) {
-      HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
-      String partitionerName = connectorConfig.getString(PARTITIONER_CLASS_CONFIG);
+    public boolean visible(String name, Map<String, Object> connectorConfigs) {
+      String partitionerName = (String) connectorConfigs.get(PARTITIONER_CLASS_CONFIG);
       try {
         Class<? extends Partitioner> partitioner = (Class<? extends Partitioner>) Class.forName(partitionerName);
         if (classNameEquals(partitionerName, DefaultPartitioner.class)) {
