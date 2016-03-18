@@ -57,7 +57,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static final String HADOOP_HOME_DOC =
       "The Hadoop home directory.";
   public static final String HADOOP_HOME_DEFAULT = "";
-  private static final String HADOOP_HOME_DISPLAY = "Haddop home directory";
+  private static final String HADOOP_HOME_DISPLAY = "Hadoop home directory";
 
   public static final String TOPICS_DIR_CONFIG = "topics.dir";
   private static final String TOPICS_DIR_DOC =
