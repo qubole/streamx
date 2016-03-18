@@ -83,11 +83,6 @@
             <version>${confluent.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>common-config</artifactId>
-            <version>${confluent.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
             <version>${hadoop.version}</version>

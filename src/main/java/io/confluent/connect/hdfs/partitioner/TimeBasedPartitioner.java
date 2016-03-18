@@ -16,6 +16,7 @@ package io.confluent.connect.hdfs.partitioner;
 
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -29,7 +30,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.confluent.common.config.ConfigException;
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 
 public class TimeBasedPartitioner implements Partitioner {

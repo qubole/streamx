@@ -14,6 +14,7 @@
 
 package io.confluent.connect.hdfs.tools;
 
+import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -54,5 +55,10 @@ public class SchemaSourceConnector extends SourceConnector {
 
   @Override
   public void stop() {
+  }
+
+  @Override
+  public ConfigDef config() {
+    return new ConfigDef();
   }
 }
