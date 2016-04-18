@@ -26,7 +26,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -71,7 +70,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
       sinkRecords.add(sinkRecord);
     }
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     String encodedPartition = "partition=" + String.valueOf(PARTITION);
     String directory = partitioner.generatePartitionedPath(TOPIC, encodedPartition);
@@ -140,7 +140,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
           new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 50 + i));
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     committedFiles.add(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION,
                                                    50, 52, extension, ZERO_PAD_FMT));
@@ -172,7 +173,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
       }
     }
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     // Last file (offset 6) doesn't satisfy size requirement and gets discarded on close
     long[] validOffsets = {-1, 2, 5};
@@ -221,7 +223,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     long previousOffset = committedOffsets.get(TOPIC_PARTITION);
     assertEquals(previousOffset, 6L);
 
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
   }
 
   @Test
@@ -242,7 +245,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     }
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     String directory = partitioner.generatePartitionedPath(TOPIC, "partition=" + String.valueOf(PARTITION));
 
@@ -290,9 +294,10 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     Set<TopicPartition> newAssignment = new HashSet<>();
     newAssignment.add(TOPIC_PARTITION);
     newAssignment.add(TOPIC_PARTITION3);
-    hdfsWriter.onPartitionsRevoked(assignment);
+    hdfsWriter.close(assignment);
+
     assignment = newAssignment;
-    hdfsWriter.onPartitionsAssigned(newAssignment);
+    hdfsWriter.open(newAssignment);
 
     assertEquals(null, hdfsWriter.getBucketWriter(TOPIC_PARTITION2));
     assertNotNull(hdfsWriter.getBucketWriter(TOPIC_PARTITION));
@@ -326,7 +331,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     }
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     // Last file (offset 9) doesn't satisfy size requirement and gets discarded on close
     long[] validOffsetsTopicPartition1 = {5, 8};
@@ -386,7 +392,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 1L));
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     String DIRECTORY = TOPIC + "/" + "partition=" + String.valueOf(PARTITION);
     Path path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION,
@@ -408,7 +415,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
                                    newRecord, 3L));
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 2L,
                                                 3L, extension, ZERO_PAD_FMT));
@@ -442,7 +450,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 2L));
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     String DIRECTORY = TOPIC + "/" + "partition=" + String.valueOf(PARTITION);
     Path path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION,
@@ -467,7 +476,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 4L));
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 3L,
                                                 4L, extension, ZERO_PAD_FMT));
@@ -502,7 +512,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, 2L));
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     String DIRECTORY = TOPIC + "/" + "partition=" + String.valueOf(PARTITION);
     Path path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION,
@@ -526,7 +537,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, 4L));
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     path = new Path(FileUtils.committedFileName(url, topicsDir, DIRECTORY, TOPIC_PARTITION, 3L,
                                                 4L, extension, ZERO_PAD_FMT));
@@ -575,8 +587,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     } catch (RuntimeException e) {
       // expected
     }
-
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
   }
 }
 

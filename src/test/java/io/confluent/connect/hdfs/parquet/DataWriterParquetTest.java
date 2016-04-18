@@ -64,7 +64,8 @@ public class DataWriterParquetTest extends TestWithMiniDFSCluster {
       sinkRecords.add(sinkRecord);
     }
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     String encodedPartition = "partition=" + String.valueOf(PARTITION);
     String directory = partitioner.generatePartitionedPath(TOPIC, encodedPartition);

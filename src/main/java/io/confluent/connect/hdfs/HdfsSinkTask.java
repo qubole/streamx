@@ -48,6 +48,7 @@ public class HdfsSinkTask extends SinkTask {
 
   @Override
   public void start(Map<String, String> props) {
+    Set<TopicPartition> assignment = context.assignment();;
     try {
       HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
       boolean hiveIntegration = connectorConfig.getBoolean(HdfsSinkConnectorConfig.HIVE_INTEGRATION_CONFIG);
@@ -61,7 +62,6 @@ public class HdfsSinkTask extends SinkTask {
       int schemaCacheSize = connectorConfig.getInt(HdfsSinkConnectorConfig.SCHEMA_CACHE_SIZE_CONFIG);
       avroData = new AvroData(schemaCacheSize);
       hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-      Set<TopicPartition> assignment = context.assignment();
       recover(assignment);
       if (hiveIntegration) {
         syncWithHive();
@@ -72,7 +72,8 @@ public class HdfsSinkTask extends SinkTask {
       log.info("Couldn't start HdfsSinkConnector:", e);
       log.info("Shutting down HdfsSinkConnector.");
       if (hdfsWriter != null) {
-        hdfsWriter.close();
+        hdfsWriter.close(assignment);
+        hdfsWriter.stop();
       }
     }
   }
@@ -80,7 +81,7 @@ public class HdfsSinkTask extends SinkTask {
   @Override
   public void stop() throws ConnectException {
     if (hdfsWriter != null) {
-      hdfsWriter.close();
+      hdfsWriter.stop();
     }
   }
 
@@ -99,13 +100,13 @@ public class HdfsSinkTask extends SinkTask {
   }
 
   @Override
-  public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-    hdfsWriter.onPartitionsAssigned(partitions);
+  public void open(Collection<TopicPartition> partitions) {
+    hdfsWriter.open(partitions);
   }
 
   @Override
-  public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-    hdfsWriter.onPartitionsRevoked(partitions);
+  public void close(Collection<TopicPartition> partitions) {
+    hdfsWriter.close(partitions);
   }
 
   private void recover(Set<TopicPartition> assignment) {
