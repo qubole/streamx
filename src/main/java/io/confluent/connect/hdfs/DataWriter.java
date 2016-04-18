@@ -303,10 +303,6 @@ public class DataWriter {
   }
 
   public void close() {
-    for (TopicPartition tp: assignment) {
-      topicPartitionWriters.get(tp).close();
-    }
-
     if (executorService != null) {
       boolean terminated = false;
       try {
