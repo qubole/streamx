@@ -153,8 +153,8 @@ public class ParquetHiveUtilTest extends HiveTestBase {
       sinkRecords.add(sinkRecord);
     }
     hdfsWriter.write(sinkRecords);
-
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
   }
 
   private DataWriter createWriter(SinkTaskContext context, AvroData avroData) {

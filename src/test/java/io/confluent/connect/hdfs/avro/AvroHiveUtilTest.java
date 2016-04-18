@@ -141,9 +141,10 @@ public class AvroHiveUtilTest extends HiveTestBase {
           new SinkRecord(topic, partition, Schema.STRING_SCHEMA, key, schema, record, offset);
       sinkRecords.add(sinkRecord);
     }
-    hdfsWriter.write(sinkRecords);
 
-    hdfsWriter.close();
+    hdfsWriter.write(sinkRecords);
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
   }
 
   private DataWriter createWriter(SinkTaskContext context, AvroData avroData){

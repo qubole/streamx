@@ -70,7 +70,8 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     }
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     props = createProps();
     props.put(HdfsSinkConnectorConfig.HIVE_INTEGRATION_CONFIG, "true");
@@ -99,7 +100,8 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
 
     assertEquals(expectedPartitions, partitions);
 
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
   }
 
   @Test
@@ -123,7 +125,8 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
       sinkRecords.add(sinkRecord);
     }
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     Table table = hiveMetaStore.getTable(hiveDatabase, TOPIC);
     List<String> expectedColumnNames = new ArrayList<>();
@@ -172,7 +175,8 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     }
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     Table table = hiveMetaStore.getTable(hiveDatabase, TOPIC);
 
@@ -247,7 +251,8 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     }
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close();
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
 
     Table table = hiveMetaStore.getTable(hiveDatabase, TOPIC);
 
