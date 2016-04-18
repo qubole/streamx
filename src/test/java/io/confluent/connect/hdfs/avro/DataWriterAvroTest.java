@@ -294,8 +294,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     Set<TopicPartition> newAssignment = new HashSet<>();
     newAssignment.add(TOPIC_PARTITION);
     newAssignment.add(TOPIC_PARTITION3);
-    hdfsWriter.close(assignment);
 
+    hdfsWriter.close(assignment);
     assignment = newAssignment;
     hdfsWriter.open(newAssignment);
 
@@ -331,7 +331,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     }
 
     hdfsWriter.write(sinkRecords);
-    hdfsWriter.close(assignment);
+    hdfsWriter.close(newAssignment);
     hdfsWriter.stop();
 
     // Last file (offset 9) doesn't satisfy size requirement and gets discarded on close
