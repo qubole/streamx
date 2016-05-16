@@ -10,8 +10,8 @@ The connector periodically polls data from Kafka and writes them to HDFS. The da
 topic is partitioned by the provided partitioner and divided into chucks. Each chunk of data is
 represented as an HDFS file with topic, kafka partition, start and end offsets of this data chuck
 in the filename. If no partitioner is specified in the configuration, the default partitioner which
-preserves the Kafka partitioning will be used. The size of each data chunk is determined by the
-number of records written to HDFS, the time written to HDFS and schema compatibility.
+preserves the Kafka partitioning is used. The size of each data chunk is determined by the number of
+records written to HDFS, the time written to HDFS and schema compatibility.
 
 The HDFS connector integrates with Hive and when it is enabled, the connector automatically creates
 an external Hive partitioned table for each Kafka topic and updates the table according to the
@@ -22,13 +22,13 @@ Quickstart
 In this Quickstart, we use the HDFS connector to export data produced by the Avro console producer
 to HDFS.
 
-Start Zookeeper, Kafka and SchemaRegistry is you haven't done so. The instructions on how to start
-these services is available at the Confluent Platform QuickStart. You also need to have Hadoop
+Start Zookeeper, Kafka and SchemaRegistry if you haven't done so. The instructions on how to start
+these services are available at the Confluent Platform QuickStart. You also need to have Hadoop
 running locally or remotely and make sure that you know the HDFS url. For Hive integration, you
 need to have Hive installed and to know the metastore thrift uri.
 
-This Quickstart assumes that you started the required services with the default config and you
-should make necessary changes according to the actual configurations used.
+This Quickstart assumes that you started the required services with the default configurations and
+you should make necessary changes according to the actual configurations used.
 
 .. note:: You need to make sure the connector user have write access to the directories
    specified in ``topics.dir`` and ``logs.dir``. The default value of ``topics.dir`` is
@@ -38,7 +38,7 @@ should make necessary changes according to the actual configurations used.
    usually don't have write access to ``/``.
 
 Also, this Quickstart assumes that security is not configured for HDFS and Hive metastore,
-please make the corresponding configuration changes following `Secure HDFS and Hive Metastore`_
+please make the necessary configurations change following `Secure HDFS and Hive Metastore`_
 section.
 
 First, start the Avro console producer::
@@ -52,10 +52,11 @@ Then in the console producer, type in::
   {"f1": "value2"}
   {"f1": "value3"}
 
-The three records entered will be published to the Kafka topic ``test_hdfs`` in Avro format.
+The three records entered are published to the Kafka topic ``test_hdfs`` in Avro format.
 
 Before starting the connector, please make sure that the configurations in
 ``./etc/kafka-connect-hdfs/quickstart-hdfs.properties`` is property set to your configuration of
+
 Hadoop, e.g. ``hdfs.url`` points to the proper HDFS and using FQDN in the host. Then run the
 following command to start Kafka connect with the HDFS connector::
 
@@ -63,8 +64,8 @@ following command to start Kafka connect with the HDFS connector::
   $ ./bin/connect-standalone ./etc/schema-registry/connect-avro-standalone.properties \
                              ./etc/kafka-connect-hdfs/quickstart-hdfs.properties
 
-You should see that the process starts up and logs some messages, and then it will export data from
-Kafka to HDFS. Once the connector finishes ingesting data to HDFS, check that the data is available
+You should see that the process starts up and logs some messages, and then exports data from Kafka
+to HDFS. Once the connector finishes ingesting data to HDFS, check that the data is available
 in HDFS::
 
   $ hadoop fs -ls /topics/test_hdfs/partitions=0
@@ -100,15 +101,15 @@ You should see the following output::
 
 .. note:: If you leave the ``hive.metastore.uris`` empty, an embedded Hive metastore will be
    created in the directory the connector is started. You need to start Hive in that specific
-   directory in order to query the data.
+   directory to query the data.
 
 Features
 --------
-The HDFS connector offers a bunch of features as follows:
+The HDFS connector offers a bunch of features:
 
-* **Exactly Once Delivery**: The connector uses a write ahead log to make sure each record exports
-  to HDFS exactly once. Also, the connector manages offset commit by encoding the Kafka offset
-  information into the file so that the we can start from the last committed offset in case of
+* **Exactly Once Delivery**: The connector uses a write ahead log to ensure each record exports
+  to HDFS exactly once. Also, the connector manages offsets commit by encoding the Kafka offset
+  information into the file so that the we can start from the last committed offsets in case of
   failures and task restarts.
 
 * **Extensible Data Format**: Out of the box, the connector supports writing data to HDFS in Avro
@@ -119,13 +120,13 @@ The HDFS connector offers a bunch of features as follows:
   exported to HDFS.
 
 * **Schema Evolution**: The connector supports schema evolution and different schema compatibility
-  rules. When the connector observes a schema change, it will project to the proper schema according
+  levels. When the connector observes a schema change, it projects to the proper schema according
   to the ``schema.compatibility`` configuration. Hive integration is supported if ``BACKWARD``,
-  ``FORWARD`` and ``FULL`` is specified for ``schema.compatibility`` and the Hive table have the
-  proper table schema to query the whole data under a topic written with different schemas.
+  ``FORWARD`` and ``FULL`` is specified for ``schema.compatibility`` and Hive tables have the
+  table schema that are able to query the whole data under a topic written with different schemas.
 
-* **Secure HDFS and Hive Metastore**: The connector supports Kerberos authentication and thus
-  works with secure HDFS and Hive metastore.
+* **Secure HDFS and Hive Metastore Support**: The connector supports Kerberos authentication and
+  thus works with secure HDFS and Hive metastore.
 
 * **Pluggable Partitioner**: The connector supports default partitioner, field partitioner, and
   time based partitioner including daily and hourly partitioner out of the box. You can implement
@@ -134,8 +135,8 @@ The HDFS connector offers a bunch of features as follows:
 
 Configuration
 -------------
-This section gives example configuration files that cover common scenarios, then provides an
-exhaustive description of the available configuration options.
+This section gives example configurations that cover common scenarios, then provides an exhaustive
+description of the available configuration options.
 
 Example
 ~~~~~~~
