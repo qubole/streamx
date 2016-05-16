@@ -71,19 +71,15 @@ public class HiveMetaStore {
     R call() throws TException;
   }
 
-  private <R> R doWithRetry(ClientAction<R> action) throws TException {
-    try {
-      return action.call();
-    } catch (TException e) {
-      try {
-          client.reconnect();
-      } catch (MetaException swallowedException) {
-        // reconnect failed, throw the original exception
-        log.warn("Cannot connect to Hive meta store: {}", swallowedException.getMessage());
-        throw e;
-      }
-      return action.call();
-    }
+  private <R> R doAction(ClientAction<R> action) throws TException {
+    // No need to implement retries here. We use RetryingMetaStoreClient
+    // which creates a proxy for a IMetaStoreClient implementation and 
+    // retries calls to it on failure. The retrying client is conscious
+    // of the socket timeout and does not call reconnect on an open connection.
+    // Since HiveMetaStoreClient's reconnect method does not check the status 
+    // of the connection, blind retries may cause a huge spike in the number
+    // of connections to the Hive MetaStore. 
+    return action.call();
   }
 
   public void addPartition(final String database, final String tableName, final String path) throws HiveMetaStoreException {
@@ -99,7 +95,7 @@ public class HiveMetaStore {
     };
 
     try {
-      doWithRetry(addPartition);
+      doAction(addPartition);
     } catch (AlreadyExistsException e) {
       // this is okay
     } catch (InvalidObjectException e) {
@@ -121,7 +117,7 @@ public class HiveMetaStore {
     };
 
     try {
-      doWithRetry(dropPartition);
+      doAction(dropPartition);
     } catch (NoSuchObjectException e) {
       // this is okay
     } catch (InvalidObjectException e) {
@@ -144,7 +140,7 @@ public class HiveMetaStore {
     };
 
     try {
-      doWithRetry(create);
+      doAction(create);
     } catch (AlreadyExistsException e) {
       log.warn("Hive database already exists: {}", database);
     } catch (InvalidObjectException e) {
@@ -167,7 +163,7 @@ public class HiveMetaStore {
     };
 
     try {
-      doWithRetry(drop);
+      doAction(drop);
     } catch (NoSuchObjectException e) {
       // this is okey
     } catch (MetaException e) {
@@ -189,7 +185,7 @@ public class HiveMetaStore {
     createDatabase(table.getDbName());
 
     try {
-      doWithRetry(create);
+      doAction(create);
     } catch (NoSuchObjectException e) {
       throw new HiveMetaStoreException("Hive table not found: " + table.getDbName() + "." + table.getTableName());
     } catch (AlreadyExistsException e) {
@@ -214,7 +210,7 @@ public class HiveMetaStore {
     };
 
     try {
-      doWithRetry(alter);
+      doAction(alter);
     } catch (NoSuchObjectException e) {
       throw new HiveMetaStoreException("Hive table not found: " + table.getDbName() + "." + table.getTableName());
     } catch (InvalidObjectException e) {
@@ -238,7 +234,7 @@ public class HiveMetaStore {
     };
 
     try {
-      doWithRetry(drop);
+      doAction(drop);
     } catch (NoSuchObjectException e) {
       // this is okay
     } catch (MetaException e) {
@@ -256,7 +252,7 @@ public class HiveMetaStore {
       }
     };
     try {
-      return doWithRetry(exists);
+      return doAction(exists);
     } catch (UnknownDBException e) {
       return false;
     } catch (MetaException e) {
@@ -276,7 +272,7 @@ public class HiveMetaStore {
 
     Table table;
     try {
-      table = doWithRetry(getTable);
+      table = doAction(getTable);
     } catch (NoSuchObjectException e) {
       throw new HiveMetaStoreException("Hive table not found: " + database + "." + tableName);
     } catch (MetaException e) {
@@ -305,7 +301,7 @@ public class HiveMetaStore {
     };
 
     try {
-      return doWithRetry(listPartitions);
+      return doAction(listPartitions);
     } catch (NoSuchObjectException e) {
       return new ArrayList<>();
     } catch (MetaException e) {
@@ -324,7 +320,7 @@ public class HiveMetaStore {
     };
 
     try {
-      return doWithRetry(getAllTables);
+      return doAction(getAllTables);
     } catch (NoSuchObjectException e) {
       return new ArrayList<>();
     } catch (MetaException e) {
@@ -344,7 +340,7 @@ public class HiveMetaStore {
         };
 
     try {
-      return doWithRetry(create);
+      return doAction(create);
     } catch (NoSuchObjectException e) {
       return new ArrayList<>();
     } catch (MetaException e) {
