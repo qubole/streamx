@@ -17,7 +17,10 @@ package io.confluent.connect.hdfs.filter;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.common.TopicPartition;
 
-import io.confluent.connect.hdfs.HdfsSinkConnecorConstants;
+import io.confluent.connect.hdfs.HdfsSinkConnector;
+import io.confluent.connect.hdfs.HdfsSinkConnectorConstants;
+
+import java.util.regex.Matcher;
 
 public class TopicPartitionCommittedFileFilter extends CommittedFileFilter {
   private TopicPartition tp;
@@ -32,9 +35,13 @@ public class TopicPartitionCommittedFileFilter extends CommittedFileFilter {
       return false;
     }
     String filename = path.getName();
-    String[] parts = filename.split(HdfsSinkConnecorConstants.COMMMITTED_FILENAME_SEPARATOR_REGEX);
-    String topic = parts[0];
-    int partition = Integer.parseInt(parts[1]);
+    Matcher m = HdfsSinkConnectorConstants.COMMITTED_FILENAME_PATTERN.matcher(filename);
+    // NB: if statement has side effect of enabling group() call
+    if (!m.matches()) {
+      throw new AssertionError("match expected because of CommittedFileFilter");
+    }
+    String topic = m.group(HdfsSinkConnectorConstants.PATTERN_TOPIC_GROUP);
+    int partition = Integer.parseInt(m.group(HdfsSinkConnectorConstants.PATTERN_PARTITION_GROUP));
     return topic.equals(tp.topic()) && partition == tp.partition();
   }
 }
