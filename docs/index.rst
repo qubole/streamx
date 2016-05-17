@@ -1,4 +1,4 @@
-.. Kafka Connect HDFS documentation master file
+.. _connect_hdfs: Kafka Connect HDFS documentation master file
 
 HDFS Connector
 ==============
@@ -483,4 +483,3 @@ a topic written with different schemas. If the ``schema.compatibility`` is set t
 under that topic that can query the whole data of that topic. If the ``schema.compatibility`` is
 set to ``FORWARD``, the Hive table schema of a topic is equivalent to the oldest schema of the HFDS
 files under that topic that can query the whole data of that topic.
-
