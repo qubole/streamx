@@ -1,4 +1,4 @@
-.. _connect_hdfs: Kafka Connect HDFS documentation master file
+.. _connect_hdfs:
 
 HDFS Connector
 ==============
