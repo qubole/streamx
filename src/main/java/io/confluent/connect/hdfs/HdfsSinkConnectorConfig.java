@@ -14,7 +14,6 @@
 
 package io.confluent.connect.hdfs;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.kafka.clients.producer.internals.DefaultPartitioner;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -23,7 +22,6 @@ import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Width;
 import org.apache.kafka.common.config.ConfigException;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,9 +32,6 @@ import io.confluent.connect.hdfs.partitioner.FieldPartitioner;
 import io.confluent.connect.hdfs.partitioner.HourlyPartitioner;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
 import io.confluent.connect.hdfs.partitioner.TimeBasedPartitioner;
-import io.confluent.connect.hdfs.storage.HdfsStorage;
-import io.confluent.connect.hdfs.storage.Storage;
-import io.confluent.connect.hdfs.storage.StorageFactory;
 
 public class HdfsSinkConnectorConfig extends AbstractConfig {
 
@@ -259,7 +254,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   static {
 
     // Define HDFS configuration group
-    config.define(HDFS_URL_CONFIG, Type.STRING, "", new HdfsUrlValidator(), Importance.HIGH, HDFS_URL_DOC, HDFS_GROUP, 1, Width.MEDIUM, HDFS_URL_DISPLAY)
+    config.define(HDFS_URL_CONFIG, Type.STRING, Importance.HIGH, HDFS_URL_DOC, HDFS_GROUP, 1, Width.MEDIUM, HDFS_URL_DISPLAY)
         .define(HADOOP_CONF_DIR_CONFIG, Type.STRING, HADOOP_CONF_DIR_DEFAULT, Importance.HIGH, HADOOP_CONF_DIR_DOC, HDFS_GROUP, 2, Width.MEDIUM, HADOOP_CONF_DIR_DISPLAY)
         .define(HADOOP_HOME_CONFIG, Type.STRING, HADOOP_HOME_DEFAULT, Importance.HIGH, HADOOP_HOME_DOC, HDFS_GROUP, 3, Width.SHORT, HADOOP_HOME_DISPLAY)
         .define(TOPICS_DIR_CONFIG, Type.STRING, TOPICS_DIR_DEFAULT, Importance.HIGH, TOPICS_DIR_DOC, HDFS_GROUP, 4, Width.SHORT, TOPICS_DIR_DISPLAY)
@@ -392,26 +387,6 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
 
   private static boolean classNameEquals(String className, Class<?> clazz) {
     return className.equals(clazz.getSimpleName()) || className.equals(clazz.getCanonicalName());
-  }
-
-  private static class HdfsUrlValidator implements ConfigDef.Validator {
-
-    @Override
-    public void ensureValid(String name, Object o) {
-      String url = (String ) o;
-      Configuration conf = new Configuration();
-      if (url.equals("") || url.startsWith("memory")) {
-        return;
-      }
-      try {
-        Storage storage = StorageFactory.createStorage(HdfsStorage.class, conf, url);
-        storage.listStatus("/");
-      } catch (IOException e) {
-        throw new ConfigException("Cannot connect to HDFS.");
-      } catch (Throwable t) {
-        throw new ConfigException("Exception:", t);
-      }
-    }
   }
 
   public static ConfigDef getConfig() {
