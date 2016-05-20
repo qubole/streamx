@@ -55,13 +55,13 @@ Then in the console producer, type in::
 The three records entered will be published to the Kafka topic ``test_hdfs`` in Avro format.
 
 Before starting the connector, please make sure that the configurations in
-``etc/kafka-connect-hdfs/quickstart-hdfs.properties`` is property set to your configuration of
+``./etc/kafka-connect-hdfs/quickstart-hdfs.properties`` is property set to your configuration of
 Hadoop, e.g. ``hdfs.url`` points to the proper HDFS and using FQDN in the host. Then run the
 following command to start Kafka connect with the HDFS connector::
 
 
-  $ ./bin/connect-standalone etc/schema-registry/connect-avro-standalone.properties \
-  etc/kafka-connect-hdfs/quickstart-hdfs.properties
+  $ ./bin/connect-standalone ./etc/schema-registry/connect-avro-standalone.properties \
+                             ./etc/kafka-connect-hdfs/quickstart-hdfs.properties
 
 You should see that the process starts up and logs some messages, and then it will export data from
 Kafka to HDFS. Once the connector finishes ingesting data to HDFS, check that the data is available
@@ -88,7 +88,7 @@ You should see the following output::
 
 .. note:: If you want to run the Quickstart with Hive integration, before starting the connector,
    you need to add the following configurations to
-   ``etc/kafka-connect-hdfs/quickstart-hdfs.properties``::
+   ``./etc/kafka-connect-hdfs/quickstart-hdfs.properties``::
 
       hive.integration=true
       hive.metastore.uris=thrift uri to your Hive metastore
@@ -139,7 +139,7 @@ exhaustive description of the available configuration options.
 
 Example
 ~~~~~~~
-Here is the content of ``etc/kafka-connect-hdfs/quickstart-hdfs.properties``::
+Here is the content of ``./etc/kafka-connect-hdfs/quickstart-hdfs.properties``::
 
   name=hdfs-sink
   connector.class=io.confluent.connect.hdfs.HdfsSinkConnector
