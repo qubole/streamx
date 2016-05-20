@@ -51,6 +51,11 @@ public class HiveMetaStore {
     HiveConf hiveConf = new HiveConf(conf, HiveConf.class);
     String hiveConfDir = connectorConfig.getString(HdfsSinkConnectorConfig.HIVE_CONF_DIR_CONFIG);
     String hiveMetaStoreURIs = connectorConfig.getString(HdfsSinkConnectorConfig.HIVE_METASTORE_URIS_CONFIG);
+    if (hiveMetaStoreURIs.isEmpty()) {
+      log.warn("hive.metastore.uris empty, an embedded Hive metastore will be "
+               + "created in the directory the connector is started. "
+               + "You need to start Hive in that specific directory to query the data.");
+    }
     if (!hiveConfDir.equals("")) {
       String hiveSitePath = hiveConfDir + "/hive-site.xml";
       File hiveSite = new File(hiveSitePath);
