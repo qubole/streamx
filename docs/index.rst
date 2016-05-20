@@ -1,7 +1,7 @@
 .. _connect_hdfs:
 
-HDFS Connector
-==============
+Confluent HDFS Connector
+========================
 
 The HDFS connector allows you to export data from Kafka topics to HDFS files in a variety of formats
 and integrates with Hive to make data immediately available for querying with HiveQL.
