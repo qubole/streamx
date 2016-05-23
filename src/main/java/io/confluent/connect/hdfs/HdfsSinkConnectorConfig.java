@@ -14,6 +14,9 @@
 
 package io.confluent.connect.hdfs;
 
+
+import com.qubole.streamx.s3.S3Storage;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.kafka.clients.producer.internals.DefaultPartitioner;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -234,7 +237,8 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   public static final String STORAGE_CLASS_CONFIG = "storage.class";
   private static final String STORAGE_CLASS_DOC =
       "The underlying storage layer. The default is HDFS";
-  public static final String STORAGE_CLASS_DEFAULT = "io.confluent.connect.hdfs.storage.HdfsStorage";
+  //public static final String STORAGE_CLASS_DEFAULT = "io.confluent.connect.hdfs.storage.HdfsStorage";
+  public static final String STORAGE_CLASS_DEFAULT = " com.qubole.streamx.s3.S3Storage";
   private static final String STORAGE_CLASS_DISPLAY = "Storage Class";
 
   public static final String HDFS_GROUP = "HDFS";
@@ -388,7 +392,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static boolean classNameEquals(String className, Class<?> clazz) {
     return className.equals(clazz.getSimpleName()) || className.equals(clazz.getCanonicalName());
   }
-
+    
   public static ConfigDef getConfig() {
     return config;
   }

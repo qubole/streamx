@@ -14,6 +14,7 @@
 
 package io.confluent.connect.hdfs;
 
+import com.qubole.streamx.s3.S3SinkConnectorConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;

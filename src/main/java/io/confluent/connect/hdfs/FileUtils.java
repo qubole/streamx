@@ -16,6 +16,7 @@
 
 package io.confluent.connect.hdfs;
 
+import com.qubole.streamx.s3.S3SinkConnectorConstants;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -59,6 +60,11 @@ public class FileUtils {
     return url + "/" + topicsDir + "/" + directory + "/" + name;
   }
 
+  public static String
+  localFileName(String url, String topicsDir, String directory, String name) {
+    return "file://" + S3SinkConnectorConstants.TEMPFILE_DIRECTORY + "/" + topicsDir + "/"+ directory + "/" + name;
+  }
+
   public static String directoryName(String url, String topicsDir, String directory) {
     return url + "/" + topicsDir + "/" + directory;
   }
@@ -67,7 +73,7 @@ public class FileUtils {
                                     String extension) {
     UUID id = UUID.randomUUID();
     String name = id.toString() + "_" + "tmp" + extension;
-    return fileName(url, topicsDir, directory, name);
+    return localFileName(url, topicsDir, directory, name);
   }
 
   public static String committedFileName(String url, String topicsDir, String directory,
