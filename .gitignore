@@ -1,13 +1,16 @@
 # Build products
 target/
 build/
-derby.log
-metastore_db/
 
 # IntelliJ data
 *.iml
 .idea/
 .ipr
+
+# Eclipse
+.classpath
+.project
+.settings/
 
 # Documentation build output
 /docs/_build
@@ -17,6 +20,3 @@ metastore_db/
 derby.log
 
 .DS_Store
-
-
-pom.xml
