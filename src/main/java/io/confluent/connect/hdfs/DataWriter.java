@@ -21,6 +21,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.util.Options;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.data.Schema;
@@ -51,6 +52,7 @@ import io.confluent.connect.avro.AvroData;
 import io.confluent.connect.hdfs.filter.CommittedFileFilter;
 import io.confluent.connect.hdfs.filter.TopicCommittedFileFilter;
 import io.confluent.connect.hdfs.hive.HiveMetaStore;
+import io.confluent.connect.hdfs.hive.HiveMetaStoreFactory;
 import io.confluent.connect.hdfs.hive.HiveUtil;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
 import io.confluent.connect.hdfs.storage.Storage;
@@ -185,8 +187,10 @@ public class DataWriter {
 
       hiveIntegration = connectorConfig.getBoolean(HdfsSinkConnectorConfig.HIVE_INTEGRATION_CONFIG);
       if (hiveIntegration) {
+        Class<? extends HiveMetaStore> metaStoreClass = (Class<? extends HiveMetaStore>) Class
+                .forName(connectorConfig.getString(HdfsSinkConnectorConfig.HIVE_METASTORE_TYPE));
         hiveDatabase = connectorConfig.getString(HdfsSinkConnectorConfig.HIVE_DATABASE_CONFIG);
-        hiveMetaStore = new HiveMetaStore(conf, connectorConfig);
+        hiveMetaStore = HiveMetaStoreFactory.createHiveMetaStore(metaStoreClass, conf, connectorConfig);
         hive = format.getHiveUtil(connectorConfig, avroData, hiveMetaStore);
         executorService = Executors.newSingleThreadExecutor();
         hiveUpdateFutures = new LinkedList<>();

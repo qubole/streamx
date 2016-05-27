@@ -106,6 +106,18 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static final String HIVE_DATABASE_DEFAULT = "default";
   private static final String HIVE_DATABASE_DISPLAY = "Hive database";
 
+  public static final String HIVE_METASTORE_TYPE = "hive.metastore.type";
+  private static final String HIVE_METASTORE_TYPE_DOC =
+      "Configuration indicating whether a REST interface to the Hive metastore is used (Disabled by default)";
+  private static final String HIVE_METASTORE_TYPE_DEFAULT = "io.confluent.connect.hdfs.hive.HiveMetaStoreImpl";
+  private static final String HIVE_METASTORE_TYPE_DISPLAY = "Hive Metastore Type";
+
+  public static final String HIVE_CONF_REST_API_KEY = "hive.metastore.api.key";
+  private static final String HIVE_CONF_REST_API_KEY_DOC =
+      "Configuration to set API key for REST interface to the Hive metastore";
+  private static final String HIVE_CONF_REST_API_KEY_DEFAULT = "";
+  private static final String HIVE_CONF_REST_API_KEY_DISPLAY = "Hive Metastore API key";
+
   // Security group
   public static final String HDFS_AUTHENTICATION_KERBEROS_CONFIG = "hdfs.authentication.kerberos";
   private static final String HDFS_AUTHENTICATION_KERBEROS_DOC =
@@ -273,7 +285,9 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
                 HIVE_METASTORE_URIS_DISPLAY, hiveIntegrationDependentsRecommender)
         .define(HIVE_CONF_DIR_CONFIG, Type.STRING, HIVE_CONF_DIR_DEFAULT, Importance.HIGH, HIVE_CONF_DIR_DOC, HIVE_GROUP, 3, Width.MEDIUM, HIVE_CONF_DIR_DISPLAY, hiveIntegrationDependentsRecommender)
         .define(HIVE_HOME_CONFIG, Type.STRING, HIVE_HOME_DEFAULT, Importance.HIGH, HIVE_HOME_DOC, HIVE_GROUP, 4, Width.MEDIUM, HIVE_HOME_DISPLAY, hiveIntegrationDependentsRecommender)
-        .define(HIVE_DATABASE_CONFIG, Type.STRING, HIVE_DATABASE_DEFAULT, Importance.HIGH, HIVE_DATABASE_DOC, HIVE_GROUP, 5, Width.SHORT, HIVE_DATABASE_DISPLAY, hiveIntegrationDependentsRecommender);
+        .define(HIVE_DATABASE_CONFIG, Type.STRING, HIVE_DATABASE_DEFAULT, Importance.HIGH, HIVE_DATABASE_DOC, HIVE_GROUP, 5, Width.SHORT, HIVE_DATABASE_DISPLAY, hiveIntegrationDependentsRecommender)
+        .define(HIVE_METASTORE_TYPE, Type.STRING, HIVE_METASTORE_TYPE_DEFAULT, Importance.LOW, HIVE_METASTORE_TYPE_DOC, HIVE_GROUP, 6, Width.MEDIUM, HIVE_METASTORE_TYPE_DISPLAY)
+        .define(HIVE_CONF_REST_API_KEY, Type.STRING, HIVE_CONF_REST_API_KEY_DEFAULT, Importance.LOW, HIVE_CONF_REST_API_KEY_DOC, HIVE_GROUP, 7, Width.MEDIUM, HIVE_CONF_REST_API_KEY_DISPLAY);
 
     // Define Security configuration group
     config.define(HDFS_AUTHENTICATION_KERBEROS_CONFIG, Type.BOOLEAN, HDFS_AUTHENTICATION_KERBEROS_DEFAULT, Importance.HIGH, HDFS_AUTHENTICATION_KERBEROS_DOC,
@@ -313,6 +327,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
 
     // Define Internal configuration group
     config.define(STORAGE_CLASS_CONFIG, Type.STRING, STORAGE_CLASS_DEFAULT, Importance.LOW, STORAGE_CLASS_DOC, INTERNAL_GROUP, 1, Width.MEDIUM, STORAGE_CLASS_DISPLAY);
+
   }
 
   private static class SchemaCompatibilityRecommender extends BooleanParentRecommender {
