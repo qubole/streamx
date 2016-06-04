@@ -24,6 +24,9 @@
                 <exclude>com.sun.jersey:*</exclude>
                 <exclude>org.eclipse.jetty.aggregate:jetty-all</exclude>
                 <exclude>com.sun.jersey.contribs:jersey-guice</exclude>
+                <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
+                <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                <exclude>javax.servlet:servlet-api</exclude>
             </excludes>
         </dependencySet>
     </dependencySets>
