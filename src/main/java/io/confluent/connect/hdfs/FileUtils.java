@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.regex.Matcher;
 
 import io.confluent.connect.hdfs.filter.CommittedFileFilter;
 import io.confluent.connect.hdfs.storage.Storage;
@@ -77,11 +78,11 @@ public class FileUtils {
     int partition = topicPart.partition();
     StringBuilder sb = new StringBuilder();
     sb.append(topic);
-    sb.append(HdfsSinkConnecorConstants.COMMMITTED_FILENAME_SEPARATOR);
+    sb.append(HdfsSinkConnectorConstants.COMMMITTED_FILENAME_SEPARATOR);
     sb.append(partition);
-    sb.append(HdfsSinkConnecorConstants.COMMMITTED_FILENAME_SEPARATOR);
+    sb.append(HdfsSinkConnectorConstants.COMMMITTED_FILENAME_SEPARATOR);
     sb.append(String.format(zeroPadFormat, startOffset));
-    sb.append(HdfsSinkConnecorConstants.COMMMITTED_FILENAME_SEPARATOR);
+    sb.append(HdfsSinkConnectorConstants.COMMMITTED_FILENAME_SEPARATOR);
     sb.append(String.format(zeroPadFormat, endOffset));
     sb.append(extension);
     String name = sb.toString();
@@ -151,7 +152,12 @@ public class FileUtils {
   }
 
   public static long extractOffset(String filename) {
-    return Long.parseLong(filename.split(HdfsSinkConnecorConstants.COMMMITTED_FILENAME_SEPARATOR_REGEX)[3]);
+    Matcher m = HdfsSinkConnectorConstants.COMMITTED_FILENAME_PATTERN.matcher(filename);
+    // NB: if statement has side effect of enabling group() call
+    if (!m.matches()) {
+      throw new IllegalArgumentException(filename + " does not match COMMITTED_FILENAME_PATTERN");
+    }
+    return Long.parseLong(m.group(HdfsSinkConnectorConstants.PATTERN_END_OFFSET_GROUP));
   }
 
   private static ArrayList<FileStatus> getDirectoriesImpl(Storage storage, Path path)

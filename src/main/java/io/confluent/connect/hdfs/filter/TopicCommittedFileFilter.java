@@ -16,7 +16,9 @@ package io.confluent.connect.hdfs.filter;
 
 import org.apache.hadoop.fs.Path;
 
-import io.confluent.connect.hdfs.HdfsSinkConnecorConstants;
+import io.confluent.connect.hdfs.HdfsSinkConnectorConstants;
+
+import java.util.regex.Matcher;
 
 public class TopicCommittedFileFilter extends CommittedFileFilter {
   private String topic;
@@ -31,8 +33,12 @@ public class TopicCommittedFileFilter extends CommittedFileFilter {
       return false;
     }
     String filename = path.getName();
-    String[] parts = filename.split(HdfsSinkConnecorConstants.COMMMITTED_FILENAME_SEPARATOR_REGEX);
-    String topic = parts[0];
+    Matcher m = HdfsSinkConnectorConstants.COMMITTED_FILENAME_PATTERN.matcher(filename);
+    // NB: if statement has side effect of enabling group() call
+    if (!m.matches()) {
+      throw new AssertionError("match expected because of CommittedFileFilter");
+    }
+    String topic = m.group(HdfsSinkConnectorConstants.PATTERN_TOPIC_GROUP);
     return topic.equals(this.topic);
   }
 }

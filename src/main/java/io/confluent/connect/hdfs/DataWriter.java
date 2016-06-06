@@ -168,7 +168,7 @@ public class DataWriter {
       storage = StorageFactory.createStorage(storageClass, conf, url);
 
       createDir(topicsDir);
-      createDir(topicsDir + HdfsSinkConnecorConstants.TEMPFILE_DIRECTORY);
+      createDir(topicsDir + HdfsSinkConnectorConstants.TEMPFILE_DIRECTORY);
       createDir(logsDir);
 
       format = getFormat();

@@ -58,6 +58,7 @@ public class CommittedFileFilterTest {
     Path tmp = new Path(ROOT_PATH, tempName);
     Path valid1 = new Path(ROOT_PATH, "topic+1+2+3.abc");
     Path valid2 = new Path(ROOT_PATH, "topic+1+55+67.def");
+    Path validOtherTopic = new Path(ROOT_PATH, "namespace.topic+1+55+67.def");
     Path invalid1 = new Path(ROOT_PATH, "1+2+3");
     Path invalid2 = new Path(ROOT_PATH, "a_b_c_d");
     Path invalid3 = new Path(ROOT_PATH, "tmp");
@@ -70,6 +71,7 @@ public class CommittedFileFilterTest {
     fs.createNewFile(tmp);
     fs.createNewFile(valid1);
     fs.createNewFile(valid2);
+    fs.createNewFile(validOtherTopic);
     fs.createNewFile(invalid1);
     fs.createNewFile(invalid2);
     fs.createNewFile(invalid3);
@@ -88,6 +90,12 @@ public class CommittedFileFilterTest {
     assertTrue(files.contains(valid1.getName()));
     assertTrue(files.contains(valid2.getName()));
 
+    TopicPartition tp2 = new TopicPartition("namespace.topic", 1);
+    FileStatus[] statusesOtherTopic = fs.listStatus(
+            ROOT_PATH, new TopicPartitionCommittedFileFilter(tp2));
+    assertEquals(1, statusesOtherTopic.length);
+    assertEquals(validOtherTopic.getName(), statusesOtherTopic[0].getPath().getName());
+
     fs.deleteOnExit(ROOT_PATH);
   }
 
@@ -101,11 +109,11 @@ public class CommittedFileFilterTest {
     Path valid2 = new Path(ROOT_PATH, "topic+1+55+67.def");
     Path valid3 = new Path(ROOT_PATH, "topic+234+56+78.ghi");
     Path valid4 = new Path(ROOT_PATH, "topic+34+56+7.hjk");
+    Path validOtherTopic = new Path(ROOT_PATH, "namespace.topic+34+56+7.hjk");
     Path invalid1 = new Path(ROOT_PATH, "1+2+3");
     Path invalid2 = new Path(ROOT_PATH, "a_b_c_d");
     Path invalid3 = new Path(ROOT_PATH, "tmp");
     Path invalid4 = new Path(ROOT_PATH, "a.b");
-
 
     fs.createNewFile(log);
     fs.createNewFile(oldLog);
@@ -114,6 +122,7 @@ public class CommittedFileFilterTest {
     fs.createNewFile(valid2);
     fs.createNewFile(valid3);
     fs.createNewFile(valid4);
+    fs.createNewFile(validOtherTopic);
     fs.createNewFile(invalid1);
     fs.createNewFile(invalid2);
     fs.createNewFile(invalid3);
@@ -130,6 +139,11 @@ public class CommittedFileFilterTest {
     assertTrue(files.contains(valid2.getName()));
     assertTrue(files.contains(valid3.getName()));
     assertTrue(files.contains(valid4.getName()));
+
+    FileStatus[] statusesOtherTopic = fs.listStatus(
+            ROOT_PATH, new TopicCommittedFileFilter("namespace.topic"));
+    assertEquals(1, statusesOtherTopic.length);
+    assertEquals(validOtherTopic.getName(), statusesOtherTopic[0].getPath().getName());
 
     fs.deleteOnExit(ROOT_PATH);
   }

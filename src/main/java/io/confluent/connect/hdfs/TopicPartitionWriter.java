@@ -429,7 +429,7 @@ public class TopicPartitionWriter {
     if (tempFiles.containsKey(encodedPartition)) {
       tempFile = tempFiles.get(encodedPartition);
     } else {
-      String directory = HdfsSinkConnecorConstants.TEMPFILE_DIRECTORY + getDirectory(encodedPartition);
+      String directory = HdfsSinkConnectorConstants.TEMPFILE_DIRECTORY + getDirectory(encodedPartition);
       tempFile = FileUtils.tempFileName(url, topicsDir, directory, extension);
       tempFiles.put(encodedPartition, tempFile);
     }
