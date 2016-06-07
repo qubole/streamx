@@ -72,6 +72,8 @@ public class RDSWal implements  WAL {
     @Override
     public void append(String tempFile, String committedFile) throws ConnectException {
         try {
+            acquireLease();
+
             Statement statement = connection.createStatement();
             statement.setQueryTimeout(30);  // set timeout to 30 sec.
             //End Marker - Seen all encoded Partitions, write to DB
@@ -102,36 +104,37 @@ public class RDSWal implements  WAL {
     }
 
     @Override
-        public void apply() throws ConnectException {
-            try {
-                Statement statement = connection.createStatement();
-                statement.setQueryTimeout(30);  // set timeout to 30 sec.
+    public void apply() throws ConnectException {
+        try {
+            acquireLease();
 
-                String sql = String.format("select * from %s order by id desc limit 1", tableName);
-                log.info("Reading wal " + sql);
-                ResultSet rs=statement.executeQuery(sql);
-                while(rs.next()) {
-                    String tempFiles = rs.getString(2);
-                    String committedFiles = rs.getString(3);
-                    String tempFile[]=tempFiles.split(",");
-                    String committedFile[]=committedFiles.split(",");
-                    //TODO : check if all tempFiles are there.
-                    try {
-                        for(int k=0;k<tempFile.length;k++) {
-                            storage.commit(tempFile[k], committedFile[k]);
-                        }
-                    } catch (IOException e){
-                        e.printStackTrace();
-                        throw new ConnectException(e);
+            Statement statement = connection.createStatement();
+            statement.setQueryTimeout(30);  // set timeout to 30 sec.
+
+            String sql = String.format("select * from %s order by id desc limit 1", tableName);
+            log.info("Reading wal " + sql);
+            ResultSet rs=statement.executeQuery(sql);
+            while(rs.next()) {
+                String tempFiles = rs.getString(2);
+                String committedFiles = rs.getString(3);
+                String tempFile[]=tempFiles.split(",");
+                String committedFile[]=committedFiles.split(",");
+                //TODO : check if all tempFiles are there.
+                try {
+                    for(int k=0;k<tempFile.length;k++) {
+                        storage.commit(tempFile[k], committedFile[k]);
                     }
+                } catch (IOException e){
+                    e.printStackTrace();
+                    throw new ConnectException(e);
                 }
-
-            }catch (SQLException e){
-                log.error(e.toString());
-                throw new ConnectException(e);
             }
-
+        } catch (SQLException e){
+            log.error(e.toString());
+            throw new ConnectException(e);
         }
+
+    }
 
 
     @Override
