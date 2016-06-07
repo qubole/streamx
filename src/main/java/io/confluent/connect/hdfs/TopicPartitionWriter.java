@@ -15,6 +15,7 @@
 package io.confluent.connect.hdfs;
 
 import com.qubole.streamx.s3.S3SinkConnectorConstants;
+import com.qubole.streamx.s3.wal.RDSWal;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
@@ -29,6 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -384,6 +387,11 @@ public class TopicPartitionWriter {
     }
   }
 
+  private void readOffsetFromWAL() throws ConnectException {
+    offset = wal.readOffsetFromWAL();
+  }
+
+
   private void readOffset() throws ConnectException {
     try {
       String path = FileUtils.topicDirectory(url, topicsDir, tp.topic());
@@ -451,7 +459,10 @@ public class TopicPartitionWriter {
 
   private void resetOffsets() throws ConnectException {
     if (!recovered) {
-      readOffset();
+      if(wal instanceof RDSWal)
+        readOffsetFromWAL();
+      else
+        readOffset();
       if (offset > 0) {
         log.debug("Resetting offset for {} to {}", tp, offset);
         context.offset(tp, offset);

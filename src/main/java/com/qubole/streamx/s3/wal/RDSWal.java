@@ -1,5 +1,6 @@
 package com.qubole.streamx.s3.wal;
 
+import io.confluent.connect.hdfs.FileUtils;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -159,6 +160,8 @@ public class RDSWal implements  WAL {
         }
     }
 
+
+
     @Override
     public void close() throws ConnectException {
 
@@ -166,6 +169,61 @@ public class RDSWal implements  WAL {
 
     @Override
     public String getLogFile() {
-        return null;
+        return tableName;
+    }
+
+    @Override
+    public long readOffsetFromWAL() {
+        ResultSet rs = fetch();
+        String committedFiles[];
+        long offset = 0;
+        try {
+            rs.absolute(1);
+            committedFiles = rs.getString(3).split(",");
+            boolean lastCommittedRecordExists = checkFileExists(committedFiles);
+            if (lastCommittedRecordExists) {
+                offset = FileUtils.extractOffset(committedFiles[0]) + 1;
+            } else {
+                rs.absolute(2);
+                committedFiles = rs.getString(3).split(",");
+                lastCommittedRecordExists = checkFileExists(committedFiles);
+                if (!lastCommittedRecordExists) {
+                    throw new ConnectException("Unable to recover");
+                }
+                offset = FileUtils.extractOffset(committedFiles[0]) + 1;
+            }
+
+        } catch (SQLException e) {
+            log.error("Exception while reading offset from WAL " + e.toString());
+        }
+        return offset;
+    }
+
+    private boolean checkFileExists(String files[]) {
+        boolean fileExists = true;
+        for(String file: files) {
+            try {
+                if (!storage.exists(file)) {
+                    fileExists = false;
+                }
+            }catch (IOException e) {
+                fileExists = false;
+                break;
+            }
+        }
+        return fileExists;
+    }
+
+    private ResultSet fetch() throws ConnectException {
+        try {
+            Statement statement = connection.createStatement();
+            statement.setQueryTimeout(30);  // set timeout to 30 sec.
+            String sql = String.format("select * from %s order by id desc limit 2", tableName);
+            ResultSet rs = statement.executeQuery(sql);
+            return rs;
+        }catch (SQLException e){
+            log.error(e.toString());
+            throw new ConnectException(e);
+        }
     }
 }

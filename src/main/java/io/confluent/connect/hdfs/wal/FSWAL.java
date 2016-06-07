@@ -161,4 +161,9 @@ public class FSWAL implements WAL {
   public String getLogFile() {
     return logFile;
   }
+
+  @Override
+  public long readOffsetFromWAL() {
+    throw new ConnectException("Reading offset from WAL is not supported in MemoryWAL");
+  }
 }

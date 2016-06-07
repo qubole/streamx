@@ -9,6 +9,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.kafka.common.TopicPartition;
+import java.io.*;
 
 import java.io.IOException;
 import java.net.URI;
@@ -47,7 +48,12 @@ public class S3Storage implements Storage {
 
     @Override
     public boolean exists(String filename) throws IOException {
-        return fs.exists(new Path(filename));
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(filename))));
+        } catch(IOException e){
+            return false;
+        }
+        return true;
     }
 
     @Override
