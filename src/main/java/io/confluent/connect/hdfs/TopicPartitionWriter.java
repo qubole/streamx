@@ -15,7 +15,8 @@
 package io.confluent.connect.hdfs;
 
 import com.qubole.streamx.s3.S3SinkConnectorConstants;
-import com.qubole.streamx.s3.wal.RDSWal;
+import com.qubole.streamx.s3.wal.DBWAL;
+import com.qubole.streamx.s3.wal.DBWAL;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
@@ -459,7 +460,7 @@ public class TopicPartitionWriter {
 
   private void resetOffsets() throws ConnectException {
     if (!recovered) {
-      if(wal instanceof RDSWal)
+      if(wal instanceof DBWAL)
         readOffsetFromWAL();
       else
         readOffset();

@@ -14,6 +14,8 @@
 
 package io.confluent.connect.hdfs;
 
+import com.qubole.streamx.s3.S3SinkConnectorConfig;
+import io.confluent.connect.hdfs.wal.WAL;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
@@ -165,7 +167,9 @@ public class DataWriter {
 
       Class<? extends Storage> storageClass = (Class<? extends Storage>) Class
               .forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
-      storage = StorageFactory.createStorage(storageClass, conf, url);
+      Class<? extends WAL> walClass = (Class<? extends WAL>) Class
+              .forName(connectorConfig.getString(S3SinkConnectorConfig.WAL_CLASS_CONFIG));
+      storage = StorageFactory.createStorage(storageClass, walClass, conf, url);
 
       createDir(topicsDir);
       createDir(topicsDir + HdfsSinkConnecorConstants.TEMPFILE_DIRECTORY);

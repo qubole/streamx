@@ -1,17 +1,26 @@
 package com.qubole.streamx.s3;
 
+import com.qubole.streamx.s3.wal.DBWAL;
 import io.confluent.connect.hdfs.storage.Storage;
 import io.confluent.connect.hdfs.wal.WAL;
-import com.qubole.streamx.s3.wal.RDSWal;
+import com.qubole.streamx.s3.wal.DBWAL;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.velocity.exception.MethodInvocationException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
+
 import java.io.*;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 
 public class S3Storage implements Storage {
@@ -19,11 +28,13 @@ public class S3Storage implements Storage {
     private final FileSystem fs;
     private final Configuration conf;
     private final String url;
+    private final Class<? extends  WAL> walClass;
 
-    public S3Storage(Configuration conf,  String url) throws IOException {
+    public S3Storage(Configuration conf, Class walClass, String url) throws IOException {
         fs = FileSystem.newInstance(URI.create(url), conf);
         this.conf = conf;
         this.url = url;
+        this.walClass = walClass;
     }
 
     @Override
@@ -76,7 +87,12 @@ public class S3Storage implements Storage {
 
     @Override
     public WAL wal(String topicsDir, TopicPartition topicPart) {
-        return new RDSWal(topicsDir, topicPart, this);
+        try {
+            Constructor<? extends WAL> ctor = walClass.getConstructor(String.class, TopicPartition.class, Storage.class);
+            return ctor.newInstance(topicsDir, topicPart, this);
+        } catch (NoSuchMethodException | InvocationTargetException | MethodInvocationException | InstantiationException | IllegalAccessException e) {
+            throw new ConnectException(e);
+        }
     }
 
     @Override

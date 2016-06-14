@@ -3,6 +3,7 @@ package com.qubole.streamx.s3.wal;
 import io.confluent.connect.hdfs.FileUtils;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 import io.confluent.connect.hdfs.wal.WAL;
 
@@ -14,13 +15,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
+import java.util.concurrent.ThreadLocalRandom;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.confluent.connect.hdfs.storage.Storage;
 
-public class RDSWal implements  WAL {
-    private static final Logger log = LoggerFactory.getLogger(RDSWal.class);
+public class DBWAL implements  WAL {
+    private static final Logger log = LoggerFactory.getLogger(DBWAL.class);
     String database = "wal";
     String tableName;
     Storage storage;
@@ -28,15 +31,19 @@ public class RDSWal implements  WAL {
     ArrayList<String> tempFiles = new ArrayList<>();
     ArrayList<String> committedFiles = new ArrayList<>();
     boolean beginMarker = false;
+    int partitionId = -1;
+    int id = ThreadLocalRandom.current().nextInt(1, 100000 + 1);
 
-
-    public RDSWal(String logsDir, TopicPartition topicPartition, Storage storage) {
+    public DBWAL(String logsDir, TopicPartition topicPartition, Storage storage) {
         this.storage = storage;
         try {
             Class.forName("com.mysql.jdbc.Driver");
         }catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
+
+        partitionId = topicPartition.partition();
+
 
         tableName = topicPartition.topic()+topicPartition.partition();
         try {
@@ -55,7 +62,7 @@ public class RDSWal implements  WAL {
                 String sql=String.format("create table %s (id INT AUTO_INCREMENT, tempFile VARCHAR(500), committedFile VARCHAR(500), primary key (id))", tableName);
                 log.info("Creating table "+ sql);
                 statement.executeUpdate(sql);
-                connection.commit();
+                //connection.commit();
             }
 
         }catch (SQLException e) {
@@ -64,9 +71,84 @@ public class RDSWal implements  WAL {
 
         }
     }
+
     @Override
     public void acquireLease() throws ConnectException {
+
+        long sleepIntervalMs = 1000L;
+        long MAX_SLEEP_INTERVAL_MS = 16000L;
+        while (sleepIntervalMs < MAX_SLEEP_INTERVAL_MS) {
+
+            try {
+                Statement statement = connection.createStatement();
+                statement.setQueryTimeout(5);  // set timeout to 30 sec.
+                String sql = String.format("select now() as currentTS,l1.* from l1 where pid = %s for update", partitionId);
+
+                ResultSet rs = statement.executeQuery(sql);
+                if(!rs.next()) {
+                    sql = String.format("insert into l1(id,pid) values (%s,%s)", id, partitionId);
+                    statement.executeUpdate(sql);
+                    connection.commit();
+                    return;
+                }
+
+                if(canAcquireLock(rs)) {
+                    sql = String.format("update l1 set id=%s,ts=now() where pid=%s", id, partitionId);
+                    statement.executeUpdate(sql);
+                    connection.commit();
+                    return;
+                }
+                connection.commit();
+            } catch (SQLException e) {
+                log.error(e.toString());
+                throw new ConnectException(e);
+            }
+            try {
+                Thread.sleep(sleepIntervalMs);
+            } catch (InterruptedException ie) {
+                throw new ConnectException(ie);
+            }
+            sleepIntervalMs = sleepIntervalMs * 2;
+            if (sleepIntervalMs >= MAX_SLEEP_INTERVAL_MS) {
+                throw new ConnectException("Cannot acquire lease after timeout, will retry.");
+            }
+        }
+    }
+    private boolean canAcquireLock(ResultSet rs) {
+        try {
+            boolean exists = rs.next();
+            if(!exists)
+                return true;
+            java.sql.Timestamp now = rs.getTimestamp("currentTS");
+            java.sql.Timestamp ts = rs.getTimestamp("ts");
+
+            if(now.getTime() - ts.getTime() >= 60*1000) {
+                log.warn("last update is more than a minute" + now + " "+ts);
+                return false;
+            }
+            else {
+                log.warn("last update within a minute"+ now + " " + ts);
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    public void acquireLease1() throws ConnectException {
         //Implement a lease that keep's renewing as long as thread is alive
+        try {
+            Statement statement = connection.createStatement();
+            statement.setQueryTimeout(30);  // set timeout to 30 sec.
+            String sql = String.format("lock table %s write", tableName);
+            statement.executeUpdate(sql);
+            //ResultSet rs = statement.executeQuery(sql);
+            connection.commit();
+        } catch (SQLException e) {
+            log.error(e.toString());
+            throw new ConnectException(e);
+        }
     }
 
     @Override
@@ -114,9 +196,10 @@ public class RDSWal implements  WAL {
             String sql = String.format("select * from %s order by id desc limit 1", tableName);
             log.info("Reading wal " + sql);
             ResultSet rs=statement.executeQuery(sql);
+
             while(rs.next()) {
-                String tempFiles = rs.getString(2);
-                String committedFiles = rs.getString(3);
+                String tempFiles = rs.getString("tempFile");
+                String committedFiles = rs.getString("committedFile");
                 String tempFile[]=tempFiles.split(",");
                 String committedFile[]=committedFiles.split(",");
                 //TODO : check if all tempFiles are there.
@@ -151,11 +234,11 @@ public class RDSWal implements  WAL {
             if(rows < 2)
                 return;
             rs.absolute(2);
-            String id = rs.getString(1);
+            String id = rs.getString("id");
             sql = String.format("delete from %s where id < %s", tableName, id);
             log.info("truncating table " + sql);
             statement.executeUpdate(sql);
-            connection.commit();
+            //connection.commit();
 
         }catch (SQLException e){
             log.error(e.toString());
@@ -182,13 +265,13 @@ public class RDSWal implements  WAL {
         long offset = 0;
         try {
             rs.absolute(1);
-            committedFiles = rs.getString(3).split(",");
+            committedFiles = rs.getString("committedFile").split(",");
             boolean lastCommittedRecordExists = checkFileExists(committedFiles);
             if (lastCommittedRecordExists) {
                 offset = FileUtils.extractOffset(committedFiles[0]) + 1;
             } else {
                 rs.absolute(2);
-                committedFiles = rs.getString(3).split(",");
+                committedFiles = rs.getString("committedFile").split(",");
                 lastCommittedRecordExists = checkFileExists(committedFiles);
                 if (!lastCommittedRecordExists) {
                     throw new ConnectException("Unable to recover");
