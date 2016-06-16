@@ -15,6 +15,7 @@
 package io.confluent.connect.hdfs.storage;
 
 import com.qubole.streamx.s3.S3Storage;
+import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.wal.WAL;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -24,12 +25,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public class StorageFactory {
-  public static Storage createStorage(Class<? extends Storage> storageClass, Class<? extends WAL> walClass, Configuration conf, String url) {
+  public static Storage createStorage(Class<? extends Storage> storageClass, HdfsSinkConnectorConfig config, Configuration conf, String url) {
     try {
       Constructor<? extends Storage> ctor = null;
       if(storageClass == S3Storage.class) {
-        ctor = storageClass.getConstructor(Configuration.class, Class.class, String.class);
-        return ctor.newInstance(conf, walClass, url);
+        ctor = storageClass.getConstructor(Configuration.class, HdfsSinkConnectorConfig.class, String.class);
+        return ctor.newInstance(conf, config, url);
       }
       else {
         ctor = storageClass.getConstructor(Configuration.class, String.class);

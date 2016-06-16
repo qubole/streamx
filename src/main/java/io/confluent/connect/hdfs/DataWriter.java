@@ -167,9 +167,8 @@ public class DataWriter {
 
       Class<? extends Storage> storageClass = (Class<? extends Storage>) Class
               .forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
-      Class<? extends WAL> walClass = (Class<? extends WAL>) Class
-              .forName(connectorConfig.getString(S3SinkConnectorConfig.WAL_CLASS_CONFIG));
-      storage = StorageFactory.createStorage(storageClass, walClass, conf, url);
+
+      storage = StorageFactory.createStorage(storageClass, connectorConfig, conf, url);
 
       createDir(topicsDir);
       createDir(topicsDir + HdfsSinkConnecorConstants.TEMPFILE_DIRECTORY);

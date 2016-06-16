@@ -1,6 +1,7 @@
 package com.qubole.streamx.s3;
 
 import com.qubole.streamx.s3.wal.DBWAL;
+import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.storage.Storage;
 import io.confluent.connect.hdfs.wal.WAL;
 import com.qubole.streamx.s3.wal.DBWAL;
@@ -26,15 +27,15 @@ import java.net.URI;
 public class S3Storage implements Storage {
 
     private final FileSystem fs;
-    private final Configuration conf;
+    private final Configuration hadoopConf;
     private final String url;
-    private final Class<? extends  WAL> walClass;
+    private final HdfsSinkConnectorConfig config;
 
-    public S3Storage(Configuration conf, Class walClass, String url) throws IOException {
-        fs = FileSystem.newInstance(URI.create(url), conf);
-        this.conf = conf;
+    public S3Storage(Configuration hadoopConf, HdfsSinkConnectorConfig config, String url) throws IOException {
+        fs = FileSystem.newInstance(URI.create(url), hadoopConf);
+        this.hadoopConf = hadoopConf;
         this.url = url;
-        this.walClass = walClass;
+        this.config = config;
     }
 
     @Override
@@ -88,16 +89,18 @@ public class S3Storage implements Storage {
     @Override
     public WAL wal(String topicsDir, TopicPartition topicPart) {
         try {
-            Constructor<? extends WAL> ctor = walClass.getConstructor(String.class, TopicPartition.class, Storage.class);
-            return ctor.newInstance(topicsDir, topicPart, this);
-        } catch (NoSuchMethodException | InvocationTargetException | MethodInvocationException | InstantiationException | IllegalAccessException e) {
+            Class<? extends WAL> walClass = (Class<? extends WAL>) Class
+                    .forName(config.getString(S3SinkConnectorConfig.WAL_CLASS_CONFIG));
+            Constructor<? extends WAL> ctor = walClass.getConstructor(String.class, TopicPartition.class, Storage.class, HdfsSinkConnectorConfig.class);
+            return ctor.newInstance(topicsDir, topicPart, this, config);
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | MethodInvocationException | InstantiationException | IllegalAccessException e) {
             throw new ConnectException(e);
         }
     }
 
     @Override
     public Configuration conf() {
-        return conf;
+        return hadoopConf;
     }
 
     @Override
@@ -111,7 +114,7 @@ public class S3Storage implements Storage {
         }
         final Path srcPath = new Path(sourcePath);
         final Path dstPath = new Path(targetPath);
-        FileSystem localFs = FileSystem.get(srcPath.toUri(),conf);
+        FileSystem localFs = FileSystem.get(srcPath.toUri(),hadoopConf);
 
         if (localFs.exists(srcPath)) {
             fs.copyFromLocalFile(false, srcPath, dstPath);

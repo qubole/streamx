@@ -1,6 +1,8 @@
 package com.qubole.streamx.s3.wal;
 
+import com.qubole.streamx.s3.S3SinkConnectorConfig;
 import io.confluent.connect.hdfs.FileUtils;
+import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Timestamp;
@@ -33,9 +35,11 @@ public class DBWAL implements  WAL {
     boolean beginMarker = false;
     int partitionId = -1;
     int id = ThreadLocalRandom.current().nextInt(1, 100000 + 1);
+    HdfsSinkConnectorConfig config;
 
-    public DBWAL(String logsDir, TopicPartition topicPartition, Storage storage) {
+    public DBWAL(String logsDir, TopicPartition topicPartition, Storage storage, HdfsSinkConnectorConfig config) {
         this.storage = storage;
+        this.config = config;
         try {
             Class.forName("com.mysql.jdbc.Driver");
         }catch (ClassNotFoundException e) {
@@ -44,11 +48,21 @@ public class DBWAL implements  WAL {
 
         partitionId = topicPartition.partition();
 
-
-        tableName = topicPartition.topic()+topicPartition.partition();
+        //TODO : check if connector name can be used instead
+        String url = storage.url();
+        String logFile = FileUtils.logFileName(url, logsDir, topicPartition);
+        logFile = logFile.substring(5);
+        tableName = logFile.replace("/","_");
+        tableName = tableName.replace("-","_");
         try {
 
-            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/kafka","root","sss");
+            //connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/kafka","root","sss");
+            String connectionURL = config.getString(S3SinkConnectorConfig.DB_CONNECTION_URL_CONFIG);
+            String user = config.getString(S3SinkConnectorConfig.DB_USER_CONFIG);
+            String password = config.getString(S3SinkConnectorConfig.DB_PASSWORD_CONFIG);
+            if(connectionURL.length()==0 || user.length()==0 || password.length()==0)
+                throw new ConnectException("db.connection.url,db.user,db.password - all three properties must be specified");
+            connection = DriverManager.getConnection(connectionURL, user, password);
             connection.setAutoCommit(false);
             Statement statement = connection.createStatement();
             statement.setQueryTimeout(30);  // set timeout to 30 sec.
@@ -262,7 +276,7 @@ public class DBWAL implements  WAL {
     public long readOffsetFromWAL() {
         ResultSet rs = fetch();
         String committedFiles[];
-        long offset = 0;
+        long offset = -1L;
         try {
             rs.absolute(1);
             committedFiles = rs.getString("committedFile").split(",");
