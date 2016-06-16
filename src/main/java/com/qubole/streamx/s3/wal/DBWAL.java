@@ -264,7 +264,11 @@ public class DBWAL implements  WAL {
 
     @Override
     public void close() throws ConnectException {
-
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            throw new ConnectException("Unable to close connection",e);
+        }
     }
 
     @Override
