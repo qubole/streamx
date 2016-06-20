@@ -1,28 +1,41 @@
 package com.qubole.streamx.s3;
 
+import com.qubole.streamx.s3.wal.DBWAL;
+import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.storage.Storage;
 import io.confluent.connect.hdfs.wal.WAL;
-import com.qubole.streamx.s3.wal.RDSWal;
+import com.qubole.streamx.s3.wal.DBWAL;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.velocity.exception.MethodInvocationException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
+
+import java.io.*;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 
 public class S3Storage implements Storage {
 
     private final FileSystem fs;
-    private final Configuration conf;
+    private final Configuration hadoopConf;
     private final String url;
+    private final HdfsSinkConnectorConfig config;
 
-    public S3Storage(Configuration conf,  String url) throws IOException {
-        fs = FileSystem.newInstance(URI.create(url), conf);
-        this.conf = conf;
+    public S3Storage(Configuration hadoopConf, HdfsSinkConnectorConfig config, String url) throws IOException {
+        fs = FileSystem.newInstance(URI.create(url), hadoopConf);
+        this.hadoopConf = hadoopConf;
         this.url = url;
+        this.config = config;
     }
 
     @Override
@@ -47,7 +60,12 @@ public class S3Storage implements Storage {
 
     @Override
     public boolean exists(String filename) throws IOException {
-        return fs.exists(new Path(filename));
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(filename))));
+        } catch(IOException e){
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -70,12 +88,19 @@ public class S3Storage implements Storage {
 
     @Override
     public WAL wal(String topicsDir, TopicPartition topicPart) {
-        return new RDSWal(topicsDir, topicPart, this);
+        try {
+            Class<? extends WAL> walClass = (Class<? extends WAL>) Class
+                    .forName(config.getString(S3SinkConnectorConfig.WAL_CLASS_CONFIG));
+            Constructor<? extends WAL> ctor = walClass.getConstructor(String.class, TopicPartition.class, Storage.class, HdfsSinkConnectorConfig.class);
+            return ctor.newInstance(topicsDir, topicPart, this, config);
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | MethodInvocationException | InstantiationException | IllegalAccessException e) {
+            throw new ConnectException(e);
+        }
     }
 
     @Override
     public Configuration conf() {
-        return conf;
+        return hadoopConf;
     }
 
     @Override
@@ -89,11 +114,13 @@ public class S3Storage implements Storage {
         }
         final Path srcPath = new Path(sourcePath);
         final Path dstPath = new Path(targetPath);
-        FileSystem localFs = FileSystem.get(srcPath.toUri(),conf);
-
+        FileSystem localFs = FileSystem.get(srcPath.toUri(),hadoopConf);
+        fs.rename(srcPath, dstPath);
+        /*
         if (localFs.exists(srcPath)) {
             fs.copyFromLocalFile(false, srcPath, dstPath);
             //fs.rename(srcPath, dstPath);
-        }
+        }*/
+
     }
 }

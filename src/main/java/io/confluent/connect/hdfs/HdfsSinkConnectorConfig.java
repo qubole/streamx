@@ -253,7 +253,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static final ConfigDef.Recommender partitionerClassDependentsRecommender = new PartitionerClassDependentsRecommender();
   private static final ConfigDef.Recommender schemaCompatibilityRecommender = new SchemaCompatibilityRecommender();
 
-  private static ConfigDef config = new ConfigDef();
+  protected static ConfigDef config = new ConfigDef();
 
   static {
 

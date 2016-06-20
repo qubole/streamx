@@ -27,4 +27,5 @@ public interface WAL {
   void truncate() throws ConnectException;
   void close() throws ConnectException;
   String getLogFile();
+  long readOffsetFromWAL();
 }

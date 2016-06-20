@@ -95,6 +95,11 @@ public class MemoryWAL implements WAL {
     return logFile;
   }
 
+  @Override
+  public long readOffsetFromWAL() {
+    throw new ConnectException("Reading offset from WAL is not supported in MemoryWAL");
+  }
+
   private static class LogEntry {
     private String key;
     private String value;
