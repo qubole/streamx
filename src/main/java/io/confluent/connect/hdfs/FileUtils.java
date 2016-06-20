@@ -73,7 +73,8 @@ public class FileUtils {
                                     String extension) {
     UUID id = UUID.randomUUID();
     String name = id.toString() + "_" + "tmp" + extension;
-    return localFileName(url, topicsDir, directory, name);
+    //return localFileName(url, topicsDir, directory, name);
+    return fileName(url, topicsDir, directory, name);
   }
 
   public static String committedFileName(String url, String topicsDir, String directory,

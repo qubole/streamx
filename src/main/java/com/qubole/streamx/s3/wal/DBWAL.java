@@ -48,15 +48,11 @@ public class DBWAL implements  WAL {
 
         partitionId = topicPartition.partition();
 
-        //TODO : check if connector name can be used instead
-        String url = storage.url();
-        String logFile = FileUtils.logFileName(url, logsDir, topicPartition);
-        logFile = logFile.substring(5);
-        tableName = logFile.replace("/","_");
-        tableName = tableName.replace("-","_");
-        try {
 
-            //connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/kafka","root","sss");
+        try {
+            String name = config.getString(S3SinkConnectorConfig.NAME_CONFIG);
+            tableName = name + "_" + topicPartition.topic() + "_" + partitionId;
+            
             String connectionURL = config.getString(S3SinkConnectorConfig.DB_CONNECTION_URL_CONFIG);
             String user = config.getString(S3SinkConnectorConfig.DB_USER_CONFIG);
             String password = config.getString(S3SinkConnectorConfig.DB_PASSWORD_CONFIG);
@@ -220,6 +216,7 @@ public class DBWAL implements  WAL {
                 try {
                     for(int k=0;k<tempFile.length;k++) {
                         storage.commit(tempFile[k], committedFile[k]);
+                        log.info("Recovering file "+tempFile[k]+" "+committedFile[k]);
                     }
                 } catch (IOException e){
                     e.printStackTrace();
@@ -296,6 +293,7 @@ public class DBWAL implements  WAL {
                 }
                 offset = FileUtils.extractOffset(committedFiles[0]) + 1;
             }
+            log.info("Offset from WAL " + offset +" for topic partition id "+partitionId);
 
         } catch (SQLException e) {
             log.error("Exception while reading offset from WAL " + e.toString());

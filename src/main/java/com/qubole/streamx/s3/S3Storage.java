@@ -115,10 +115,12 @@ public class S3Storage implements Storage {
         final Path srcPath = new Path(sourcePath);
         final Path dstPath = new Path(targetPath);
         FileSystem localFs = FileSystem.get(srcPath.toUri(),hadoopConf);
-
+        fs.rename(srcPath, dstPath);
+        /*
         if (localFs.exists(srcPath)) {
             fs.copyFromLocalFile(false, srcPath, dstPath);
             //fs.rename(srcPath, dstPath);
-        }
+        }*/
+
     }
 }
