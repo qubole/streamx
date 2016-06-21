@@ -101,7 +101,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 
     Class<? extends Storage> storageClass = (Class<? extends Storage>)
         Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
-    Storage storage = StorageFactory.createStorage(storageClass, conf, url);
+    Storage storage = StorageFactory.createStorage(storageClass, connectorConfig, conf, url);
 
     WAL wal = storage.wal(logsDir, TOPIC_PARTITION);
 

@@ -180,7 +180,7 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
 
     Class<? extends Storage> storageClass = (Class<? extends Storage>)
         Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
-    Storage storage = StorageFactory.createStorage(storageClass, conf, url);
+    Storage storage = StorageFactory.createStorage(storageClass, connectorConfig, conf, url);
 
     for (TopicPartition tp: tempfiles.keySet()) {
       WAL wal = storage.wal(logsDir, tp);

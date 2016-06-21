@@ -71,7 +71,7 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     extension = writerProvider.getExtension();
     Class<? extends Storage> storageClass = (Class<? extends Storage>) Class
             .forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
-    storage = StorageFactory.createStorage(storageClass, conf, url);
+    storage = StorageFactory.createStorage(storageClass, connectorConfig, conf, url);
     createTopicDir(url, topicsDir, TOPIC);
     createLogsDir(url, logsDir);
   }

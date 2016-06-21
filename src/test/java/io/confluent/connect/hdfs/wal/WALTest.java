@@ -40,7 +40,7 @@ public class WALTest extends TestWithMiniDFSCluster {
 
     Class<? extends Storage> storageClass = (Class<? extends Storage>)
         Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
-    Storage storage = StorageFactory.createStorage(storageClass, conf, url);
+    Storage storage = StorageFactory.createStorage(storageClass, connectorConfig, conf, url);
 
     final WAL wal1 = storage.wal(topicsDir, TOPIC_PARTITION);
     final WAL wal2 = storage.wal(topicsDir, TOPIC_PARTITION);
