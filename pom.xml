@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--~
-  ~ Copyright 2015 Confluent Inc.
+  ~ Copyright 2016 Qubole Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -20,18 +20,18 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.confluent</groupId>
-    <artifactId>kafka-connect-hdfs</artifactId>
+    <groupId>com.qubole</groupId>
+    <artifactId>streamx</artifactId>
     <packaging>jar</packaging>
-    <version>3.1.0-SNAPSHOT</version>
-    <name>kafka-connect-hdfs</name>
+    <version>0.1.0-SNAPSHOT</version>
+    <name>streamx</name>
     <organization>
         <name>Confluent, Inc.</name>
-        <url>http://confluent.io</url>
+        <url>http://qubole.com</url>
     </organization>
-    <url>http://confluent.io</url>
+    <url>http://qubole.com</url>
     <description>
-        A Kafka Connect HDFS connector for copying data between Kafka and Hadoop HDFS.
+        A Kafka Connect based connector for copying data between Kafka and Object Stores in Cloud like AWS s3/GCS/Azure blob store.
     </description>
 
     <licenses>
@@ -43,9 +43,9 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:git://github.com/confluentinc/kafka-connect-hdfs.git</connection>
-        <developerConnection>scm:git:git@github.com:confluentinc/kafka-connect-hdfs.git</developerConnection>
-        <url>https://github.com/confluentinc/kafka-connect-hdfs</url>
+        <connection>scm:git:git://github.com/qubole/streamx.git</connection>
+        <developerConnection>scm:git:git@github.com:qubole/streamx.git</developerConnection>
+        <url>https://github.com/qubole/streamx</url>
         <tag>HEAD</tag>
     </scm>
 

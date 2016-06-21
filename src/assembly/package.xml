@@ -11,7 +11,7 @@
     <fileSets>
         <fileSet>
             <directory>${project.basedir}</directory>
-            <outputDirectory>share/doc/kafka-connect-hdfs/</outputDirectory>
+            <outputDirectory>share/doc/streamx/</outputDirectory>
             <includes>
                 <include>README*</include>
                 <include>LICENSE*</include>
@@ -21,7 +21,7 @@
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/config</directory>
-            <outputDirectory>etc/kafka-connect-hdfs</outputDirectory>
+            <outputDirectory>etc/streamx</outputDirectory>
             <includes>
                 <include>*</include>
             </includes>
@@ -29,7 +29,7 @@
     </fileSets>
     <dependencySets>
         <dependencySet>
-            <outputDirectory>share/java/kafka-connect-hdfs</outputDirectory>
+            <outputDirectory>share/java/streamx</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <excludes>
