@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  **/
- 
+
 package com.qubole.streamx.s3.wal;
 
 import com.qubole.streamx.s3.S3SinkConnectorConfig;
@@ -50,6 +50,7 @@ public class DBWAL implements  WAL {
     int partitionId = -1;
     int id = ThreadLocalRandom.current().nextInt(1, 100000 + 1);
     HdfsSinkConnectorConfig config;
+    String lease_table = "streamx_lease";
 
     public DBWAL(String logsDir, TopicPartition topicPartition, Storage storage, HdfsSinkConnectorConfig config) {
         this.storage = storage;
@@ -74,25 +75,38 @@ public class DBWAL implements  WAL {
                 throw new ConnectException("db.connection.url,db.user,db.password - all three properties must be specified");
             connection = DriverManager.getConnection(connectionURL, user, password);
             connection.setAutoCommit(false);
-            Statement statement = connection.createStatement();
-            statement.setQueryTimeout(30);  // set timeout to 30 sec.
-            DatabaseMetaData dbm = connection.getMetaData();
 
-            ResultSet tables = dbm.getTables(null, null, tableName, null);
-            if (tables.next()) {
-                // No op
-            }
-            else {
-                String sql=String.format("create table %s (id INT AUTO_INCREMENT, tempFile VARCHAR(500), committedFile VARCHAR(500), primary key (id))", tableName);
-                log.info("Creating table "+ sql);
-                statement.executeUpdate(sql);
-                //connection.commit();
-            }
+            String sql = String.format("create table %s (id INT AUTO_INCREMENT, tempFile VARCHAR(500), committedFile VARCHAR(500), primary key (id))", tableName);
+            createIfNotExists(tableName, sql);
+
+            sql = String.format("CREATE TABLE `%s` (\n" +
+                    " `ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n" +
+                    " `id` int(11) DEFAULT NULL,\n" +
+                    " `pid` int(10) DEFAULT NULL\n" +
+                    ") ", lease_table);
+            createIfNotExists("streamx_lease", sql);
+
 
         }catch (SQLException e) {
             log.error(e.toString());
             throw new ConnectException(e);
 
+        }
+    }
+
+    private void createIfNotExists(String tableName, String sql) throws SQLException {
+        Statement statement = connection.createStatement();
+        statement.setQueryTimeout(30);  // set timeout to 30 sec.
+        DatabaseMetaData dbm = connection.getMetaData();
+        ResultSet tables = dbm.getTables(null, null, tableName, null);
+
+        if (tables.next()) {
+            // No op
+        }
+        else {
+            log.info("Creating table "+ sql);
+            statement.executeUpdate(sql);
+            connection.commit();
         }
     }
 
@@ -106,18 +120,18 @@ public class DBWAL implements  WAL {
             try {
                 Statement statement = connection.createStatement();
                 statement.setQueryTimeout(5);  // set timeout to 30 sec.
-                String sql = String.format("select now() as currentTS,l1.* from l1 where pid = %s for update", partitionId);
+                String sql = String.format("select now() as currentTS,l1.* from %s as l1 where pid = %s for update", lease_table, partitionId);
 
                 ResultSet rs = statement.executeQuery(sql);
                 if(!rs.next()) {
-                    sql = String.format("insert into l1(id,pid) values (%s,%s)", id, partitionId);
+                    sql = String.format("insert into %s(id,pid) values (%s,%s)", lease_table, id, partitionId);
                     statement.executeUpdate(sql);
                     connection.commit();
                     return;
                 }
 
                 if(canAcquireLock(rs)) {
-                    sql = String.format("update l1 set id=%s,ts=now() where pid=%s", id, partitionId);
+                    sql = String.format("update %s set id=%s,ts=now() where pid=%s", lease_table, id, partitionId);
                     statement.executeUpdate(sql);
                     connection.commit();
                     return;
