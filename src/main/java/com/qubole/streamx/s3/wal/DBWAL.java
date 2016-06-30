@@ -40,13 +40,11 @@ import io.confluent.connect.hdfs.storage.Storage;
 
 public class DBWAL implements  WAL {
     private static final Logger log = LoggerFactory.getLogger(DBWAL.class);
-    String database = "wal";
     String tableName;
     Storage storage;
     Connection connection;
     ArrayList<String> tempFiles = new ArrayList<>();
     ArrayList<String> committedFiles = new ArrayList<>();
-    boolean beginMarker = false;
     int partitionId = -1;
     int id = ThreadLocalRandom.current().nextInt(1, 100000 + 1);
     HdfsSinkConnectorConfig config;
@@ -76,7 +74,7 @@ public class DBWAL implements  WAL {
             connection = DriverManager.getConnection(connectionURL, user, password);
             connection.setAutoCommit(false);
 
-            String sql = String.format("create table %s (id INT AUTO_INCREMENT, tempFile VARCHAR(500), committedFile VARCHAR(500), primary key (id))", tableName);
+            String sql = String.format("create table %s (id INT AUTO_INCREMENT, tempFiles VARCHAR(500), committedFiles VARCHAR(500), primary key (id))", tableName);
             createIfNotExists(tableName, sql);
 
             sql = String.format("CREATE TABLE `%s` (\n" +
@@ -90,7 +88,6 @@ public class DBWAL implements  WAL {
         }catch (SQLException e) {
             log.error(e.toString());
             throw new ConnectException(e);
-
         }
     }
 
@@ -161,7 +158,7 @@ public class DBWAL implements  WAL {
             java.sql.Timestamp ts = rs.getTimestamp("ts");
 
             if(now.getTime() - ts.getTime() >= 60*1000) {
-                log.warn("last update is more than a minute" + now + " "+ts);
+                log.warn("last update is more than a minute" + now + " " + ts);
                 return false;
             }
             else {
@@ -174,49 +171,31 @@ public class DBWAL implements  WAL {
         return true;
     }
 
-    public void acquireLease1() throws ConnectException {
-        //Implement a lease that keep's renewing as long as thread is alive
-        try {
-            Statement statement = connection.createStatement();
-            statement.setQueryTimeout(30);  // set timeout to 30 sec.
-            String sql = String.format("lock table %s write", tableName);
-            statement.executeUpdate(sql);
-            //ResultSet rs = statement.executeQuery(sql);
-            connection.commit();
-        } catch (SQLException e) {
-            log.error(e.toString());
-            throw new ConnectException(e);
-        }
-    }
-
     @Override
     public void append(String tempFile, String committedFile) throws ConnectException {
         try {
-            acquireLease();
-
-            Statement statement = connection.createStatement();
-            statement.setQueryTimeout(30);  // set timeout to 30 sec.
-            //End Marker - Seen all encoded Partitions, write to DB
-            if(beginMarker && committedFile.length()==0) {
-                beginMarker = false;
+            if(tempFile==WAL.beginMarker) {
+                tempFiles.clear();
+                committedFiles.clear();
+            }
+            else if(tempFile==WAL.endMarker) {
                 String tempFilesCommaSeparated = StringUtils.join(",",tempFiles);
                 String committedFilesCommaSeparated = StringUtils.join(",",committedFiles);
 
-                String sql = String.format("insert into %s (tempFile,committedFile) values ('%s','%s')", tableName, tempFilesCommaSeparated, committedFilesCommaSeparated);
+                acquireLease();
+
+                Statement statement = connection.createStatement();
+                statement.setQueryTimeout(30);  // set timeout to 30 sec.
+
+                String sql = String.format("insert into %s (tempFiles,committedFiles) values ('%s','%s')", tableName, tempFilesCommaSeparated, committedFilesCommaSeparated);
                 log.info("committing " + sql);
                 statement.executeUpdate(sql);
                 connection.commit();
-                return;
             }
-            //Begin Marker
-            else if(committedFile.length()==0) {
-                beginMarker = true;
-                tempFiles.clear();
-                committedFiles.clear();
-                return;
+            else {
+                tempFiles.add(tempFile);
+                committedFiles.add(committedFile);
             }
-            tempFiles.add(tempFile);
-            committedFiles.add(committedFile);
         }catch (SQLException e){
             log.error(e.toString());
             throw new ConnectException(e);
@@ -236,8 +215,8 @@ public class DBWAL implements  WAL {
             ResultSet rs=statement.executeQuery(sql);
 
             while(rs.next()) {
-                String tempFiles = rs.getString("tempFile");
-                String committedFiles = rs.getString("committedFile");
+                String tempFiles = rs.getString("tempFiles");
+                String committedFiles = rs.getString("committedFiles");
                 String tempFile[]=tempFiles.split(",");
                 String committedFile[]=committedFiles.split(",");
                 //TODO : check if all tempFiles are there.
@@ -255,9 +234,7 @@ public class DBWAL implements  WAL {
             log.error(e.toString());
             throw new ConnectException(e);
         }
-
     }
-
 
     @Override
     public void truncate() throws ConnectException {
@@ -277,8 +254,7 @@ public class DBWAL implements  WAL {
             sql = String.format("delete from %s where id < %s", tableName, id);
             log.info("truncating table " + sql);
             statement.executeUpdate(sql);
-            //connection.commit();
-
+            connection.commit();
         }catch (SQLException e){
             log.error(e.toString());
             throw new ConnectException(e);
@@ -304,27 +280,34 @@ public class DBWAL implements  WAL {
     @Override
     public long readOffsetFromWAL() {
         ResultSet rs = fetch();
-        String committedFiles[];
         long offset = -1L;
         try {
-            rs.absolute(1);
-            committedFiles = rs.getString("committedFile").split(",");
-            boolean lastCommittedRecordExists = checkFileExists(committedFiles);
-            if (lastCommittedRecordExists) {
-                offset = FileUtils.extractOffset(committedFiles[0]) + 1;
-            } else {
-                rs.absolute(2);
-                committedFiles = rs.getString("committedFile").split(",");
-                lastCommittedRecordExists = checkFileExists(committedFiles);
-                if (!lastCommittedRecordExists) {
-                    throw new ConnectException("Unable to recover");
-                }
-                offset = FileUtils.extractOffset(committedFiles[0]) + 1;
-            }
-            log.info("Offset from WAL " + offset +" for topic partition id "+partitionId);
+            // Check if last committed record in WAL exists in s3
+            if(rs.next())
+                offset = checkWAlEntryExists(rs);
+            // Else pick the previously committed record. This case can happen only
+            // if tempFiles are stored in LocalFS
+            if(offset == -1 && rs.next())
+                offset = checkWAlEntryExists(rs);
+
+            log.info("Offset from WAL " + offset + " for topic partition id " + partitionId);
 
         } catch (SQLException e) {
             log.error("Exception while reading offset from WAL " + e.toString());
+        }
+        return offset;
+    }
+
+    private long checkWAlEntryExists(ResultSet rs) {
+        long offset = -1L;
+        String committedFiles[];
+        try {
+            committedFiles = rs.getString("committedFiles").split(",");
+            boolean lastCommittedRecordExists = checkFileExists(committedFiles);
+            if (lastCommittedRecordExists)
+                offset = FileUtils.extractOffset(committedFiles[0]) + 1;
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return offset;
     }
