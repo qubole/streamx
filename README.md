@@ -39,19 +39,21 @@ For quick reference, these properties must be present in your core-site.xml. Thi
 - fs.s3a.secret.key=xxxxx
 
 ### Sample Job
+
+You need to change all the values that has "<..>"
 ```
 {"name":"twitter connector",
 "config":{
 "name":"twitter connector",
-"connector.class":"io.confluent.connect.hdfs.HdfsSinkConnector",
+"connector.class":"com.qubole.streamx.s3.S3SinkConnector",
 "tasks.max":"1",
 "flush.size":"100000",
-"hdfs.url":"<S3 location>",
-  "wal.class":"com.qubole.streamx.s3.wal.DBWAL",
-  "db.connection.url":"jdbc:mysql://localhost:3306/kafka",
-  "db.user":"username_required",
-  "db.password":"password_required",
-"hadoop.conf.dir":"/usr/lib/hadoop2/etc/hadoop/",
+"s3.url":"<S3 location>",
+"wal.class":"com.qubole.streamx.s3.wal.DBWAL",
+"db.connection.url":"<jdbc:mysql://localhost:3306/kafka>",
+"db.user":"<username_required>",
+"db.password":"<password_required>",
+"hadoop.conf.dir":"<directory where hadoop conf files are stored. Example /usr/lib/hadoop2/etc/hadoop/>",
 "topics":"twitter1p"}}
 ```
 

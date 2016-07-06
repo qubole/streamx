@@ -161,7 +161,7 @@ public class DataWriter {
         ticketRenewThread.start();
       }
 
-      url = connectorConfig.getString(HdfsSinkConnectorConfig.HDFS_URL_CONFIG);
+      url = connectorConfig.getString(S3SinkConnectorConfig.S3_URL_CONFIG);
       topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPICS_DIR_CONFIG);
       String logsDir = connectorConfig.getString(HdfsSinkConnectorConfig.LOGS_DIR_CONFIG);
 

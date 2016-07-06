@@ -80,7 +80,7 @@ public class DBWAL implements  WAL {
             sql = String.format("CREATE TABLE `%s` (\n" +
                     " `ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n" +
                     " `id` int(11) DEFAULT NULL,\n" +
-                    " `pid` int(10) DEFAULT NULL\n" +
+                    " `wal` VARCHAR(500)" +
                     ") ", lease_table);
             createIfNotExists("streamx_lease", sql);
 
@@ -117,18 +117,18 @@ public class DBWAL implements  WAL {
             try {
                 Statement statement = connection.createStatement();
                 statement.setQueryTimeout(5);  // set timeout to 30 sec.
-                String sql = String.format("select now() as currentTS,l1.* from %s as l1 where pid = %s for update", lease_table, partitionId);
+                String sql = String.format("select now() as currentTS,l1.* from %s as l1 where wal = '%s' for update", lease_table, tableName);
 
                 ResultSet rs = statement.executeQuery(sql);
                 if(!rs.next()) {
-                    sql = String.format("insert into %s(id,pid) values (%s,%s)", lease_table, id, partitionId);
+                    sql = String.format("insert into %s(id,wal) values (%s,'%s')", lease_table, id, tableName);
                     statement.executeUpdate(sql);
                     connection.commit();
                     return;
                 }
 
                 if(canAcquireLock(rs)) {
-                    sql = String.format("update %s set id=%s,ts=now() where pid=%s", lease_table, id, partitionId);
+                    sql = String.format("update %s set id=%s,ts=now() where wal='%s'", lease_table, id, tableName);
                     statement.executeUpdate(sql);
                     connection.commit();
                     return;

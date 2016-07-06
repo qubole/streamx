@@ -14,6 +14,7 @@
 
 package io.confluent.connect.hdfs.hive;
 
+import com.qubole.streamx.s3.S3SinkConnectorConfig;
 import org.apache.kafka.connect.data.Schema;
 
 import io.confluent.connect.avro.AvroData;
@@ -29,7 +30,7 @@ public abstract class HiveUtil {
 
 
   public HiveUtil(HdfsSinkConnectorConfig connectorConfig, AvroData avroData, HiveMetaStore hiveMetaStore) {
-    this.url = connectorConfig.getString(HdfsSinkConnectorConfig.HDFS_URL_CONFIG);
+    this.url = connectorConfig.getString(S3SinkConnectorConfig.S3_URL_CONFIG);
     this.topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPICS_DIR_CONFIG);
     this.avroData = avroData;
     this.hiveMetaStore = hiveMetaStore;

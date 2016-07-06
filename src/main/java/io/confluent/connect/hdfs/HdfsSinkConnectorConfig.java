@@ -43,6 +43,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static final String HDFS_URL_DOC =
       "The HDFS connection URL. This configuration has the format of hdfs:://hostname:port and "
       + "specifies the HDFS to export data to.";
+  private static final String HDFS_URL_DEFAULT = "";
   private static final String HDFS_URL_DISPLAY = "HDFS URL";
 
   public static final String HADOOP_CONF_DIR_CONFIG = "hadoop.conf.dir";
@@ -258,7 +259,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   static {
 
     // Define HDFS configuration group
-    config.define(HDFS_URL_CONFIG, Type.STRING, Importance.HIGH, HDFS_URL_DOC, HDFS_GROUP, 1, Width.MEDIUM, HDFS_URL_DISPLAY)
+    config.define(HDFS_URL_CONFIG, Type.STRING, HDFS_URL_DEFAULT, Importance.HIGH, HDFS_URL_DOC, HDFS_GROUP, 1, Width.MEDIUM, HDFS_URL_DISPLAY)
         .define(HADOOP_CONF_DIR_CONFIG, Type.STRING, HADOOP_CONF_DIR_DEFAULT, Importance.HIGH, HADOOP_CONF_DIR_DOC, HDFS_GROUP, 2, Width.MEDIUM, HADOOP_CONF_DIR_DISPLAY)
         .define(HADOOP_HOME_CONFIG, Type.STRING, HADOOP_HOME_DEFAULT, Importance.HIGH, HADOOP_HOME_DOC, HDFS_GROUP, 3, Width.SHORT, HADOOP_HOME_DISPLAY)
         .define(TOPICS_DIR_CONFIG, Type.STRING, TOPICS_DIR_DEFAULT, Importance.HIGH, TOPICS_DIR_DOC, HDFS_GROUP, 4, Width.SHORT, TOPICS_DIR_DISPLAY)

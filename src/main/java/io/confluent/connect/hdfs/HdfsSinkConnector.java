@@ -15,7 +15,6 @@
 package io.confluent.connect.hdfs;
 
 
-import com.qubole.streamx.s3.S3SinkConnectorConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.connector.Connector;
@@ -47,7 +46,7 @@ public class HdfsSinkConnector extends Connector {
   public void start(Map<String, String> props) throws ConnectException {
     try {
       configProperties = props;
-      config = new S3SinkConnectorConfig(props);
+      config = new HdfsSinkConnectorConfig(props);
     } catch (ConfigException e) {
       throw new ConnectException("Couldn't start HdfsSinkConnector due to configuration error", e);
     }
