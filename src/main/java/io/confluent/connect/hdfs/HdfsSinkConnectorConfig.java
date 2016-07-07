@@ -148,6 +148,16 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static final long ROTATE_INTERVAL_MS_DEFAULT = -1L;
   private static final String ROTATE_INTERVAL_MS_DISPLAY = "Rotate Interval (ms)";
 
+  public static final String ROTATE_SCHEDULE_INTERVAL_MS_CONFIG = "rotate.schedule.interval.ms";
+  private static final String ROTATE_SCHEDULE_INTERVAL_MS_DOC =
+          "The time interval in milliseconds to periodically invoke file commits. This configuration ensures that "
+          + "file commits are invoked every configured interval. Time of commit will be adjusted to 00:00 of selected timezone. "
+          + "Commit will be performed at scheduled time regardless previous commit time or number of messages. "
+          + "This configuration is useful when you have to commit your data based on current server time, like at the beginning of every hour. "
+          + "The default value -1 means that this feature is disabled.";
+  private static final long ROTATE_SCHEDULE_INTERVAL_MS_DEFAULT = -1L;
+  private static final String ROTATE_SCHEDULE_INTERVAL_MS_DISPLAY = "Rotate Schedule Interval (ms)";
+
   public static final String RETRY_BACKOFF_CONFIG = "retry.backoff.ms";
   private static final String RETRY_BACKOFF_DOC =
       "The retry backoff in milliseconds. This config is used to "
@@ -290,21 +300,22 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
 
     // Define Connector configuration group
     config.define(FLUSH_SIZE_CONFIG, Type.INT, Importance.HIGH, FLUSH_SIZE_DOC, CONNECTOR_GROUP, 1, Width.SHORT, FLUSH_SIZE_DISPLAY)
-        .define(ROTATE_INTERVAL_MS_CONFIG, Type.LONG, ROTATE_INTERVAL_MS_DEFAULT,Importance.HIGH, ROTATE_INTERVAL_MS_DOC, CONNECTOR_GROUP, 2, Width.SHORT, ROTATE_INTERVAL_MS_DISPLAY)
-        .define(RETRY_BACKOFF_CONFIG, Type.LONG, RETRY_BACKOFF_DEFAULT, Importance.LOW, RETRY_BACKOFF_DOC, CONNECTOR_GROUP, 3, Width.SHORT, RETRY_BACKOFF_DISPLAY)
-        .define(SHUTDOWN_TIMEOUT_CONFIG, Type.LONG, SHUTDOWN_TIMEOUT_DEFAULT, Importance.MEDIUM, SHUTDOWN_TIMEOUT_DOC, CONNECTOR_GROUP, 4, Width.SHORT, SHUTDOWN_TIMEOUT_DISPLAY)
-        .define(PARTITIONER_CLASS_CONFIG, Type.STRING, PARTITIONER_CLASS_DEFAULT, Importance.HIGH, PARTITIONER_CLASS_DOC, CONNECTOR_GROUP, 5, Width.LONG, PARTITIONER_CLASS_DISPLAY,
+        .define(ROTATE_INTERVAL_MS_CONFIG, Type.LONG, ROTATE_INTERVAL_MS_DEFAULT, Importance.HIGH, ROTATE_INTERVAL_MS_DOC, CONNECTOR_GROUP, 2, Width.SHORT, ROTATE_INTERVAL_MS_DISPLAY)
+        .define(ROTATE_SCHEDULE_INTERVAL_MS_CONFIG, Type.LONG, ROTATE_SCHEDULE_INTERVAL_MS_DEFAULT, Importance.MEDIUM, ROTATE_SCHEDULE_INTERVAL_MS_DOC, CONNECTOR_GROUP, 3, Width.SHORT, ROTATE_SCHEDULE_INTERVAL_MS_DISPLAY)
+        .define(RETRY_BACKOFF_CONFIG, Type.LONG, RETRY_BACKOFF_DEFAULT, Importance.LOW, RETRY_BACKOFF_DOC, CONNECTOR_GROUP, 4, Width.SHORT, RETRY_BACKOFF_DISPLAY)
+        .define(SHUTDOWN_TIMEOUT_CONFIG, Type.LONG, SHUTDOWN_TIMEOUT_DEFAULT, Importance.MEDIUM, SHUTDOWN_TIMEOUT_DOC, CONNECTOR_GROUP, 5, Width.SHORT, SHUTDOWN_TIMEOUT_DISPLAY)
+        .define(PARTITIONER_CLASS_CONFIG, Type.STRING, PARTITIONER_CLASS_DEFAULT, Importance.HIGH, PARTITIONER_CLASS_DOC, CONNECTOR_GROUP, 6, Width.LONG, PARTITIONER_CLASS_DISPLAY,
                 Arrays.asList(PARTITION_FIELD_NAME_CONFIG, PARTITION_DURATION_MS_CONFIG, PATH_FORMAT_CONFIG, LOCALE_CONFIG, TIMEZONE_CONFIG))
-        .define(PARTITION_FIELD_NAME_CONFIG, Type.STRING, PARTITION_FIELD_NAME_DEFAULT, Importance.MEDIUM, PARTITION_FIELD_NAME_DOC, CONNECTOR_GROUP, 6, Width.MEDIUM,
+        .define(PARTITION_FIELD_NAME_CONFIG, Type.STRING, PARTITION_FIELD_NAME_DEFAULT, Importance.MEDIUM, PARTITION_FIELD_NAME_DOC, CONNECTOR_GROUP, 7, Width.MEDIUM,
                 PARTITION_FIELD_NAME_DISPLAY, partitionerClassDependentsRecommender)
-        .define(PARTITION_DURATION_MS_CONFIG, Type.LONG, PARTITION_DURATION_MS_DEFAULT, Importance.MEDIUM, PARTITION_DURATION_MS_DOC, CONNECTOR_GROUP, 7, Width.SHORT,
+        .define(PARTITION_DURATION_MS_CONFIG, Type.LONG, PARTITION_DURATION_MS_DEFAULT, Importance.MEDIUM, PARTITION_DURATION_MS_DOC, CONNECTOR_GROUP, 8, Width.SHORT,
                 PARTITION_DURATION_MS_DISPLAY, partitionerClassDependentsRecommender)
-        .define(PATH_FORMAT_CONFIG, Type.STRING, PATH_FORMAT_DEFAULT, Importance.MEDIUM, PATH_FORMAT_DOC, CONNECTOR_GROUP, 8, Width.LONG, PATH_FORMAT_DISPLAY,
+        .define(PATH_FORMAT_CONFIG, Type.STRING, PATH_FORMAT_DEFAULT, Importance.MEDIUM, PATH_FORMAT_DOC, CONNECTOR_GROUP, 9, Width.LONG, PATH_FORMAT_DISPLAY,
                 partitionerClassDependentsRecommender)
-        .define(LOCALE_CONFIG, Type.STRING, LOCALE_DEFAULT, Importance.MEDIUM, LOCALE_DOC, CONNECTOR_GROUP, 9, Width.MEDIUM, LOCALE_DISPLAY, partitionerClassDependentsRecommender)
-        .define(TIMEZONE_CONFIG, Type.STRING, TIMEZONE_DEFAULT, Importance.MEDIUM, TIMEZONE_DOC, CONNECTOR_GROUP, 10, Width.MEDIUM, TIMEZONE_DISPLAY, partitionerClassDependentsRecommender)
+        .define(LOCALE_CONFIG, Type.STRING, LOCALE_DEFAULT, Importance.MEDIUM, LOCALE_DOC, CONNECTOR_GROUP, 10, Width.MEDIUM, LOCALE_DISPLAY, partitionerClassDependentsRecommender)
+        .define(TIMEZONE_CONFIG, Type.STRING, TIMEZONE_DEFAULT, Importance.MEDIUM, TIMEZONE_DOC, CONNECTOR_GROUP, 11, Width.MEDIUM, TIMEZONE_DISPLAY, partitionerClassDependentsRecommender)
         .define(FILENAME_OFFSET_ZERO_PAD_WIDTH_CONFIG, Type.INT, FILENAME_OFFSET_ZERO_PAD_WIDTH_DEFAULT, ConfigDef.Range.atLeast(0), Importance.LOW, FILENAME_OFFSET_ZERO_PAD_WIDTH_DOC,
-                CONNECTOR_GROUP, 11, Width.SHORT, FILENAME_OFFSET_ZERO_PAD_WIDTH_DISPLAY);
+                CONNECTOR_GROUP, 12, Width.SHORT, FILENAME_OFFSET_ZERO_PAD_WIDTH_DISPLAY);
 
     // Define Internal configuration group
     config.define(STORAGE_CLASS_CONFIG, Type.STRING, STORAGE_CLASS_DEFAULT, Importance.LOW, STORAGE_CLASS_DOC, INTERNAL_GROUP, 1, Width.MEDIUM, STORAGE_CLASS_DISPLAY);

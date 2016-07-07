@@ -18,12 +18,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.IllegalWorkerStateException;
 import org.apache.kafka.connect.errors.SchemaProjectorException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +73,8 @@ public class TopicPartitionWriter {
   private int flushSize;
   private long rotateIntervalMs;
   private long lastRotate;
+  private long rotateScheduleIntervalMs;
+  private long nextScheduledRotate;
   private RecordWriterProvider writerProvider;
   private Configuration conf;
   private AvroData avroData;
@@ -85,6 +90,7 @@ public class TopicPartitionWriter {
   private HdfsSinkConnectorConfig connectorConfig;
   private String extension;
   private final String zeroPadOffsetFormat;
+  private DateTimeZone timeZone;
 
   private final boolean hiveIntegration;
   private String hiveDatabase;
@@ -133,6 +139,7 @@ public class TopicPartitionWriter {
     topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPICS_DIR_CONFIG);
     flushSize = connectorConfig.getInt(HdfsSinkConnectorConfig.FLUSH_SIZE_CONFIG);
     rotateIntervalMs = connectorConfig.getLong(HdfsSinkConnectorConfig.ROTATE_INTERVAL_MS_CONFIG);
+    rotateScheduleIntervalMs = connectorConfig.getLong(HdfsSinkConnectorConfig.ROTATE_SCHEDULE_INTERVAL_MS_CONFIG);
     timeoutMs = connectorConfig.getLong(HdfsSinkConnectorConfig.RETRY_BACKOFF_CONFIG);
     compatibility = SchemaUtils.getCompatibility(
         connectorConfig.getString(HdfsSinkConnectorConfig.SCHEMA_COMPATIBILITY_CONFIG));
@@ -164,6 +171,10 @@ public class TopicPartitionWriter {
       this.executorService = executorService;
       this.hiveUpdateFutures = hiveUpdateFutures;
       hivePartitions = new HashSet<>();
+    }
+
+    if(rotateScheduleIntervalMs > 0) {
+      timeZone = DateTimeZone.forID(connectorConfig.getString(HdfsSinkConnectorConfig.TIMEZONE_CONFIG));
     }
   }
 
@@ -218,6 +229,19 @@ public class TopicPartitionWriter {
     return true;
   }
 
+  private void updateRotationTimers() {
+    lastRotate = System.currentTimeMillis();
+    if(log.isDebugEnabled() && rotateIntervalMs > 0) {
+      log.debug("Update last rotation timer. Next rotation for {} will be in {}ms", tp, rotateIntervalMs);
+    }
+    if (rotateScheduleIntervalMs > 0) {
+      nextScheduledRotate = DateTimeUtils.getNextTimeAdjustedByDay(lastRotate, rotateScheduleIntervalMs, timeZone);
+      if (log.isDebugEnabled()) {
+        log.debug("Update scheduled rotation timer. Next rotation for {} will be at {}", tp, new DateTime(nextScheduledRotate).withZone(timeZone).toString());
+      }
+    }
+  }
+
   public void write() {
     long now = System.currentTimeMillis();
     if (failureTime > 0 && now - failureTime < timeoutMs) {
@@ -228,6 +252,7 @@ public class TopicPartitionWriter {
       if (!success) {
         return;
       }
+      updateRotationTimers();
     }
     while(!buffer.isEmpty()) {
       try {
@@ -273,7 +298,7 @@ public class TopicPartitionWriter {
               }
             }
           case SHOULD_ROTATE:
-            lastRotate = System.currentTimeMillis();
+            updateRotationTimers();
             closeTempFile();
             nextState();
           case TEMP_FILE_CLOSED:
@@ -374,13 +399,10 @@ public class TopicPartitionWriter {
   }
 
   private boolean shouldRotate(long now) {
-    if (recordCounter >= flushSize) {
-      return true;
-    } else if (rotateIntervalMs <= 0) {
-      return false;
-    } else {
-      return now - lastRotate >= rotateIntervalMs;
-    }
+    boolean periodicRotation = rotateIntervalMs > 0 && now - lastRotate >= rotateIntervalMs;
+    boolean scheduledRotation = rotateScheduleIntervalMs > 0 && now >= nextScheduledRotate;
+    boolean messageSizeRotation = recordCounter >= flushSize;
+    return periodicRotation || scheduledRotation || messageSizeRotation;
   }
 
   private void readOffset() throws ConnectException {

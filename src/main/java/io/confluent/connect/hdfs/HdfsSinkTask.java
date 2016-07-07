@@ -20,6 +20,7 @@ import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +60,17 @@ public class HdfsSinkTask extends SinkTask {
           throw new ConfigException("Hive Integration requires schema compatibility to be BACKWARD, FORWARD or FULL");
         }
       }
+
+      //check that timezone it setup correctly in case of scheduled rotation
+      if(connectorConfig.getLong(HdfsSinkConnectorConfig.ROTATE_SCHEDULE_INTERVAL_MS_CONFIG) > 0) {
+        String timeZoneString = connectorConfig.getString(HdfsSinkConnectorConfig.TIMEZONE_CONFIG);
+        if (timeZoneString.equals("")) {
+          throw new ConfigException(HdfsSinkConnectorConfig.TIMEZONE_CONFIG,
+                  timeZoneString, "Timezone cannot be empty when using scheduled file rotation.");
+        }
+        DateTimeZone.forID(timeZoneString);
+      }
+
       int schemaCacheSize = connectorConfig.getInt(HdfsSinkConnectorConfig.SCHEMA_CACHE_SIZE_CONFIG);
       avroData = new AvroData(schemaCacheSize);
       hdfsWriter = new DataWriter(connectorConfig, context, avroData);
