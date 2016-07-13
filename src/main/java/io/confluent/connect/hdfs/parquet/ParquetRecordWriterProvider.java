@@ -49,7 +49,7 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
 
     Path path = new Path(fileName);
     final ParquetWriter<GenericRecord> writer =
-        new AvroParquetWriter<>(path, avroSchema, compressionCodecName, blockSize, pageSize);
+        new AvroParquetWriter<>(path, avroSchema, compressionCodecName, blockSize, pageSize, true, conf);
 
     return new RecordWriter<SinkRecord>() {
       @Override
