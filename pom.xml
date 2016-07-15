@@ -53,7 +53,7 @@
         <confluent.version>3.1.0-SNAPSHOT</confluent.version>
         <kafka.version>0.10.1.0-SNAPSHOT</kafka.version>
         <junit.version>4.12</junit.version>
-        <hadoop.version>2.6.0</hadoop.version>
+        <hadoop.version>2.6.1</hadoop.version>
         <hive.version>1.2.1</hive.version>
         <avro.version>1.7.7</avro.version>
         <parquet.version>1.7.0</parquet.version>
