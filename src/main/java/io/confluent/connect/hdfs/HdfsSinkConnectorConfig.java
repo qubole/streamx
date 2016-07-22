@@ -369,11 +369,11 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       return new LinkedList<>();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public boolean visible(String name, Map<String, Object> connectorConfigs) {
       String partitionerName = (String) connectorConfigs.get(PARTITIONER_CLASS_CONFIG);
       try {
+        @SuppressWarnings("unchecked")
         Class<? extends Partitioner> partitioner = (Class<? extends Partitioner>) Class.forName(partitionerName);
         if (classNameEquals(partitionerName, DefaultPartitioner.class)) {
           return false;

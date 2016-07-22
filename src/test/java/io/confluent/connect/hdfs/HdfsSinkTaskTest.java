@@ -174,10 +174,9 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
     fs.createNewFile(new Path(file4));
   }
 
-  @SuppressWarnings("unchecked")
   private void createWALs(Map<TopicPartition, List<String>> tempfiles,
                           Map<TopicPartition, List<String>> committedFiles) throws Exception {
-
+    @SuppressWarnings("unchecked")
     Class<? extends Storage> storageClass = (Class<? extends Storage>)
         Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
     Storage storage = StorageFactory.createStorage(storageClass, conf, url);

@@ -75,8 +75,8 @@ public class WALFile {
     private DataOutputBuffer buffer = new DataOutputBuffer();
     boolean ownOutputStream = true;
     private boolean appendMode;
-    protected Serializer keySerializer;
-    protected Serializer valSerializer;
+    protected Serializer<WALEntry> keySerializer;
+    protected Serializer<WALEntry> valSerializer;
 
     // Insert a globally unique 16-byte value every few entries, so that one
     // can seek into the middle of a file and then synchronize with record
@@ -265,13 +265,7 @@ public class WALFile {
       }
     }
 
-    public void append(Writable key, Writable val)
-        throws IOException {
-      append((Object) key, (Object) val);
-    }
-
-    @SuppressWarnings("unchecked")
-    private synchronized void append(Object key, Object val)
+    public synchronized void append(WALEntry key, WALEntry val)
         throws IOException {
       buffer.reset();
 
@@ -385,8 +379,8 @@ public class WALFile {
 
     private DataInputBuffer valBuffer = null;
     private DataInputStream valIn = null;
-    private Deserializer keyDeserializer;
-    private Deserializer valDeserializer;
+    private Deserializer<WALEntry> keyDeserializer;
+    private Deserializer<WALEntry> valDeserializer;
 
     /**
      * A tag interface for all of the Reader options
@@ -640,8 +634,7 @@ public class WALFile {
       }
     }
 
-    @SuppressWarnings("unchecked")
-    private Deserializer getDeserializer(SerializationFactory sf, Class c) {
+    private <T> Deserializer<T> getDeserializer(SerializationFactory sf, Class<T> c) {
       return sf.getDeserializer(c);
     }
 
@@ -711,7 +704,7 @@ public class WALFile {
      *
      * @param val : The 'value' to be read.
      */
-    public synchronized Object getCurrentValue(Object val)
+    public synchronized WALEntry getCurrentValue(WALEntry val)
         throws IOException {
       if (val instanceof Configurable) {
         ((Configurable) val).setConf(this.conf);
@@ -730,8 +723,7 @@ public class WALFile {
 
     }
 
-    @SuppressWarnings("unchecked")
-    private Object deserializeValue(Object val) throws IOException {
+    private WALEntry deserializeValue(WALEntry val) throws IOException {
       return valDeserializer.deserialize(val);
     }
 
@@ -835,12 +827,7 @@ public class WALFile {
     /**
      * Read the next key in the file, skipping its value.  Return null at end of file.
      */
-    public synchronized Object next(Object key) throws IOException {
-      if (key != null && key.getClass() != WALEntry.class) {
-        throw new IOException("wrong key class: " + key.getClass().getName()
-                              + " is not " + WALEntry.class);
-      }
-
+    public synchronized WALEntry next(WALEntry key) throws IOException {
       outBuf.reset();
       keyLength = next(outBuf);
       if (keyLength < 0) {
@@ -856,8 +843,7 @@ public class WALFile {
       return key;
     }
 
-    @SuppressWarnings("unchecked")
-    private Object deserializeKey(Object key) throws IOException {
+    private WALEntry deserializeKey(WALEntry key) throws IOException {
       return keyDeserializer.deserialize(key);
     }
 

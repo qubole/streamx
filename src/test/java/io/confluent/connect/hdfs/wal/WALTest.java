@@ -34,10 +34,10 @@ public class WALTest extends TestWithMiniDFSCluster {
   private static final String extension = ".avro";
 
   @Test
-  @SuppressWarnings("unchecked")
   public void testWALMultiClient() throws Exception {
     fs.delete(new Path(FileUtils.directoryName(url, topicsDir, TOPIC_PARTITION)), true);
 
+    @SuppressWarnings("unchecked")
     Class<? extends Storage> storageClass = (Class<? extends Storage>)
         Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
     Storage storage = StorageFactory.createStorage(storageClass, conf, url);

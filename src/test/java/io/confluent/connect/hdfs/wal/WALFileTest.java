@@ -85,11 +85,11 @@ public class WALFileTest extends TestWithMiniDFSCluster {
 
     WALFile.Reader reader = new WALFile.Reader(conf, WALFile.Reader.file(file));
 
-    assertEquals(key1.getName(), ((WALEntry) reader.next((Object) null)).getName());
-    assertEquals(val1.getName(), ((WALEntry) reader.getCurrentValue((Object) null)).getName());
-    assertEquals(key2.getName(), ((WALEntry) reader.next((Object) null)).getName());
-    assertEquals(val2.getName(), ((WALEntry) reader.getCurrentValue((Object) null)).getName());
-    assertNull(reader.next((Object) null));
+    assertEquals(key1.getName(), reader.next((WALEntry) null).getName());
+    assertEquals(val1.getName(), reader.getCurrentValue(null).getName());
+    assertEquals(key2.getName(), reader.next((WALEntry) null).getName());
+    assertEquals(val2.getName(), reader.getCurrentValue(null).getName());
+    assertNull(reader.next((WALEntry) null));
     reader.close();
   }
 
@@ -107,16 +107,16 @@ public class WALFileTest extends TestWithMiniDFSCluster {
     WALEntry val4 = new WALEntry("val4");
 
     WALFile.Reader reader = new WALFile.Reader(conf, WALFile.Reader.file(file));
-    assertEquals(key1.getName(), ((WALEntry) reader.next((Object) null)).getName());
-    assertEquals(val1.getName(), ((WALEntry) reader.getCurrentValue((Object) null)).getName());
-    assertEquals(key2.getName(), ((WALEntry) reader.next((Object) null)).getName());
-    assertEquals(val2.getName(), ((WALEntry) reader.getCurrentValue((Object) null)).getName());
+    assertEquals(key1.getName(), reader.next((WALEntry) null).getName());
+    assertEquals(val1.getName(), reader.getCurrentValue(null).getName());
+    assertEquals(key2.getName(), reader.next((WALEntry) null).getName());
+    assertEquals(val2.getName(), reader.getCurrentValue(null).getName());
 
-    assertEquals(key3.getName(), ((WALEntry) reader.next((Object) null)).getName());
-    assertEquals(val3.getName(), ((WALEntry) reader.getCurrentValue((Object) null)).getName());
-    assertEquals(key4.getName(), ((WALEntry) reader.next((Object) null)).getName());
-    assertEquals(val4.getName(), ((WALEntry) reader.getCurrentValue((Object) null)).getName());
-    assertNull(reader.next((Object) null));
+    assertEquals(key3.getName(), reader.next((WALEntry) null).getName());
+    assertEquals(val3.getName(), reader.getCurrentValue(null).getName());
+    assertEquals(key4.getName(), reader.next((WALEntry) null).getName());
+    assertEquals(val4.getName(), reader.getCurrentValue(null).getName());
+    assertNull(reader.next((WALEntry) null));
     reader.close();
   }
 }
