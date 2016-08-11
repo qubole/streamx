@@ -73,6 +73,8 @@ public class TopicPartitionWriter {
   private int flushSize;
   private long rotateIntervalMs;
   private long lastRotate;
+  private boolean isFirst;
+  private boolean flushPartial;
   private long rotateScheduleIntervalMs;
   private long nextScheduledRotate;
   private RecordWriterProvider writerProvider;
@@ -176,6 +178,9 @@ public class TopicPartitionWriter {
     if(rotateScheduleIntervalMs > 0) {
       timeZone = DateTimeZone.forID(connectorConfig.getString(HdfsSinkConnectorConfig.TIMEZONE_CONFIG));
     }
+
+    setIsFirst(true);
+    setFlushPartial(true);
   }
 
   private enum State {
@@ -325,6 +330,22 @@ public class TopicPartitionWriter {
       }
     }
     if (buffer.isEmpty()) {
+      // committing files after waiting for rotateIntervalMs time but less than flush.size records available
+      if (flushPartial && recordCounter > 0 && shouldRotate(now)) {
+        log.info("committing files after waiting for rotateIntervalMs time but less than flush.size records available.");
+        updateRotationTimers();
+
+        try {
+          closeTempFile();
+          appendToWAL();
+          commitFile();
+        } catch (IOException e) {
+          log.error("Exception on topic partition {}: ", tp, e);
+          failureTime = System.currentTimeMillis();
+          setRetryTimeout(timeoutMs);
+        }
+      }
+
       resume();
       state = State.WRITE_STARTED;
     }
@@ -400,10 +421,24 @@ public class TopicPartitionWriter {
     this.state = state;
   }
 
+  public void setIsFirst(boolean isFirst) {
+    this.isFirst = isFirst;
+  }
+
+  public void setFlushPartial(boolean flushPartial) {
+    this.flushPartial = flushPartial;
+  }
+
   private boolean shouldRotate(long now) {
-    boolean periodicRotation = rotateIntervalMs > 0 && now - lastRotate >= rotateIntervalMs;
+    boolean periodicRotation = rotateIntervalMs > 0 && (!isFirst && now - lastRotate >= rotateIntervalMs);
     boolean scheduledRotation = rotateScheduleIntervalMs > 0 && now >= nextScheduledRotate;
     boolean messageSizeRotation = recordCounter >= flushSize;
+
+    if (isFirst) {
+      lastRotate = now;
+      setIsFirst(false);
+    }
+
     return periodicRotation || scheduledRotation || messageSizeRotation;
   }
 
