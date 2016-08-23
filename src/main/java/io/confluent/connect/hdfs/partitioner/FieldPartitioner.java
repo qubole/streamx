@@ -32,7 +32,7 @@ import io.confluent.connect.hdfs.errors.PartitionException;
 
 public class FieldPartitioner implements Partitioner {
   private static final Logger log = LoggerFactory.getLogger(FieldPartitioner.class);
-  private static List<String> fieldNames;
+  private List<String> fieldNames;
   private List<FieldSchema> partitionFields = new ArrayList<>();
 
   @Override
