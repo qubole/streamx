@@ -32,48 +32,61 @@ import io.confluent.connect.hdfs.errors.PartitionException;
 
 public class FieldPartitioner implements Partitioner {
   private static final Logger log = LoggerFactory.getLogger(FieldPartitioner.class);
-  private static String fieldName;
+  private List<String> fieldNames;
   private List<FieldSchema> partitionFields = new ArrayList<>();
 
   @Override
   public void configure(Map<String, Object> config) {
-    fieldName = (String) config.get(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG);
-    partitionFields.add(new FieldSchema(fieldName, TypeInfoFactory.stringTypeInfo.toString(), ""));
+    fieldNames = (List<String>) config.get(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG);
+    for (String fieldName : fieldNames) {
+      partitionFields.add(new FieldSchema(fieldName, TypeInfoFactory.stringTypeInfo.toString(), ""));
+    }
   }
 
   @Override
   public String encodePartition(SinkRecord sinkRecord) {
     Object value = sinkRecord.value();
     Schema valueSchema = sinkRecord.valueSchema();
+    StringBuilder partition = new StringBuilder();
     if (value instanceof Struct) {
       Struct struct = (Struct) value;
-      Object partitionKey = struct.get(fieldName);
-      Type type = valueSchema.field(fieldName).schema().type();
-      switch (type) {
-        case INT8:
-        case INT16:
-        case INT32:
-        case INT64:
-          Number record = (Number) partitionKey;
-          return fieldName + "=" + record.toString();
-        case STRING:
-          return fieldName + "=" + (String) partitionKey;
-        case BOOLEAN:
-          boolean booleanRecord = (boolean) partitionKey;
-          return fieldName + "=" + Boolean.toString(booleanRecord);
-        default:
-          log.error("Type {} is not supported as a partition key.", type.getName());
-          throw new PartitionException("Error encoding partition.");
+
+      for (String fieldName : fieldNames) {
+        partition.append("/").append(fieldName).append("=");
+
+        Object partitionKey = struct.get(fieldName);
+        Type type = valueSchema.field(fieldName).schema().type();
+        switch (type) {
+          case INT8:
+          case INT16:
+          case INT32:
+          case INT64:
+            Number record = (Number) partitionKey;
+            partition.append(record);
+            break;
+          case STRING:
+            partition.append(partitionKey);
+            break;
+          case BOOLEAN:
+            boolean booleanRecord = (boolean) partitionKey;
+            partition.append(booleanRecord);
+            break;
+          default:
+            log.error("Type {} is not supported as a partition key.", type.getName());
+            throw new PartitionException("Error encoding partition.");
+        }
       }
     } else {
       log.error("Value is not Struct type.");
       throw new PartitionException("Error encoding partition.");
     }
+
+    return partition.toString();
   }
 
   @Override
   public String generatePartitionedPath(String topic, String encodedPartition) {
-    return topic + "/" + encodedPartition;
+    return topic + encodedPartition;
   }
 
   @Override
