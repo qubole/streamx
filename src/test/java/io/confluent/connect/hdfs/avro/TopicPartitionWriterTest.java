@@ -61,14 +61,15 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
   private static String extension;
 
   @Before
-  @SuppressWarnings("unchecked")
   public void setUp() throws Exception {
     super.setUp();
 
+    @SuppressWarnings("unchecked")
     Format format = ((Class<Format>) Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.FORMAT_CLASS_CONFIG))).newInstance();
     writerProvider = format.getRecordWriterProvider();
     schemaFileReader = format.getSchemaFileReader(avroData);
     extension = writerProvider.getExtension();
+    @SuppressWarnings("unchecked")
     Class<? extends Storage> storageClass = (Class<? extends Storage>) Class
             .forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
     storage = StorageFactory.createStorage(storageClass, conf, url);

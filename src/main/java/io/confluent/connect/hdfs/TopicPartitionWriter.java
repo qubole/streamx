@@ -59,7 +59,7 @@ public class TopicPartitionWriter {
   private static final Logger log = LoggerFactory.getLogger(TopicPartitionWriter.class);
   private WAL wal;
   private Map<String, String> tempFiles;
-  private Map<String, RecordWriter> writers;
+  private Map<String, RecordWriter<SinkRecord>> writers;
   private TopicPartition tp;
   private Partitioner partitioner;
   private String url;
@@ -98,7 +98,7 @@ public class TopicPartitionWriter {
   private SchemaFileReader schemaFileReader;
   private HiveUtil hive;
   private ExecutorService executorService;
-  private Queue<Future> hiveUpdateFutures;
+  private Queue<Future<Void>> hiveUpdateFutures;
   private Set<String> hivePartitions;
 
   public TopicPartitionWriter(
@@ -124,7 +124,7 @@ public class TopicPartitionWriter {
       HiveUtil hive,
       SchemaFileReader schemaFileReader,
       ExecutorService executorService,
-      Queue<Future> hiveUpdateFutures) {
+      Queue<Future<Void>> hiveUpdateFutures) {
     this.tp = tp;
     this.connectorConfig = connectorConfig;
     this.context = context;
@@ -197,6 +197,7 @@ public class TopicPartitionWriter {
     }
   }
 
+  @SuppressWarnings("fallthrough")
   public boolean recover() {
     try {
       switch (state) {
@@ -242,6 +243,7 @@ public class TopicPartitionWriter {
     }
   }
 
+  @SuppressWarnings("fallthrough")
   public void write() {
     long now = System.currentTimeMillis();
     if (failureTime > 0 && now - failureTime < timeoutMs) {
@@ -374,7 +376,7 @@ public class TopicPartitionWriter {
     return offset;
   }
 
-  public Map<String, RecordWriter> getWriters() {
+  public Map<String, RecordWriter<SinkRecord>> getWriters() {
     return writers;
   }
 
@@ -426,7 +428,6 @@ public class TopicPartitionWriter {
     context.resume(tp);
   }
 
-  @SuppressWarnings("unchecked")
   private RecordWriter<SinkRecord> getWriter(SinkRecord record, String encodedPartition)
       throws ConnectException {
     try {
@@ -519,7 +520,7 @@ public class TopicPartitionWriter {
 
   private void closeTempFile(String encodedPartition) throws IOException {
     if (writers.containsKey(encodedPartition)) {
-      RecordWriter writer = writers.get(encodedPartition);
+      RecordWriter<SinkRecord> writer = writers.get(encodedPartition);
       writer.close();
       writers.remove(encodedPartition);
     }

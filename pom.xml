@@ -177,6 +177,23 @@
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
+                    <compilerArguments>
+                        <Xlint:all/>
+                        <!-- bootstrap class path not set in conjunction with -source 1.7 -->
+                        <Xlint:-options/>
+                        <!-- serializable class ... has no definition of serialVersionUID -->
+                        <Xlint:-serial/>
+                        <!-- bad path element ".../repository/org/apache/derby/derby/10.10.2.0/derbyLocale_*.jar": no such file or directory -->
+                        <Xlint:-path/>
+                        <!--
+                        WALFile.java:[333,16] [deprecation] sync() in Syncable has been deprecated
+                        Apparently SuppressWarnings("deprecation") doesn't cover this on JDK 7
+                        -->
+                        <Xlint:-deprecation/>
+                        <Werror/>
+                    </compilerArguments>
+                    <showWarnings>true</showWarnings>
+                    <showDeprecation>false</showDeprecation>
                 </configuration>
             </plugin>
             <plugin>

@@ -95,10 +95,10 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   public void testRecovery() throws Exception {
     fs.delete(new Path(FileUtils.directoryName(url, topicsDir, TOPIC_PARTITION)), true);
 
+    @SuppressWarnings("unchecked")
     Class<? extends Storage> storageClass = (Class<? extends Storage>)
         Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
     Storage storage = StorageFactory.createStorage(storageClass, conf, url);
