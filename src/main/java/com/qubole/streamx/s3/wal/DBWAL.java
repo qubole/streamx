@@ -17,26 +17,23 @@ package com.qubole.streamx.s3.wal;
 import com.qubole.streamx.s3.S3SinkConnectorConfig;
 import io.confluent.connect.hdfs.FileUtils;
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
+import io.confluent.connect.hdfs.storage.Storage;
+import io.confluent.connect.hdfs.wal.WAL;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
-import io.confluent.connect.hdfs.wal.WAL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
-
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import io.confluent.connect.hdfs.storage.Storage;
 
 public class DBWAL implements  WAL {
     private static final Logger log = LoggerFactory.getLogger(DBWAL.class);
@@ -55,6 +52,7 @@ public class DBWAL implements  WAL {
         this.config = config;
         try {
             Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.postgresql.jdbc.Driver");
         }catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -64,13 +62,15 @@ public class DBWAL implements  WAL {
 
         try {
             String name = config.getString(S3SinkConnectorConfig.NAME_CONFIG);
-            tableName = name + "_" + topicPartition.topic() + "_" + partitionId;
+            String topicName = topicPartition.topic().toLowerCase().replace('.', '_');
+            tableName = name + "_" + topicName + "_" + partitionId;
             
             String connectionURL = config.getString(S3SinkConnectorConfig.DB_CONNECTION_URL_CONFIG);
             String user = config.getString(S3SinkConnectorConfig.DB_USER_CONFIG);
             String password = config.getString(S3SinkConnectorConfig.DB_PASSWORD_CONFIG);
             if(connectionURL.length()==0 || user.length()==0 || password.length()==0)
                 throw new ConnectException("db.connection.url,db.user,db.password - all three properties must be specified");
+            log.info("jdbc wal connecting to " + connectionURL);
             connection = DriverManager.getConnection(connectionURL, user, password);
             connection.setAutoCommit(false);
 
