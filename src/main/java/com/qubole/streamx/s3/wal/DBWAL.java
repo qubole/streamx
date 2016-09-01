@@ -15,6 +15,7 @@
 package com.qubole.streamx.s3.wal;
 
 import com.qubole.streamx.s3.S3SinkConnectorConfig;
+import com.qubole.streamx.s3.S3Util;
 import io.confluent.connect.hdfs.FileUtils;
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.storage.Storage;
@@ -62,8 +63,7 @@ public class DBWAL implements  WAL {
 
         try {
             String name = config.getString(S3SinkConnectorConfig.NAME_CONFIG);
-            String topicName = topicPartition.topic().toLowerCase().replace('.', '_');
-            tableName = name + "_" + topicName + "_" + partitionId;
+            tableName = name + "_" + S3Util.cleanTopicNameForDBWal(topicPartition.topic()) + "_" + partitionId;
             
             String connectionURL = config.getString(S3SinkConnectorConfig.DB_CONNECTION_URL_CONFIG);
             String user = config.getString(S3SinkConnectorConfig.DB_USER_CONFIG);
