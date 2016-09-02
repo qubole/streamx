@@ -28,11 +28,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -47,63 +45,32 @@ public class DBWAL implements  WAL {
     int id = ThreadLocalRandom.current().nextInt(1, 100000 + 1);
     HdfsSinkConnectorConfig config;
     String lease_table = "streamx_lease";
+    AbstractDBWALAccessor dbwalAccessor;
 
     public DBWAL(String logsDir, TopicPartition topicPartition, Storage storage, HdfsSinkConnectorConfig config) {
         this.storage = storage;
         this.config = config;
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Class.forName("com.postgresql.jdbc.Driver");
-        }catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
         partitionId = topicPartition.partition();
 
 
         try {
             String name = config.getString(S3SinkConnectorConfig.NAME_CONFIG);
             tableName = name + "_" + S3Util.cleanTopicNameForDBWal(topicPartition.topic()) + "_" + partitionId;
-            
+
             String connectionURL = config.getString(S3SinkConnectorConfig.DB_CONNECTION_URL_CONFIG);
             String user = config.getString(S3SinkConnectorConfig.DB_USER_CONFIG);
             String password = config.getString(S3SinkConnectorConfig.DB_PASSWORD_CONFIG);
             if(connectionURL.length()==0 || user.length()==0 || password.length()==0)
                 throw new ConnectException("db.connection.url,db.user,db.password - all three properties must be specified");
             log.info("jdbc wal connecting to " + connectionURL);
+            dbwalAccessor = AbstractDBWALAccessor.getInstance(connectionURL, user, password, tableName);
             connection = DriverManager.getConnection(connectionURL, user, password);
-            connection.setAutoCommit(false);
-
-            String sql = String.format("create table %s (id INT AUTO_INCREMENT, tempFiles VARCHAR(500), committedFiles VARCHAR(500), primary key (id))", tableName);
-            createIfNotExists(tableName, sql);
-
-            sql = String.format("CREATE TABLE `%s` (\n" +
-                    " `ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n" +
-                    " `id` int(11) DEFAULT NULL,\n" +
-                    " `wal` VARCHAR(500)" +
-                    ") ", lease_table);
-            createIfNotExists("streamx_lease", sql);
-
+            dbwalAccessor.createWalTable(name, topicPartition);
+            dbwalAccessor.createLeaseTable();
 
         }catch (SQLException e) {
             log.error(e.toString());
             throw new ConnectException(e);
-        }
-    }
-
-    private void createIfNotExists(String tableName, String sql) throws SQLException {
-        Statement statement = connection.createStatement();
-        statement.setQueryTimeout(30);  // set timeout to 30 sec.
-        DatabaseMetaData dbm = connection.getMetaData();
-        ResultSet tables = dbm.getTables(null, null, tableName, null);
-
-        if (tables.next()) {
-            // No op
-        }
-        else {
-            log.info("Creating table "+ sql);
-            statement.executeUpdate(sql);
-            connection.commit();
         }
     }
 
@@ -113,24 +80,15 @@ public class DBWAL implements  WAL {
         long sleepIntervalMs = 1000L;
         long MAX_SLEEP_INTERVAL_MS = 16000L;
         while (sleepIntervalMs < MAX_SLEEP_INTERVAL_MS) {
-
             try {
-                Statement statement = connection.createStatement();
-                statement.setQueryTimeout(5);  // set timeout to 30 sec.
-                String sql = String.format("select now() as currentTS,l1.* from %s as l1 where wal = '%s' for update", lease_table, tableName);
-
-                ResultSet rs = statement.executeQuery(sql);
+                ResultSet rs = dbwalAccessor.getLeaseResultSetLockedRow();
                 if(!rs.next()) {
-                    sql = String.format("insert into %s(id,wal) values (%s,'%s')", lease_table, id, tableName);
-                    statement.executeUpdate(sql);
-                    connection.commit();
+                    dbwalAccessor.insertLeaseTableRow(id);
                     return;
                 }
 
                 if(canAcquireLock(rs)) {
-                    sql = String.format("update %s set id=%s,ts=now() where wal='%s'", lease_table, id, tableName);
-                    statement.executeUpdate(sql);
-                    connection.commit();
+                    dbwalAccessor.updateLeaseTableRow(id);
                     return;
                 }
                 connection.commit();
@@ -174,23 +132,16 @@ public class DBWAL implements  WAL {
     @Override
     public void append(String tempFile, String committedFile) throws ConnectException {
         try {
-            if(tempFile==WAL.beginMarker) {
+            if(WAL.beginMarker.equals(tempFile)) {
                 tempFiles.clear();
                 committedFiles.clear();
             }
-            else if(tempFile==WAL.endMarker) {
+            else if(WAL.endMarker.equals(tempFile)) {
                 String tempFilesCommaSeparated = StringUtils.join(",",tempFiles);
                 String committedFilesCommaSeparated = StringUtils.join(",",committedFiles);
 
                 acquireLease();
-
-                Statement statement = connection.createStatement();
-                statement.setQueryTimeout(30);  // set timeout to 30 sec.
-
-                String sql = String.format("insert into %s (tempFiles,committedFiles) values ('%s','%s')", tableName, tempFilesCommaSeparated, committedFilesCommaSeparated);
-                log.info("committing " + sql);
-                statement.executeUpdate(sql);
-                connection.commit();
+                dbwalAccessor.insertCommitedFile(tempFilesCommaSeparated, committedFilesCommaSeparated);
             }
             else {
                 tempFiles.add(tempFile);
@@ -206,13 +157,7 @@ public class DBWAL implements  WAL {
     public void apply() throws ConnectException {
         try {
             acquireLease();
-
-            Statement statement = connection.createStatement();
-            statement.setQueryTimeout(30);  // set timeout to 30 sec.
-
-            String sql = String.format("select * from %s order by id desc limit 1", tableName);
-            log.info("Reading wal " + sql);
-            ResultSet rs=statement.executeQuery(sql);
+            ResultSet rs = dbwalAccessor.getLastResultSetFromWalTable();
 
             while(rs.next()) {
                 String tempFiles = rs.getString("tempFiles");
@@ -239,10 +184,7 @@ public class DBWAL implements  WAL {
     @Override
     public void truncate() throws ConnectException {
         try {
-            Statement statement = connection.createStatement();
-            statement.setQueryTimeout(30);  // set timeout to 30 sec.
-            String sql = String.format("select * from %s order by id desc limit 2", tableName);
-            ResultSet rs = statement.executeQuery(sql);
+            ResultSet rs = dbwalAccessor.getLastNResultsetFromWalTable(2);
             int rows = 0;
             while(rs.next()){
                 rows++;
@@ -251,10 +193,7 @@ public class DBWAL implements  WAL {
                 return;
             rs.absolute(2);
             String id = rs.getString("id");
-            sql = String.format("delete from %s where id < %s", tableName, id);
-            log.info("truncating table " + sql);
-            statement.executeUpdate(sql);
-            connection.commit();
+            dbwalAccessor.truncateTableLessThanId(id);
         }catch (SQLException e){
             log.error(e.toString());
             throw new ConnectException(e);
@@ -329,10 +268,7 @@ public class DBWAL implements  WAL {
 
     private ResultSet fetch() throws ConnectException {
         try {
-            Statement statement = connection.createStatement();
-            statement.setQueryTimeout(30);  // set timeout to 30 sec.
-            String sql = String.format("select * from %s order by id desc limit 2", tableName);
-            ResultSet rs = statement.executeQuery(sql);
+            ResultSet rs = dbwalAccessor.getLastNResultsetFromWalTable(2);
             return rs;
         }catch (SQLException e){
             log.error(e.toString());
