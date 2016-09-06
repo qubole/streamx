@@ -3,6 +3,13 @@
 Changelog
 =========
 
+Version 3.0.1
+-------------
+
+HDFS Connector
+~~~~~~~~~~~~~~
+* `PR-82 <https://github.com/confluentinc/kafka-connect-hdfs/pull/82>`_ - add version.txt to share/doc
+
 Version 3.0.0
 -------------
 
