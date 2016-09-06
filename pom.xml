@@ -190,6 +190,8 @@
                         Apparently SuppressWarnings("deprecation") doesn't cover this on JDK 7
                         -->
                         <Xlint:-deprecation/>
+                        <!-- Needed for DataWriter.java because @SuppressWarnings("unchecked") doesn't cover this on JDK 7 -->
+                        <Xlint:-unchecked/>
                         <Werror/>
                     </compilerArguments>
                     <showWarnings>true</showWarnings>
