@@ -451,10 +451,15 @@ public class TopicPartitionWriter {
   private void resetOffsets() throws ConnectException {
     if (!recovered) {
       readOffset();
-      if (offset > 0) {
-        log.debug("Resetting offset for {} to {}", tp, offset);
-        context.offset(tp, offset);
-      }
+      // Note that we must *always* request that we seek to an offset here. Currently the framework will still commit
+      // Kafka offsets even though we track our own (see KAFKA-3462), which can result in accidentally using that offset
+      // if one was committed but no files were rolled to their final location in HDFS (i.e. some data was accepted,
+      // written to a tempfile, but then that tempfile was discarded). To protect against this, even if we just want
+      // to start at offset 0 or reset to the earliest offset, we specify that explicitly to forcibly override any
+      // committed offsets.
+      long seekOffset = offset > 0 ? offset : 0;
+      log.debug("Resetting offset for {} to {}", tp, seekOffset);
+      context.offset(tp, seekOffset);
       recovered = true;
     }
   }
