@@ -74,7 +74,6 @@ public class TopicPartitionWriter {
   private long rotateIntervalMs;
   private long lastRotate;
   private boolean isFirst;
-  private boolean flushPartial;
   private long rotateScheduleIntervalMs;
   private long nextScheduledRotate;
   private RecordWriterProvider writerProvider;
@@ -180,7 +179,6 @@ public class TopicPartitionWriter {
     }
 
     setIsFirst(true);
-    setFlushPartial(true);
   }
 
   private enum State {
@@ -331,7 +329,7 @@ public class TopicPartitionWriter {
     }
     if (buffer.isEmpty()) {
       // committing files after waiting for rotateIntervalMs time but less than flush.size records available
-      if (flushPartial && recordCounter > 0 && shouldRotate(now)) {
+      if (recordCounter > 0 && shouldRotate(now)) {
         log.info("committing files after waiting for rotateIntervalMs time but less than flush.size records available.");
         updateRotationTimers();
 
@@ -421,12 +419,8 @@ public class TopicPartitionWriter {
     this.state = state;
   }
 
-  public void setIsFirst(boolean isFirst) {
+  private void setIsFirst(boolean isFirst) {
     this.isFirst = isFirst;
-  }
-
-  public void setFlushPartial(boolean flushPartial) {
-    this.flushPartial = flushPartial;
   }
 
   private boolean shouldRotate(long now) {
