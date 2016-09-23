@@ -99,16 +99,6 @@ public class HdfsSinkTask extends SinkTask {
     // Do nothing as the connector manages the offset
   }
 
-  @Override
-  public void open(Collection<TopicPartition> partitions) {
-    hdfsWriter.open(partitions);
-  }
-
-  @Override
-  public void close(Collection<TopicPartition> partitions) {
-    hdfsWriter.close(partitions);
-  }
-
   private void recover(Set<TopicPartition> assignment) {
     for (TopicPartition tp: assignment) {
       hdfsWriter.recover(tp);

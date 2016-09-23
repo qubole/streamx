@@ -73,8 +73,4 @@ public class HdfsSinkConnector extends Connector {
 
   }
 
-  @Override
-  public ConfigDef config() {
-    return HdfsSinkConnectorConfig.getConfig();
-  }
 }
