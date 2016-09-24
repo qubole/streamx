@@ -62,6 +62,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
         <jackson.version>2.6.3</jackson.version>
+        <mysql.version>5.1.6</mysql.version>
+        <postgresql.version>9.4.1209</postgresql.version>
     </properties>
 
     <repositories>
@@ -173,8 +175,13 @@
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
-	    <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.6</version>
+	          <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
