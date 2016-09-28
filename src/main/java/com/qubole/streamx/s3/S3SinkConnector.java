@@ -35,48 +35,47 @@ import java.util.Map;
  */
 public class S3SinkConnector extends Connector {
 
-    private static final Logger log = LoggerFactory.getLogger(S3SinkConnector.class);
-    private Map<String, String> configProperties;
-    private S3SinkConnectorConfig config;
+  private static final Logger log = LoggerFactory.getLogger(S3SinkConnector.class);
+  private Map<String, String> configProperties;
+  private S3SinkConnectorConfig config;
 
-    @Override
-    public String version() {
+  @Override
+  public String version() {
         return Version.getVersion();
     }
 
-    @Override
-    public void start(Map<String, String> props) throws ConnectException {
-        try {
-            configProperties = props;
-            config = new S3SinkConnectorConfig(props);
-        } catch (ConfigException e) {
-            throw new ConnectException("Couldn't start S3SinkConnector due to configuration error", e);
-        }
+  @Override
+  public void start(Map<String, String> props) throws ConnectException {
+    try {
+      configProperties = props;
+      config = new S3SinkConnectorConfig(props);
+    } catch (ConfigException e) {
+      throw new ConnectException("Couldn't start S3SinkConnector due to configuration error", e);
     }
+  }
 
-    @Override
-    public Class<? extends Task> taskClass() {
+  @Override
+  public Class<? extends Task> taskClass() {
         return HdfsSinkTask.class;
     }
 
-    @Override
-    public List<Map<String, String>> taskConfigs(int maxTasks) {
-        List<Map<String, String>> taskConfigs = new ArrayList<>();
-        Map<String, String> taskProps = new HashMap<>();
-        taskProps.putAll(configProperties);
-        for (int i = 0; i < maxTasks; i++) {
-            taskConfigs.add(taskProps);
-        }
-        return taskConfigs;
+  @Override
+  public List<Map<String, String>> taskConfigs(int maxTasks) {
+    List<Map<String, String>> taskConfigs = new ArrayList<>();
+    Map<String, String> taskProps = new HashMap<>();
+    taskProps.putAll(configProperties);
+    for (int i = 0; i < maxTasks; i++) {
+      taskConfigs.add(taskProps);
     }
+    return taskConfigs;
+  }
 
-    @Override
-    public void stop() throws ConnectException {
+  @Override
+  public void stop() throws ConnectException {
+  }
 
-    }
-
-    @Override
-    public ConfigDef config() {
+  @Override
+  public ConfigDef config() {
         return S3SinkConnectorConfig.getConfig();
     }
 }
