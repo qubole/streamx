@@ -30,9 +30,12 @@ public class HiveTestBase extends TestWithMiniDFSCluster {
 
   @Before
   public void setUp() throws Exception {
+    Class<? extends HiveMetaStore> metaStoreClass = (Class<? extends HiveMetaStore>) Class
+            .forName(connectorConfig.getString(HdfsSinkConnectorConfig.HIVE_METASTORE_TYPE));
     super.setUp();
     hiveDatabase = connectorConfig.getString(HdfsSinkConnectorConfig.HIVE_DATABASE_CONFIG);
-    hiveMetaStore = new HiveMetaStore(conf, connectorConfig);
+
+    hiveMetaStore = HiveMetaStoreFactory.createHiveMetaStore(metaStoreClass, conf, connectorConfig);
     hiveExec = new HiveExec(connectorConfig);
     cleanHive();
   }
