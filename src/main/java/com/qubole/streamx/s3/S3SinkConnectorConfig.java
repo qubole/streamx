@@ -28,7 +28,7 @@ public class S3SinkConnectorConfig extends HdfsSinkConnectorConfig {
   public static final String WAL_CLASS_CONFIG = "wal.class";
   private static final String WAL_CLASS_DOC =
       "WAL implementation to use. Use RDSWAL if you need exactly once guarantee (applies for s3)";
-  public static final String WAL_CLASS_DEFAULT = "com.qubole.streamx.s3.wal.DBWAL";
+  public static final String WAL_CLASS_DEFAULT = "io.confluent.connect.hdfs.utils.MemoryWAL";
   private static final String WAL_CLASS_DISPLAY = "WAL Class";
 
   public static final String DB_CONNECTION_URL_CONFIG = "db.connection.url";

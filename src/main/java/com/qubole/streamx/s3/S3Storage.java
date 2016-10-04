@@ -73,12 +73,22 @@ public class S3Storage implements Storage {
 
   @Override
   public boolean exists(String filename) throws IOException {
+    boolean readSucceeded = true;
     try {
+      //s3 is read-after-write consistency. We use read to check if file exists, rather listing
       BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(filename))));
     } catch(IOException e){
+      readSucceeded = false;
+    }
+    if (readSucceeded)
+      return true;
+
+    try {
+      //read fails for directories, hence we do listing as fallback
+      return fs.exists(new Path(filename));
+    } catch (IOException e) {
       return false;
     }
-    return true;
   }
 
   @Override
