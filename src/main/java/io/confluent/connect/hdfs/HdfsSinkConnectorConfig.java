@@ -89,10 +89,10 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   public static final String HIVE_CONF_DIR_CONFIG = "hive.conf.dir";
   private static final String HIVE_CONF_DIR_DOC = "Hive configuration directory";
   public static final String HIVE_CONF_DIR_DEFAULT = "";
-  private static final String HIVE_CONF_DIR_DISPLAY = "Hive configuration directory";
+  private static final String HIVE_CONF_DIR_DISPLAY = "Hive configuration directory.";
 
   public static final String HIVE_HOME_CONFIG = "hive.home";
-  private static final String HIVE_HOME_DOC = "Hive home directory";
+  private static final String HIVE_HOME_DOC = "Hive home directory.";
   public static final String HIVE_HOME_DEFAULT = "";
   private static final String HIVE_HOME_DISPLAY = "Hive home directory";
 
@@ -203,7 +203,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       + "``TimeBasedPartitioner``. The format set in this configuration converts the Unix timestamp "
       + "to proper directories strings. For example, if you set "
       + "``path.format='year'=YYYY/'month'=MM/'day'=dd/'hour'=HH/``, the data directories will have"
-      + " the format ``/year=2015/month=12/day=07/hour=15`` ";
+      + " the format ``/year=2015/month=12/day=07/hour=15``.";
   public static final String PATH_FORMAT_DEFAULT = "";
   private static final String PATH_FORMAT_DISPLAY = "Path Format";
 
@@ -243,7 +243,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   // Internal group
   public static final String STORAGE_CLASS_CONFIG = "storage.class";
   private static final String STORAGE_CLASS_DOC =
-      "The underlying storage layer. The default is HDFS";
+      "The underlying storage layer. The default is HDFS.";
   public static final String STORAGE_CLASS_DEFAULT = "io.confluent.connect.hdfs.storage.HdfsStorage";
   private static final String STORAGE_CLASS_DISPLAY = "Storage Class";
 
