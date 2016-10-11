@@ -14,7 +14,11 @@
 
 package io.confluent.connect.hdfs.avro;
 
-import io.confluent.connect.hdfs.*;
+import io.confluent.connect.hdfs.DataWriter;
+import io.confluent.connect.hdfs.FileUtils;
+import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
+import io.confluent.connect.hdfs.SchemaFileReader;
+import io.confluent.connect.hdfs.TestWithMiniDFSCluster;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.common.TopicPartition;
@@ -25,15 +29,23 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Test;
 
-import java.util.*;
-
 import io.confluent.connect.hdfs.filter.TopicPartitionCommittedFileFilter;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
 import io.confluent.connect.hdfs.storage.Storage;
 import io.confluent.connect.hdfs.storage.StorageFactory;
 import io.confluent.connect.hdfs.wal.WAL;
 
-import static org.junit.Assert.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 

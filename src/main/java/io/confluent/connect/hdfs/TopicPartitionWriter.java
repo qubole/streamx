@@ -73,7 +73,6 @@ public class TopicPartitionWriter {
   private int flushSize;
   private long rotateIntervalMs;
   private long lastRotate;
-  private boolean isFirst;
   private long rotateScheduleIntervalMs;
   private long nextScheduledRotate;
   private RecordWriterProvider writerProvider;
@@ -178,7 +177,8 @@ public class TopicPartitionWriter {
       timeZone = DateTimeZone.forID(connectorConfig.getString(HdfsSinkConnectorConfig.TIMEZONE_CONFIG));
     }
 
-    setIsFirst(true);
+    // Initialize rotation timers
+    updateRotationTimers();
   }
 
   private enum State {
@@ -419,19 +419,10 @@ public class TopicPartitionWriter {
     this.state = state;
   }
 
-  private void setIsFirst(boolean isFirst) {
-    this.isFirst = isFirst;
-  }
-
   private boolean shouldRotate(long now) {
-    boolean periodicRotation = rotateIntervalMs > 0 && (!isFirst && now - lastRotate >= rotateIntervalMs);
+    boolean periodicRotation = rotateIntervalMs > 0 && now - lastRotate >= rotateIntervalMs;
     boolean scheduledRotation = rotateScheduleIntervalMs > 0 && now >= nextScheduledRotate;
     boolean messageSizeRotation = recordCounter >= flushSize;
-
-    if (isFirst) {
-      lastRotate = now;
-      setIsFirst(false);
-    }
 
     return periodicRotation || scheduledRotation || messageSizeRotation;
   }
