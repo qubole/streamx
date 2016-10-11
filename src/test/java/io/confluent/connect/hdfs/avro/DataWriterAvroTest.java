@@ -14,6 +14,11 @@
 
 package io.confluent.connect.hdfs.avro;
 
+import io.confluent.connect.hdfs.DataWriter;
+import io.confluent.connect.hdfs.FileUtils;
+import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
+import io.confluent.connect.hdfs.SchemaFileReader;
+import io.confluent.connect.hdfs.TestWithMiniDFSCluster;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.common.TopicPartition;
@@ -24,22 +29,18 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import io.confluent.connect.hdfs.DataWriter;
-import io.confluent.connect.hdfs.FileUtils;
-import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
-import io.confluent.connect.hdfs.SchemaFileReader;
-import io.confluent.connect.hdfs.TestWithMiniDFSCluster;
 import io.confluent.connect.hdfs.filter.TopicPartitionCommittedFileFilter;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
 import io.confluent.connect.hdfs.storage.Storage;
 import io.confluent.connect.hdfs.storage.StorageFactory;
 import io.confluent.connect.hdfs.wal.WAL;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -590,5 +591,54 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.close(assignment);
     hdfsWriter.stop();
   }
+
+  @Test
+  public void testFlushPartialFile() throws Exception {
+    String ROTATE_INTERVAL_MS_CONFIG = "1000";
+    // wait for 2 * ROTATE_INTERVAL_MS_CONFIG
+    long WAIT_TIME = Long.valueOf(ROTATE_INTERVAL_MS_CONFIG) * 2;
+
+    String FLUSH_SIZE_CONFIG = "10";
+    // send 1.5 * FLUSH_SIZE_CONFIG records
+    long NUMBER_OF_RECORD = Long.valueOf(FLUSH_SIZE_CONFIG) + Long.valueOf(FLUSH_SIZE_CONFIG) / 2;
+
+    Map<String, String> props = createProps();
+    props.put(HdfsSinkConnectorConfig.FLUSH_SIZE_CONFIG, FLUSH_SIZE_CONFIG);
+    props.put(HdfsSinkConnectorConfig.ROTATE_INTERVAL_MS_CONFIG, ROTATE_INTERVAL_MS_CONFIG);
+    HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
+    assignment = new HashSet<>();
+    assignment.add(TOPIC_PARTITION);
+
+    DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
+    hdfsWriter.recover(TOPIC_PARTITION);
+
+    String key = "key";
+    Schema schema = createSchema();
+    Struct record = createRecord(schema);
+
+    Collection<SinkRecord> sinkRecords = new ArrayList<>();
+    for (long offset = 0; offset < NUMBER_OF_RECORD; offset++) {
+      SinkRecord sinkRecord = new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, offset);
+      sinkRecords.add(sinkRecord);
+    }
+    hdfsWriter.write(sinkRecords);
+
+    // wait for rotation to happen
+    long start = System.currentTimeMillis();
+    long end = start + WAIT_TIME;
+    while(System.currentTimeMillis() < end) {
+      List<SinkRecord> messageBatch = new ArrayList<>();
+      hdfsWriter.write(messageBatch);
+    }
+
+    Map<TopicPartition, Long> committedOffsets = hdfsWriter.getCommittedOffsets();
+    assertTrue(committedOffsets.containsKey(TOPIC_PARTITION));
+    long previousOffset = committedOffsets.get(TOPIC_PARTITION);
+    assertEquals(NUMBER_OF_RECORD, previousOffset);
+
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
+  }
+
 }
 
