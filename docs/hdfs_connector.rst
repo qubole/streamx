@@ -5,8 +5,8 @@ The HDFS connector allows you to export data from Kafka topics to HDFS files in 
 and integrates with Hive to make data immediately available for querying with HiveQL.
 
 The connector periodically polls data from Kafka and writes them to HDFS. The data from each Kafka
-topic is partitioned by the provided partitioner and divided into chucks. Each chunk of data is
-represented as an HDFS file with topic, kafka partition, start and end offsets of this data chuck
+topic is partitioned by the provided partitioner and divided into chunks. Each chunk of data is
+represented as an HDFS file with topic, kafka partition, start and end offsets of this data chunk
 in the filename. If no partitioner is specified in the configuration, the default partitioner which
 preserves the Kafka partitioning is used. The size of each data chunk is determined by the number of
 records written to HDFS, the time written to HDFS and schema compatibility.
