@@ -164,7 +164,7 @@ write Parquet format and use hourly partitioner::
   format.class=io.confluent.connect.hdfs.parquet.ParquetFormat
   partitioner.class=io.confluent.connect.hdfs.partitioner.HourlyPartitioner
 
-.. note:: If you want ot use the field partitioner, you need to specify the ``partition.field.name``
+.. note:: If you want to use the field partitioner, you need to specify the ``partition.field.name``
    configuration as well to specify the field name of the record.
 
 Hive Integration
