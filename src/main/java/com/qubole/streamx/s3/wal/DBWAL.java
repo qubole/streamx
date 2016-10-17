@@ -19,19 +19,19 @@ import io.confluent.connect.hdfs.FileUtils;
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 import io.confluent.connect.hdfs.wal.WAL;
 
+import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
+import com.mchange.v2.c3p0.*;
 
 
 import org.slf4j.Logger;
@@ -39,16 +39,20 @@ import org.slf4j.LoggerFactory;
 import io.confluent.connect.hdfs.storage.Storage;
 
 public class DBWAL implements  WAL {
+
   private static final Logger log = LoggerFactory.getLogger(DBWAL.class);
+
   String tableName;
   Storage storage;
-  Connection connection;
-  ArrayList<String> tempFiles = new ArrayList<>();
-  ArrayList<String> committedFiles = new ArrayList<>();
   int partitionId = -1;
   int id = ThreadLocalRandom.current().nextInt(1, 100000 + 1);
   HdfsSinkConnectorConfig config;
   String lease_table = "streamx_lease";
+
+  ArrayList<String> tempFiles = new ArrayList<>();
+  ArrayList<String> committedFiles = new ArrayList<>();
+
+  ComboPooledDataSource cpds = null;
 
   public DBWAL(String logsDir, TopicPartition topicPartition, Storage storage, HdfsSinkConnectorConfig config) {
     this.storage = storage;
@@ -61,7 +65,6 @@ public class DBWAL implements  WAL {
 
     partitionId = topicPartition.partition();
 
-
     try {
       String name = config.getString(S3SinkConnectorConfig.NAME_CONFIG);
       tableName = name + "_" + topicPartition.topic() + "_" + partitionId;
@@ -71,8 +74,8 @@ public class DBWAL implements  WAL {
       String password = config.getString(S3SinkConnectorConfig.DB_PASSWORD_CONFIG);
       if(connectionURL.length()==0 || user.length()==0 || password.length()==0)
         throw new ConnectException("db.connection.url,db.user,db.password - all three properties must be specified");
-      connection = DriverManager.getConnection(connectionURL, user, password);
-      connection.setAutoCommit(false);
+
+      cpds = ConnectionPool.getDatasource(connectionURL, user, password);
 
       String sql = String.format("create table %s (id INT AUTO_INCREMENT, tempFiles VARCHAR(500), committedFiles VARCHAR(500), primary key (id))", tableName);
       createIfNotExists(tableName, sql);
@@ -91,6 +94,8 @@ public class DBWAL implements  WAL {
   }
 
   private void createIfNotExists(String tableName, String sql) throws SQLException {
+    Connection connection = cpds.getConnection();
+    connection.setAutoCommit(false);
     Statement statement = connection.createStatement();
     statement.setQueryTimeout(30);  // set timeout to 30 sec.
     DatabaseMetaData dbm = connection.getMetaData();
@@ -114,6 +119,8 @@ public class DBWAL implements  WAL {
     while (sleepIntervalMs < MAX_SLEEP_INTERVAL_MS) {
 
       try {
+        Connection connection = cpds.getConnection();
+        connection.setAutoCommit(false);
         Statement statement = connection.createStatement();
         statement.setQueryTimeout(5);  // set timeout to 30 sec.
         String sql = String.format("select now() as currentTS,l1.* from %s as l1 where wal = '%s' for update", lease_table, tableName);
@@ -183,6 +190,8 @@ public class DBWAL implements  WAL {
         String committedFilesCommaSeparated = StringUtils.join(",",committedFiles);
 
         acquireLease();
+        Connection connection = cpds.getConnection();
+        connection.setAutoCommit(false);
 
         Statement statement = connection.createStatement();
         statement.setQueryTimeout(30);  // set timeout to 30 sec.
@@ -206,6 +215,8 @@ public class DBWAL implements  WAL {
   public void apply() throws ConnectException {
     try {
       acquireLease();
+      Connection connection = cpds.getConnection();
+      connection.setAutoCommit(false);
 
       Statement statement = connection.createStatement();
       statement.setQueryTimeout(30);  // set timeout to 30 sec.
@@ -239,6 +250,9 @@ public class DBWAL implements  WAL {
   @Override
   public void truncate() throws ConnectException {
     try {
+      Connection connection = cpds.getConnection();
+      connection.setAutoCommit(false);
+
       Statement statement = connection.createStatement();
       statement.setQueryTimeout(30);  // set timeout to 30 sec.
       String sql = String.format("select * from %s order by id desc limit 2", tableName);
@@ -263,11 +277,7 @@ public class DBWAL implements  WAL {
 
   @Override
   public void close() throws ConnectException {
-    try {
-      connection.close();
-    } catch (SQLException e) {
-      throw new ConnectException("Unable to close connection",e);
-    }
+
   }
 
   @Override
@@ -326,6 +336,9 @@ public class DBWAL implements  WAL {
 
   private ResultSet fetch() throws ConnectException {
     try {
+      Connection connection = cpds.getConnection();
+      connection.setAutoCommit(false);
+
       Statement statement = connection.createStatement();
       statement.setQueryTimeout(30);  // set timeout to 30 sec.
       String sql = String.format("select * from %s order by id desc limit 2", tableName);
@@ -337,3 +350,4 @@ public class DBWAL implements  WAL {
     }
   }
 }
+
