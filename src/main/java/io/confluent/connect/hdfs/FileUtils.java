@@ -57,6 +57,10 @@ public class FileUtils {
   }
 
   public static String fileName(String url, String topicsDir, String directory, String name) {
+    if (directory.endsWith("/"))
+      directory = directory.substring(0,directory.length()-1);
+    if (directory.startsWith("/"))
+      directory = directory.substring(1);
     return url + "/" + topicsDir + "/" + directory + "/" + name;
   }
 
@@ -73,7 +77,6 @@ public class FileUtils {
                                     String extension) {
     UUID id = UUID.randomUUID();
     String name = id.toString() + "_" + "tmp" + extension;
-    //return localFileName(url, topicsDir, directory, name);
     return fileName(url, topicsDir, directory, name);
   }
 

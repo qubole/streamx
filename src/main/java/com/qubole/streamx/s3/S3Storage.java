@@ -40,101 +40,103 @@ import java.net.URI;
 
 public class S3Storage implements Storage {
 
-    private final FileSystem fs;
-    private final Configuration hadoopConf;
-    private final String url;
-    private final HdfsSinkConnectorConfig config;
+  private final FileSystem fs;
+  private final Configuration hadoopConf;
+  private final String url;
+  private final HdfsSinkConnectorConfig config;
 
-    public S3Storage(Configuration hadoopConf, HdfsSinkConnectorConfig config, String url) throws IOException {
-        fs = FileSystem.newInstance(URI.create(url), hadoopConf);
-        this.hadoopConf = hadoopConf;
-        this.url = url;
-        this.config = config;
+  public S3Storage(Configuration hadoopConf, HdfsSinkConnectorConfig config, String url) throws IOException {
+    fs = FileSystem.newInstance(URI.create(url), hadoopConf);
+    this.hadoopConf = hadoopConf;
+    this.url = url;
+    this.config = config;
+  }
+
+  @Override
+  public FileStatus[] listStatus(String path, PathFilter filter) throws IOException {
+    return fs.listStatus(new Path(path), filter);
+  }
+
+  @Override
+  public FileStatus[] listStatus(String path) throws IOException {
+    return fs.listStatus(new Path(path));
+  }
+
+  @Override
+  public void append(String filename, Object object) throws IOException {
+  }
+
+  @Override
+  public boolean mkdirs(String filename) throws IOException {
+    return fs.mkdirs(new Path(filename));
+  }
+
+  @Override
+  public boolean exists(String filename) throws IOException {
+    boolean readSucceeded = true;
+    try {
+      //s3 is read-after-write consistency. We use read to check if file exists, rather listing
+      BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(filename))));
+    } catch(IOException e){
+      readSucceeded = false;
     }
+    if (readSucceeded)
+      return true;
 
-    @Override
-    public FileStatus[] listStatus(String path, PathFilter filter) throws IOException {
-        return fs.listStatus(new Path(path), filter);
+    try {
+      //read fails for directories, hence we do listing as fallback
+      return fs.exists(new Path(filename));
+    } catch (IOException e) {
+      return false;
     }
+  }
 
-    @Override
-    public FileStatus[] listStatus(String path) throws IOException {
-        return fs.listStatus(new Path(path));
+  @Override
+  public void commit(String tempFile, String committedFile) throws IOException {
+    renameFile(tempFile, committedFile);
+  }
+
+  @Override
+  public void delete(String filename) throws IOException {
+    fs.delete(new Path(filename), true);
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (fs != null) {
+      fs.close();
     }
+  }
 
-    @Override
-    public void append(String filename, Object object) throws IOException {
-
+  @Override
+  public WAL wal(String topicsDir, TopicPartition topicPart) {
+    try {
+      Class<? extends WAL> walClass = (Class<? extends WAL>) Class
+          .forName(config.getString(S3SinkConnectorConfig.WAL_CLASS_CONFIG));
+      Constructor<? extends WAL> ctor = walClass.getConstructor(String.class, TopicPartition.class, Storage.class, HdfsSinkConnectorConfig.class);
+      return ctor.newInstance(topicsDir, topicPart, this, config);
+    } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | MethodInvocationException | InstantiationException | IllegalAccessException e) {
+      throw new ConnectException(e);
     }
+  }
 
-    @Override
-    public boolean mkdirs(String filename) throws IOException {
-        return fs.mkdirs(new Path(filename));
-    }
-
-    @Override
-    public boolean exists(String filename) throws IOException {
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(filename))));
-        } catch(IOException e){
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public void commit(String tempFile, String committedFile) throws IOException {
-        renameFile(tempFile, committedFile);
-    }
-
-
-    @Override
-    public void delete(String filename) throws IOException {
-        fs.delete(new Path(filename), true);
-    }
-
-    @Override
-    public void close() throws IOException {
-        if (fs != null) {
-            fs.close();
-        }
-    }
-
-    @Override
-    public WAL wal(String topicsDir, TopicPartition topicPart) {
-        try {
-            Class<? extends WAL> walClass = (Class<? extends WAL>) Class
-                    .forName(config.getString(S3SinkConnectorConfig.WAL_CLASS_CONFIG));
-            Constructor<? extends WAL> ctor = walClass.getConstructor(String.class, TopicPartition.class, Storage.class, HdfsSinkConnectorConfig.class);
-            return ctor.newInstance(topicsDir, topicPart, this, config);
-        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | MethodInvocationException | InstantiationException | IllegalAccessException e) {
-            throw new ConnectException(e);
-        }
-    }
-
-    @Override
-    public Configuration conf() {
+  @Override
+  public Configuration conf() {
         return hadoopConf;
     }
 
-    @Override
-    public String url() {
+  @Override
+  public String url() {
         return url;
     }
 
-    private void renameFile(String sourcePath, String targetPath) throws IOException {
-        if (sourcePath.equals(targetPath)) {
-            return;
-        }
-        final Path srcPath = new Path(sourcePath);
-        final Path dstPath = new Path(targetPath);
-        FileSystem localFs = FileSystem.get(srcPath.toUri(),hadoopConf);
-        fs.rename(srcPath, dstPath);
-        /*
-        if (localFs.exists(srcPath)) {
-            fs.copyFromLocalFile(false, srcPath, dstPath);
-            //fs.rename(srcPath, dstPath);
-        }*/
-
+  private void renameFile(String sourcePath, String targetPath) throws IOException {
+    if (sourcePath.equals(targetPath)) {
+      return;
     }
+    final Path srcPath = new Path(sourcePath);
+    final Path dstPath = new Path(targetPath);
+    FileSystem localFs = FileSystem.get(srcPath.toUri(),hadoopConf);
+    fs.rename(srcPath, dstPath);
+  }
 }
