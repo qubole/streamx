@@ -25,6 +25,7 @@ public class ConnectionPool {
         cpds.setUser(user);
         cpds.setPassword(password);
         cpds.setMaxConnectionAge(18000);//5 hours
+        dataSources.put(connectionUrl, cpds);
         return cpds;
       } catch (PropertyVetoException e) {
         log.error("Error while creating c3p0 ComboPooledDataSource" + e);
