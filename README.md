@@ -34,16 +34,23 @@ Add Connector to Kafka Connect Classpath :
 
 #### Start Kafka Connect
 
-In Kafka, change the following in config/connect-distibuted.properties
+In Kafka, change the following in config/connect-distibuted.properties or config/connect-standalone.properties depending on what mode you want to use.
 
-*bootstrap.servers* to Kafka end-point (ex: localhost:9092)
-
-To copy data from Kafka as-is without any changes, use ByteArrayConverter. Change key.converter and value.converter to the following.
-
+bootstrap.servers=set Kafka end-point (ex: localhost:9092)
 key.converter=com.qubole.streamx.ByteArrayConverter
 value.converter=com.qubole.streamx.ByteArrayConverter
+Use ByteArrayConverter to copy data from Kafka as-is without any changes. (copy JSON/CSV)
 
-Run Kafka Connect `bin/connect-distibuted.sh config/connect-distributed.properties`
+##### Run Kafka Connect in Standalone mode
+Set *s3.url* and *hadoop-conf* in StreamX config/quickstart-s3.properties. StreamX packages hadoop-conf directory at config/hadoop-conf for ease-of-use. Set s3 access and secret keys in config/hadoop-conf/hdfs-site.xml
+
+In Kafka, run
+`bin/connect-standalone etc/kafka/connect-standalone.properties /path/to/streamx/config/quickstart-s3.properties`
+
+You are done. Check s3 for ingested data !
+
+##### Run Kafka Connect in distributed mode
+`bin/connect-distributed.sh config/connect-distributed.properties`
 
 We have started the Kafka Connect framework and the S3 Connector is added to classpath. Kafka Connect framework starts a REST server (rest.port property in connect-distributed.properties) listening for Connect Job requests. The copy job can be submitted by hitting the REST end-point using curl or any REST clients.
 
@@ -74,34 +81,7 @@ curl -i -X POST \
 - *tasks.max* refers to number of tasks that copies the data
 - a new file is written after *flush.size* number of messages
 - S3 Configuration
-It uses the hadoop file system implementation (s3a/s3n) to write to s3. The connect job has a configuration called *hadoop.conf.dir* and this needs the directory where core-site.xml and other hadoop configuration resides. StreamX packages the hadoop dependencies, so it need not have hadoop project/jars in its classpath. So, create a directory containing hadoop config files like core-site.xml, hdfs-site.xml and provide the location of this directory in hadoop.conf.dir while submitting copy job.
-
-For quick reference, 
-
-##### if you are using S3NativeFileSystem
-```
-<property>
-  <name>fs.s3n.awsAccessKeyId</name>
-  <description>AWS access key ID</description>
-</property>
-
-<property>
-  <name>fs.s3n.awsSecretAccessKey</name>
-  <description>AWS secret key</description>
-</property>
-```
-##### if you are using S3AFileSystem
-```
-<property>
-  <name>fs.s3a.access.key</name>
-  <description>AWS access key ID. Omit for Role-based authentication.</description>
-</property>
-
-<property>
-  <name>fs.s3a.secret.key</name>
-  <description>AWS secret key. Omit for Role-based authentication.</description>
-</property>
-```
+It uses the hadoop file system implementation (s3a/s3n) to write to s3. The connect job has a configuration called *hadoop.conf.dir* and this needs the directory where hdfs-site.xml and other hadoop configuration resides. StreamX packages the hadoop dependencies, so it need not have hadoop project/jars in its classpath. So, create a directory containing hadoop config files like core-site.xml, hdfs-site.xml and provide the location of this directory in *hadoop.conf.dir* while submitting copy job. (StreamX provides a default hadoop-conf directory under config/hadoop-conf. Set your s3 access key, secret key there and provide full path in *hadoop.conf.dir*)
 
 You have submitted the job, check S3 for output files. For the above copy job, it will create
 s3://streamx/demo/topics/adclicks/partition=x/files.xyz
