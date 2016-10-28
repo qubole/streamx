@@ -1,0 +1,31 @@
+<configuration>
+    <property>
+    <name>fs.s3.awsAccessKeyId</name>
+    <value>ACCESS_KEY_HERE</value>
+  </property>
+  <property>
+    <name>fs.s3.awsSecretAccessKey</name>
+    <value>SECRET_KEY_HERE</value>
+  </property>
+  <property>
+    <name>fs.s3n.awsAccessKeyId</name>
+    <value>ACCESS_KEY_HERE</value>
+  </property>
+  <property>
+    <name>fs.s3n.awsSecretAccessKey</name>
+    <value>SECRET_KEY_HERE</value>
+  </property>
+  <property>
+    <name>fs.s3a.access.key</name>
+    <value>ACCESS_KEY_HERE</value>
+  </property>
+  <property>
+    <name>fs.s3a.secret.key</name>
+    <value>SECRET_KEY_HERE</value>
+  </property>
+  <property>
+    <name>fs.s3.impl</name>
+    <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
+    <!--value>org.apache.hadoop.fs.s3native.NativeS3FileSystem</value-->
+  </property>
+</configuration>
