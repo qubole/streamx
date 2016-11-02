@@ -7,7 +7,7 @@ StreamX is a kafka-connect based connector to copy data from Kafka to Object Sto
 
 StreamX inherits rich set of features from kafka-connect-hdfs. 
  - Support for writing data in Avro and Parquet formats.
- - Provides Hive Integration where the connector creates patitioned hive table and periodically does add partitions once it writes a new partition to s3
+ - Provides Hive Integration where the connector creates partitioned hive table and periodically does add partitions once it writes a new partition to s3
  - Pluggable partitioner : 
   - default partitioner : Each Kafka partition will have its data copied under a partition specific directory
   - time based partitioner : Ability to write data on hourly basis
