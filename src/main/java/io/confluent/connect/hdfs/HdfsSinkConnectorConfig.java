@@ -14,7 +14,6 @@
 
 package io.confluent.connect.hdfs;
 
-import org.apache.kafka.clients.producer.internals.DefaultPartitioner;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
@@ -28,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.confluent.connect.hdfs.partitioner.DailyPartitioner;
+import io.confluent.connect.hdfs.partitioner.DefaultPartitioner;
 import io.confluent.connect.hdfs.partitioner.FieldPartitioner;
 import io.confluent.connect.hdfs.partitioner.HourlyPartitioner;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
