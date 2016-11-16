@@ -14,29 +14,22 @@
 
 package com.qubole.streamx.s3.wal;
 
+import com.mchange.v2.c3p0.*;
 import com.qubole.streamx.s3.S3SinkConnectorConfig;
 import io.confluent.connect.hdfs.FileUtils;
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
+import io.confluent.connect.hdfs.storage.Storage;
+import io.confluent.connect.hdfs.wal.WAL;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
-import io.confluent.connect.hdfs.wal.WAL;
-
-import java.beans.PropertyVetoException;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.DatabaseMetaData;
-import java.util.ArrayList;
-import java.util.concurrent.ThreadLocalRandom;
-import com.mchange.v2.c3p0.*;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.confluent.connect.hdfs.storage.Storage;
+
+import java.io.IOException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class DBWAL implements  WAL {
 
@@ -94,20 +87,20 @@ public class DBWAL implements  WAL {
   }
 
   private void createIfNotExists(String tableName, String sql) throws SQLException {
-    Connection connection = cpds.getConnection();
-    connection.setAutoCommit(false);
-    Statement statement = connection.createStatement();
-    statement.setQueryTimeout(30);  // set timeout to 30 sec.
-    DatabaseMetaData dbm = connection.getMetaData();
-    ResultSet tables = dbm.getTables(null, null, tableName, null);
+    try (Connection connection = cpds.getConnection()) {
+      connection.setAutoCommit(false);
+      Statement statement = connection.createStatement();
+      statement.setQueryTimeout(30);  // set timeout to 30 sec.
+      DatabaseMetaData dbm = connection.getMetaData();
+      ResultSet tables = dbm.getTables(null, null, tableName, null);
 
-    if (tables.next()) {
-      // No op
-    }
-    else {
-      log.info("Creating table "+ sql);
-      statement.executeUpdate(sql);
-      connection.commit();
+      if (tables.next()) {
+        // No op
+      } else {
+        log.info("Creating table " + sql);
+        statement.executeUpdate(sql);
+        connection.commit();
+      }
     }
   }
 
@@ -115,11 +108,10 @@ public class DBWAL implements  WAL {
   public void acquireLease() throws ConnectException {
 
     long sleepIntervalMs = 1000L;
-    long MAX_SLEEP_INTERVAL_MS = 16000L;
+    long MAX_SLEEP_INTERVAL_MS = 90000L;
     while (sleepIntervalMs < MAX_SLEEP_INTERVAL_MS) {
 
-      try {
-        Connection connection = cpds.getConnection();
+      try (Connection connection = cpds.getConnection()) {
         connection.setAutoCommit(false);
         Statement statement = connection.createStatement();
         statement.setQueryTimeout(5);  // set timeout to 30 sec.
@@ -132,8 +124,7 @@ public class DBWAL implements  WAL {
           connection.commit();
           return;
         }
-
-        if (canAcquireLock(rs)) {
+        if (canAcquireLock(rs.getTimestamp("currentTS"), rs.getTimestamp("ts"), rs.getInt("id"))) {
           sql = String.format("update %s set id=%s,ts=now() where wal='%s'", lease_table, id, tableName);
           statement.executeUpdate(sql);
           connection.commit();
@@ -144,6 +135,7 @@ public class DBWAL implements  WAL {
         log.error(e.toString());
         throw new ConnectException(e);
       }
+
       try {
         Thread.sleep(sleepIntervalMs);
       } catch (InterruptedException ie) {
@@ -156,26 +148,19 @@ public class DBWAL implements  WAL {
     }
   }
 
-  private boolean canAcquireLock(ResultSet rs) {
-    try {
-      boolean exists = rs.next();
-      if (!exists)
-        return true;
-      java.sql.Timestamp now = rs.getTimestamp("currentTS");
-      java.sql.Timestamp ts = rs.getTimestamp("ts");
-
-      if (now.getTime() - ts.getTime() >= 60*1000) {
-        log.warn("last update is more than a minute" + now + " " + ts);
-        return false;
-      }
-      else {
-        log.warn("last update within a minute"+ now + " " + ts);
-        return true;
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
+  private boolean canAcquireLock(Timestamp now, Timestamp recordTS, int id) throws SQLException{
+    if ((now.getTime() - recordTS.getTime()) >= 30*1000) {
+      log.debug("last update is more than a 30 seconds" + now + " " + recordTS);
+      return true;
     }
-    return true;
+    else {
+      log.debug("last update within 30 seconds"+ now + " " + recordTS);
+      // Check if this current thread holds the lock
+      if(this.id == id)
+        return true;
+      else
+        return false;
+    }
   }
 
   @Override
@@ -190,16 +175,17 @@ public class DBWAL implements  WAL {
         String committedFilesCommaSeparated = StringUtils.join(",",committedFiles);
 
         acquireLease();
-        Connection connection = cpds.getConnection();
-        connection.setAutoCommit(false);
+        try (Connection connection = cpds.getConnection()) {
+          connection.setAutoCommit(false);
 
-        Statement statement = connection.createStatement();
-        statement.setQueryTimeout(30);  // set timeout to 30 sec.
+          Statement statement = connection.createStatement();
+          statement.setQueryTimeout(30);  // set timeout to 30 sec.
 
-        String sql = String.format("insert into %s (tempFiles,committedFiles) values ('%s','%s')", tableName, tempFilesCommaSeparated, committedFilesCommaSeparated);
-        log.info("committing " + sql);
-        statement.executeUpdate(sql);
-        connection.commit();
+          String sql = String.format("insert into %s (tempFiles,committedFiles) values ('%s','%s')", tableName, tempFilesCommaSeparated, committedFilesCommaSeparated);
+          log.info("committing " + sql);
+          statement.executeUpdate(sql);
+          connection.commit();
+        }
       }
       else {
         tempFiles.add(tempFile);
@@ -215,30 +201,31 @@ public class DBWAL implements  WAL {
   public void apply() throws ConnectException {
     try {
       acquireLease();
-      Connection connection = cpds.getConnection();
-      connection.setAutoCommit(false);
+      try (Connection connection = cpds.getConnection()) {
+        connection.setAutoCommit(false);
 
-      Statement statement = connection.createStatement();
-      statement.setQueryTimeout(30);  // set timeout to 30 sec.
+        Statement statement = connection.createStatement();
+        statement.setQueryTimeout(30);  // set timeout to 30 sec.
 
-      String sql = String.format("select * from %s order by id desc limit 1", tableName);
-      log.info("Reading wal " + sql);
-      ResultSet rs=statement.executeQuery(sql);
+        String sql = String.format("select * from %s order by id desc limit 1", tableName);
+        log.info("Reading wal " + sql);
+        ResultSet rs = statement.executeQuery(sql);
 
-      while (rs.next()) {
-        String tempFiles = rs.getString("tempFiles");
-        String committedFiles = rs.getString("committedFiles");
-        String tempFile[]=tempFiles.split(",");
-        String committedFile[]=committedFiles.split(",");
-        //TODO : check if all tempFiles are there.
-        try {
-          for (int k=0;k<tempFile.length;k++) {
-            storage.commit(tempFile[k], committedFile[k]);
-            log.info("Recovering file "+tempFile[k]+" "+committedFile[k]);
+        while (rs.next()) {
+          String tempFiles = rs.getString("tempFiles");
+          String committedFiles = rs.getString("committedFiles");
+          String tempFile[] = tempFiles.split(",");
+          String committedFile[] = committedFiles.split(",");
+          //TODO : check if all tempFiles are there.
+          try {
+            for (int k = 0; k < tempFile.length; k++) {
+              storage.commit(tempFile[k], committedFile[k]);
+              log.info("Recovering file " + tempFile[k] + " " + committedFile[k]);
+            }
+          } catch (IOException e) {
+            e.printStackTrace();
+            throw new ConnectException(e);
           }
-        } catch (IOException e){
-          e.printStackTrace();
-          throw new ConnectException(e);
         }
       }
     } catch (SQLException e){
@@ -250,25 +237,21 @@ public class DBWAL implements  WAL {
   @Override
   public void truncate() throws ConnectException {
     try {
-      Connection connection = cpds.getConnection();
-      connection.setAutoCommit(false);
+      try (Connection connection = cpds.getConnection()) {
+        connection.setAutoCommit(false);
 
-      Statement statement = connection.createStatement();
-      statement.setQueryTimeout(30);  // set timeout to 30 sec.
-      String sql = String.format("select * from %s order by id desc limit 2", tableName);
-      ResultSet rs = statement.executeQuery(sql);
-      int rows = 0;
-      while (rs.next()) {
-        rows++;
+        Statement statement = connection.createStatement();
+        statement.setQueryTimeout(30);  // set timeout to 30 sec.
+        String sql = String.format("select * from %s order by id desc limit 1", tableName);
+        ResultSet rs = statement.executeQuery(sql);
+        if(rs.next()) {
+          String id = rs.getString("id");
+          sql = String.format("delete from %s where id < %s", tableName, id);
+          log.info("truncating table " + sql);
+          statement.executeUpdate(sql);
+          connection.commit();
+        }
       }
-      if (rows < 2)
-        return;
-      rs.absolute(2);
-      String id = rs.getString("id");
-      sql = String.format("delete from %s where id < %s", tableName, id);
-      log.info("truncating table " + sql);
-      statement.executeUpdate(sql);
-      connection.commit();
     } catch (SQLException e){
       log.error(e.toString());
       throw new ConnectException(e);
@@ -277,77 +260,37 @@ public class DBWAL implements  WAL {
 
   @Override
   public void close() throws ConnectException {
-
   }
 
   @Override
   public String getLogFile() {
-        return tableName;
-    }
+    return tableName;
+  }
 
   @Override
   public long readOffsetFromWAL() {
-    ResultSet rs = fetch();
-    long offset = -1L;
-    try {
-      // Check if last committed record in WAL exists in s3
-      if (rs.next())
-        offset = checkWAlEntryExists(rs);
-        // Else pick the previously committed record. This case can happen only
-        // if tempFiles are stored in LocalFS
-      if (offset == -1 && rs.next())
-        offset = checkWAlEntryExists(rs);
-
-      log.info("Offset from WAL " + offset + " for topic partition id " + partitionId);
+    ResultSet rs = null;
+    try (Connection connection = cpds.getConnection()){
+      connection.setAutoCommit(false);
+      Statement statement = connection.createStatement();
+      statement.setQueryTimeout(30);  // set timeout to 30 sec.
+      String sql = String.format("select * from %s order by id desc limit 1", tableName);
+      rs = statement.executeQuery(sql);
+      rs.next();
+      String committedFiles[] = rs.getString("committedFiles").split(",");
+      long maxOffset = -1;
+      for(String committedFile: committedFiles) {
+        long offset = FileUtils.extractOffset(committedFile);
+        if (offset > maxOffset)
+          maxOffset = offset;
+      }
+      log.info("Offset from WAL " + (maxOffset + 1) + " for topic partition id " + partitionId);
+      return maxOffset + 1;
     } catch (SQLException e) {
       log.error("Exception while reading offset from WAL " + e.toString());
     }
-    return offset;
+    return -1L;
   }
 
-  private long checkWAlEntryExists(ResultSet rs) {
-    long offset = -1L;
-    String committedFiles[];
-    try {
-      committedFiles = rs.getString("committedFiles").split(",");
-      boolean lastCommittedRecordExists = checkFileExists(committedFiles);
-      if (lastCommittedRecordExists)
-        offset = FileUtils.extractOffset(committedFiles[0]) + 1;
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    return offset;
-  }
-
-  private boolean checkFileExists(String files[]) {
-    boolean fileExists = true;
-    for(String file: files) {
-      try {
-        if (!storage.exists(file)) {
-          fileExists = false;
-        }
-      } catch (IOException e) {
-        fileExists = false;
-        break;
-      }
-    }
-    return fileExists;
-  }
-
-  private ResultSet fetch() throws ConnectException {
-    try {
-      Connection connection = cpds.getConnection();
-      connection.setAutoCommit(false);
-
-      Statement statement = connection.createStatement();
-      statement.setQueryTimeout(30);  // set timeout to 30 sec.
-      String sql = String.format("select * from %s order by id desc limit 2", tableName);
-      ResultSet rs = statement.executeQuery(sql);
-      return rs;
-    } catch (SQLException e){
-      log.error(e.toString());
-      throw new ConnectException(e);
-    }
-  }
 }
 
