@@ -13,7 +13,7 @@ public class ConnectionPool {
   private static final Logger log = LoggerFactory.getLogger(ConnectionPool.class);
 
   private static HashMap<String, ComboPooledDataSource> dataSources = new HashMap<>();
-  public static ComboPooledDataSource getDatasource(String connectionUrl, String user, String password) {
+  public static synchronized ComboPooledDataSource getDatasource(String connectionUrl, String user, String password) {
     if(dataSources.containsKey(connectionUrl)) {
       return dataSources.get(connectionUrl);
     }
