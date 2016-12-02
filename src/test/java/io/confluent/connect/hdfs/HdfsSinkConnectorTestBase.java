@@ -181,13 +181,12 @@ public class HdfsSinkConnectorTestBase {
     }
 
     @Override
-    public void pause(TopicPartition... partitions) {
-      return;
-    }
+    public void pause(TopicPartition... partitions) {}
 
     @Override
-    public void resume(TopicPartition... partitions) {
-      return;
-    }
+    public void resume(TopicPartition... partitions) {}
+
+    @Override
+    public void requestCommit() {}
   }
 }
