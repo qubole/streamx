@@ -30,6 +30,7 @@ import java.util.Set;
 import io.confluent.connect.avro.AvroData;
 import io.confluent.connect.hdfs.schema.Compatibility;
 import io.confluent.connect.hdfs.schema.SchemaUtils;
+import com.qubole.streamx.s3.S3SinkConnectorConfig;
 
 public class HdfsSinkTask extends SinkTask {
 
@@ -50,7 +51,7 @@ public class HdfsSinkTask extends SinkTask {
   public void start(Map<String, String> props) {
     Set<TopicPartition> assignment = context.assignment();;
     try {
-      HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
+      HdfsSinkConnectorConfig connectorConfig = new S3SinkConnectorConfig(props);
       boolean hiveIntegration = connectorConfig.getBoolean(HdfsSinkConnectorConfig.HIVE_INTEGRATION_CONFIG);
       if (hiveIntegration) {
         Compatibility compatibility = SchemaUtils.getCompatibility(
