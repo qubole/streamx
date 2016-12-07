@@ -1,0 +1,16 @@
+env_vars=`env | grep CONNECT`
+
+# Override connect-distributed.properties with env_vars
+python /usr/local/streamx/utils.py $env_vars
+if [ $? -eq 1 ]; then
+ echo "Exiting : Streamx startup script utils.py exited with non-zero exit code"
+ exit
+fi
+
+CONNECT_CONF=/usr/local/streamx/config/connect-distributed-override.properties
+
+cat $CONNECT_CONF
+
+# Launch StreamX
+export CLASSPATH=/usr/local/streamx/*
+/usr/bin/connect-distributed $CONNECT_CONF
