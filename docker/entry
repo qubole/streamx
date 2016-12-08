@@ -2,7 +2,7 @@ env_vars=`env | grep CONNECT`
 
 # Override connect-distributed.properties with env_vars
 python /usr/local/streamx/utils.py $env_vars
-if [ $? -eq 1 ]; then
+if [ $? -ne 0 ]; then
  echo "Exiting : Streamx startup script utils.py exited with non-zero exit code"
  exit
 fi
