@@ -224,7 +224,8 @@
                 <version>2.18.1</version>
                 <configuration>
                     <argLine>-Djava.awt.headless=true -XX:MaxPermSize=512m</argLine>
-                    <forkMode>pertest</forkMode>
+                    <reuseForks>false</reuseForks>
+                    <forkCount>1</forkCount>
                 </configuration>
             </plugin>
             <plugin>
