@@ -5,6 +5,7 @@ def print_help():
   CONNECT_BOOTSTRAP_SERVERS
   CONNECT_AWS_ACCESS_KEY
   CONNECT_AWS_SECRET_KEY
+  CONNECT_USE_AVRO (optional - Please set this property to true only if you want to use Avro)
   Cmd : docker run -d --env CONNECT_BOOTSTRAP_SERVERS=public_dns:9092 --env CONNECT_AWS_ACCESS_KEY=xxxxx --env CONNECT_AWS_SECRET_KEY=yyyy qubole/streamx"""
 
 def check_for_required_configs(confs):
@@ -25,6 +26,10 @@ def check_for_required_configs(confs):
 def override_connect_configs(confs):
   connect_file = "/usr/local/streamx/config/connect-distributed.properties"
   connect_override_file = "/usr/local/streamx/config/connect-distributed-override.properties"
+  if confs["CONNECT_USE_AVRO"] == True:
+    connect_file = "/usr/local/streamx/config/connect-avro-distributed.properties"
+    connect_override_file = "/usr/local/streamx/config/connect-avro-distributed-override.properties"
+
   with open(connect_file) as f:
     connect_conf = f.read().splitlines()
 
