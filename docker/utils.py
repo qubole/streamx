@@ -26,9 +26,8 @@ def check_for_required_configs(confs):
 def override_connect_configs(confs):
   connect_file = "/usr/local/streamx/config/connect-distributed.properties"
   connect_override_file = "/usr/local/streamx/config/connect-distributed-override.properties"
-  if confs["CONNECT_USE_AVRO"] == True:
+  if confs["CONNECT_USE_AVRO"] == "true":
     connect_file = "/usr/local/streamx/config/connect-avro-distributed.properties"
-    connect_override_file = "/usr/local/streamx/config/connect-avro-distributed-override.properties"
 
   with open(connect_file) as f:
     connect_conf = f.read().splitlines()
