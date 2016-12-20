@@ -117,9 +117,10 @@ Example of how to run your container,
 ```
 docker run -d -p 8083:8083 --env CONNECT_BOOTSTRAP_SERVERS=public_dns:9092 --env CONNECT_AWS_ACCESS_KEY=youracesskey --env CONNECT_AWS_SECRET_KEY=yoursecretkey qubole/streamx
 ```
-You can also use Avro/Parquet format. To switch to connect-avro-distributed mode, please set the env var CONNECT_USE_AVRO to true. Example:
+You can also use Avro/Parquet format. Example:
 ```
-docker run -d -p 8083:8083 --env CONNECT_BOOTSTRAP_SERVERS=public_dns:9092 --env CONNECT_AWS_ACCESS_KEY=youracesskey --env CONNECT_AWS_SECRET_KEY=yoursecretkey --env CONNECT_USE_AVRO=true --env CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://your.schema.registry.com:8081 --env CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://your.schema.registry.com:8081 qubole/streamx
+docker run -d -p 8083:8083 --env CONNECT_BOOTSTRAP_SERVERS=public_dns:9092 --env CONNECT_AWS_ACCESS_KEY=youracesskey --env CONNECT_AWS_SECRET_KEY=yoursecretkey  --env CONNECT_KEY_CONVERTER=io.confluent.connect.avro.AvroConverter --env CONNECT_VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter --env CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://your.schema.registry.com:8081 --env CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://your.schema.registry.com:8081 qubole/streamx
+
 ```
 
 ##Roadmap
