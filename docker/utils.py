@@ -25,6 +25,7 @@ def check_for_required_configs(confs):
 def override_connect_configs(confs):
   connect_file = "/usr/local/streamx/config/connect-distributed.properties"
   connect_override_file = "/usr/local/streamx/config/connect-distributed-override.properties"
+
   with open(connect_file) as f:
     connect_conf = f.read().splitlines()
 
@@ -33,12 +34,12 @@ def override_connect_configs(confs):
   for k,v in confs.items():
     #remove CONNECT_ prefix
     k = k[8:]
-    key = k.lower().replace("_",".")
+    key = k.lower().replace("_",".") + "="
       
     # override connect_conf with env_vars
     for i in range(0, len(connect_conf)):
       if connect_conf[i].startswith(key):
-        connect_conf[i] = key + "=" + v
+        connect_conf[i] = key + v
 
   with open(connect_override_file,'w') as f:
     for line in connect_conf:

@@ -106,6 +106,23 @@ curl -i -X GET \
 
 **Restarting Connect jobs** : All Connect jobs are stored in a Kafka Queue. So, restarting the Kafka Connect will restart all the connectors submitted to it.
 
+**Docker**
+Streamx supports Docker, but only in distributed mode
+To build your image,
+```
+docker build -t qubole/streamx .
+```
+When you run your container, you can override all the properties in connect-distributed.properties file with env vars. env_vars will be of format CONNECT_BOOTSTRAP_SERVERS corresponding to bootstrap.servers. The convention is to prefix env vars with CONNECT.
+Example of how to run your container,
+```
+docker run -d -p 8083:8083 --env CONNECT_BOOTSTRAP_SERVERS=public_dns:9092 --env CONNECT_AWS_ACCESS_KEY=youracesskey --env CONNECT_AWS_SECRET_KEY=yoursecretkey qubole/streamx
+```
+You can also use Avro/Parquet format. Example:
+```
+docker run -d -p 8083:8083 --env CONNECT_BOOTSTRAP_SERVERS=public_dns:9092 --env CONNECT_AWS_ACCESS_KEY=youracesskey --env CONNECT_AWS_SECRET_KEY=yoursecretkey  --env CONNECT_KEY_CONVERTER=io.confluent.connect.avro.AvroConverter --env CONNECT_VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter --env CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://your.schema.registry.com:8081 --env CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://your.schema.registry.com:8081 qubole/streamx
+
+```
+
 ##Roadmap
 - Support other object stores like Google Cloud Storage and Azure Blob Store
 - Currently, data can be written in avro/parquet format. This project will add support for more formats
