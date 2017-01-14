@@ -338,12 +338,12 @@ public class HiveMetaStore {
 
   public List<String> getAllDatabases() throws HiveMetaStoreException {
     ClientAction<List<String>> create =
-       new ClientAction<List<String>>() {
-         @Override
-         public List<String> call() throws TException {
-           return client.getAllDatabases();
-         }
-       };
+        new ClientAction<List<String>>() {
+          @Override
+          public List<String> call() throws TException {
+            return client.getAllDatabases();
+          }
+        };
 
     try {
       return doAction(create);
