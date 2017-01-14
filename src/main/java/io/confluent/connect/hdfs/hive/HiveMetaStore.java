@@ -182,7 +182,6 @@ public class HiveMetaStore {
     ClientAction<Void> create = new ClientAction<Void>() {
       @Override
       public Void call() throws TException {
-
         client.createTable(table.getTTable());
         return null;
       }
