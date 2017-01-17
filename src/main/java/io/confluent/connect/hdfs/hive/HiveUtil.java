@@ -14,6 +14,7 @@
 
 package io.confluent.connect.hdfs.hive;
 
+import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.kafka.connect.data.Schema;
 
 import io.confluent.connect.avro.AvroData;
@@ -38,4 +39,8 @@ public abstract class HiveUtil {
   public abstract void createTable(String database, String tableName, Schema schema, Partitioner partitioner);
 
   public abstract void alterSchema(String database, String tableName, Schema schema);
+  
+  public Table newTable(String database, String table){
+    return new Table(database, hiveMetaStore.tableNameConverter(table));
+  }
 }

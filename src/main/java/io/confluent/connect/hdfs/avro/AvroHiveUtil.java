@@ -60,7 +60,7 @@ public class AvroHiveUtil extends HiveUtil {
 
   private Table constructAvroTable(String database, String tableName, Schema schema, Partitioner partitioner)
       throws HiveMetaStoreException {
-    Table table = new Table(database, tableName);
+    Table table = newTable(database, tableName);
     table.setTableType(TableType.EXTERNAL_TABLE);
     table.getParameters().put("EXTERNAL", "TRUE");
     String tablePath = FileUtils.hiveDirectoryName(url, topicsDir, tableName);
