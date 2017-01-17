@@ -53,7 +53,7 @@
         <confluent.version>3.0.0</confluent.version>
         <kafka.version>0.10.0.0</kafka.version>
         <junit.version>4.12</junit.version>
-        <hadoop.version>2.6.0</hadoop.version>
+        <hadoop.version>2.7.2</hadoop.version>
         <hive.version>1.2.1</hive.version>
         <avro.version>1.7.7</avro.version>
         <parquet.version>1.7.0</parquet.version>
@@ -195,6 +195,11 @@
             <groupId>c3p0</groupId>
             <artifactId>c3p0</artifactId>
             <version>0.9.1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>1.11.69</version>
         </dependency>
     </dependencies>
 
