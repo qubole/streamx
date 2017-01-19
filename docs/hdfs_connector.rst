@@ -75,7 +75,9 @@ You can use ``avro-tools-1.7.7.jar``
 to extract the content of the file::
 
   $ hadoop jar avro-tools-1.7.7.jar tojson \
-  /topics/test_hdfs/partition=0/test_hdfs+0+0000000000+0000000002.avro
+  hdfs://<namenode>/topics/test_hdfs/partition=0/test_hdfs+0+0000000000+0000000002.avro
+
+where "<namenode>" is the HDFS name node hostname.
 
 You should see the following output::
 
