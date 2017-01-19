@@ -10,12 +10,15 @@ Documentation for this connector can be found [here](http://docs.confluent.io/cu
 To build a development version you'll need a recent version of Kafka. You can build
 kafka-connect-hdfs with Maven using the standard lifecycle phases.
 
+# FAQ
+
+Refer frequently asked questions on Kafka Connect HDFS here -
+https://github.com/confluentinc/kafka-connect-hdfs/wiki/FAQ
 
 # Contribute
 
 - Source Code: https://github.com/confluentinc/kafka-connect-hdfs
 - Issue Tracker: https://github.com/confluentinc/kafka-connect-hdfs/issues
-
 
 # License
 
