@@ -65,19 +65,26 @@ You should see that the process starts up and logs some messages, and then expor
 to HDFS. Once the connector finishes ingesting data to HDFS, check that the data is available
 in HDFS::
 
-  $ hadoop fs -ls /topics/test_hdfs/partitions=0
+  $ hadoop fs -ls /topics/test_hdfs/partition=0
 
-You should see a file with name ``/topics/t1/partition=0/test_hdfs+0+0000000000+0000000002.avro``
-The file name is encoded as ``topic+kafkaPartition+startOffset+endOoffset.format``.
+You should see a file with name ``/topics/test_hdfs/partition=0/test_hdfs+0+0000000000+0000000002.avro``
+The file name is encoded as ``topic+kafkaPartition+startOffset+endOffset.format``.
 
 You can use ``avro-tools-1.7.7.jar``
-(`<http://mirror.metrocast.net/apache/avro/avro-1.7.7/java/avro-tools-1.7.7.jar>`_)
-to extract the content of the file::
+(available in `Apache mirrors <http://mirror.metrocast.net/apache/avro/avro-1.7.7/java/avro-tools-1.7.7.jar>`_)
+to extract the content of the file. Run ``avro-tools`` directly on Hadoop as::
 
   $ hadoop jar avro-tools-1.7.7.jar tojson \
   hdfs://<namenode>/topics/test_hdfs/partition=0/test_hdfs+0+0000000000+0000000002.avro
 
 where "<namenode>" is the HDFS name node hostname.
+
+or, if you experience issues, first copy the avro file from HDFS to the local filesystem and try again with java::
+
+  $ hadoop fs -copyToLocal /topics/test_hdfs/partition=0/test_hdfs+0+0000000000+0000000002.avro \
+  /tmp/test_hdfs+0+0000000000+0000000002.avro
+
+  $ java -jar avro-tools-1.7.7.jar tojson /tmp/test_hdfs+0+0000000000+0000000002.avro
 
 You should see the following output::
 
