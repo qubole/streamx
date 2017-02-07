@@ -50,8 +50,8 @@
     </scm>
 
     <properties>
-        <confluent.version>3.0.0</confluent.version>
-        <kafka.version>0.10.0.0</kafka.version>
+        <confluent.version>3.1.2</confluent.version>
+        <kafka.version>0.10.1.1-cp1</kafka.version>
         <junit.version>4.12</junit.version>
         <hadoop.version>2.7.2</hadoop.version>
         <hive.version>1.2.1</hive.version>
@@ -213,6 +213,25 @@
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
+                    <compilerArguments>
+                        <Xlint:all/>
+                        <!-- bootstrap class path not set in conjunction with -source 1.7 -->
+                        <Xlint:-options/>
+                        <!-- serializable class ... has no definition of serialVersionUID -->
+                        <Xlint:-serial/>
+                        <!-- bad path element ".../repository/org/apache/derby/derby/10.10.2.0/derbyLocale_*.jar": no such file or directory -->
+                        <Xlint:-path/>
+                        <!--
+                        WALFile.java:[333,16] [deprecation] sync() in Syncable has been deprecated
+                        Apparently SuppressWarnings("deprecation") doesn't cover this on JDK 7
+                        -->
+                        <Xlint:-deprecation/>
+                        <!-- Needed for DataWriter.java because @SuppressWarnings("unchecked") doesn't cover this on JDK 7 -->
+                        <Xlint:-unchecked/>
+                        <Werror/>
+                    </compilerArguments>
+                    <showWarnings>true</showWarnings>
+                    <showDeprecation>false</showDeprecation>
                 </configuration>
             </plugin>
             <plugin>
@@ -241,6 +260,21 @@
                 <configuration>
                     <argLine>-Djava.awt.headless=true</argLine>
                     <forkMode>pertest</forkMode>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>.</directory>
+                            <includes>
+                                <include>derby.log</include>
+                                <include>metastore_db/</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
                 </configuration>
             </plugin>
         </plugins>

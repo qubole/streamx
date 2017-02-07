@@ -138,6 +138,9 @@ public class FSWAL implements WAL {
       String oldLogFile = logFile + ".1";
       storage.delete(oldLogFile);
       storage.commit(logFile, oldLogFile);
+      // Clean out references to the current WAL file.
+      // Open a new one on the next lease acquisition.
+      close();
     } catch (IOException e) {
       throw new ConnectException(e);
     }
@@ -148,9 +151,11 @@ public class FSWAL implements WAL {
     try {
       if (writer != null) {
         writer.close();
+        writer = null;
       }
       if (reader != null) {
         reader.close();
+        reader = null;
       }
     } catch (IOException e) {
       throw new ConnectException("Error closing " + logFile, e);

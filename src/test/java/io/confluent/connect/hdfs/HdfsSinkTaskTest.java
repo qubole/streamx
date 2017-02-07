@@ -66,6 +66,26 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
   }
 
   @Test
+  public void testSinkTaskStartNoCommittedFiles() throws Exception {
+    Map<String, String> props = createProps();
+    HdfsSinkTask task = new HdfsSinkTask();
+
+    task.initialize(context);
+    task.start(props);
+
+    // Even without any files in HDFS, we expect an explicit request to start from the beginning of the topic (which
+    // either exists at offset 0, or offset 0 will be out of range and the consumer will reset to the smallest offset).
+    Map<TopicPartition, Long> offsets = context.offsets();
+    assertEquals(offsets.size(), 2);
+    assertTrue(offsets.containsKey(TOPIC_PARTITION));
+    assertEquals(0, (long) offsets.get(TOPIC_PARTITION));
+    assertTrue(offsets.containsKey(TOPIC_PARTITION2));
+    assertEquals(0, (long) offsets.get(TOPIC_PARTITION2));
+
+    task.stop();
+  }
+
+  @Test
   public void testSinkTaskStartWithRecovery() throws Exception {
     Map<TopicPartition, List<String>> tempfiles = new HashMap<>();
     List<String> list1 = new ArrayList<>();
@@ -174,10 +194,9 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
     fs.createNewFile(new Path(file4));
   }
 
-  @SuppressWarnings("unchecked")
   private void createWALs(Map<TopicPartition, List<String>> tempfiles,
                           Map<TopicPartition, List<String>> committedFiles) throws Exception {
-
+    @SuppressWarnings("unchecked")
     Class<? extends Storage> storageClass = (Class<? extends Storage>)
         Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
     Storage storage = StorageFactory.createStorage(storageClass, connectorConfig, conf, url);

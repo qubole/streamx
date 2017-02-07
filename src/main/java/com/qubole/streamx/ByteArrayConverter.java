@@ -32,9 +32,9 @@ public class ByteArrayConverter implements Converter {
   }
 
   public void configure(Map<String, ?> configs, boolean isKey) {
-    HashMap serializerConfigs = new HashMap();
+    HashMap<String, Object> serializerConfigs = new HashMap<>();
     serializerConfigs.putAll(configs);
-    HashMap deserializerConfigs = new HashMap();
+    HashMap<String, Object> deserializerConfigs = new HashMap<>();
     deserializerConfigs.putAll(configs);
     Object encodingValue = configs.get("converter.encoding");
     if (encodingValue != null) {
