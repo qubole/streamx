@@ -14,27 +14,23 @@
 
 package com.qubole.streamx.s3;
 
-import com.qubole.streamx.s3.wal.DBWAL;
+import com.qubole.streamx.s3.wal.DummyWAL;
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.storage.Storage;
 import io.confluent.connect.hdfs.wal.WAL;
-import com.qubole.streamx.s3.wal.DBWAL;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.velocity.exception.MethodInvocationException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
-
-import java.io.*;
-
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 
@@ -113,8 +109,13 @@ public class S3Storage implements Storage {
     try {
       Class<? extends WAL> walClass = (Class<? extends WAL>) Class
           .forName(config.getString(S3SinkConnectorConfig.WAL_CLASS_CONFIG));
-      Constructor<? extends WAL> ctor = walClass.getConstructor(String.class, TopicPartition.class, Storage.class, HdfsSinkConnectorConfig.class);
-      return ctor.newInstance(topicsDir, topicPart, this, config);
+      if (walClass.equals(DummyWAL.class)) {
+        return new DummyWAL();
+      }
+      else {
+        Constructor<? extends WAL> ctor = walClass.getConstructor(String.class, TopicPartition.class, Storage.class, HdfsSinkConnectorConfig.class);
+        return ctor.newInstance(topicsDir, topicPart, this, config);
+      }
     } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | MethodInvocationException | InstantiationException | IllegalAccessException e) {
       throw new ConnectException(e);
     }
@@ -136,7 +137,7 @@ public class S3Storage implements Storage {
     }
     final Path srcPath = new Path(sourcePath);
     final Path dstPath = new Path(targetPath);
-    FileSystem localFs = FileSystem.get(srcPath.toUri(),hadoopConf);
+
     fs.rename(srcPath, dstPath);
   }
 }
