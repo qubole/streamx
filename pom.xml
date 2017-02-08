@@ -201,6 +201,16 @@
             <artifactId>aws-java-sdk-s3</artifactId>
             <version>1.11.69</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>19.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.cloud.bigdataoss</groupId>
+            <artifactId>gcs-connector</artifactId>
+            <version>1.6.0-hadoop2</version>
+        </dependency>
     </dependencies>
 
     <build>
