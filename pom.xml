@@ -53,12 +53,12 @@
         <confluent.version>3.2.0-SNAPSHOT</confluent.version>
         <kafka.version>0.10.2.0-SNAPSHOT</kafka.version>
         <junit.version>4.12</junit.version>
-        <hadoop.version>2.6.1</hadoop.version>
+        <hadoop.version>2.7.3</hadoop.version>
         <hive.version>1.2.1</hive.version>
         <avro.version>1.7.7</avro.version>
         <parquet.version>1.7.0</parquet.version>
         <commons-io.version>2.4</commons-io.version>
-        <joda.version>1.6.2</joda.version>
+        <joda.version>2.9.7</joda.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
     </properties>
