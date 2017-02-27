@@ -14,6 +14,7 @@
 
 package io.confluent.connect.hdfs;
 
+import io.confluent.kafka.serializers.NonRecordContainer;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Schema;
@@ -174,6 +175,49 @@ public class HdfsSinkTaskTest extends TestWithMiniDFSCluster {
         assertEquals(records.size(), size);
         for (Object avroRecord : records) {
           assertEquals(avroRecord, avroData.fromConnectData(schema, record));
+        }
+      }
+    }
+  }
+
+  @Test
+  public void testSinkTaskPutPrimitive() throws Exception {
+    Map<String, String> props = createProps();
+    HdfsSinkTask task = new HdfsSinkTask();
+
+    final String key = "key";
+    final Schema schema = Schema.INT32_SCHEMA;
+    final int record = 12;
+    Collection<SinkRecord> sinkRecords = new ArrayList<>();
+    for (TopicPartition tp: assignment) {
+      for (long offset = 0; offset < 7; offset++) {
+        SinkRecord sinkRecord =
+                new SinkRecord(tp.topic(), tp.partition(), Schema.STRING_SCHEMA, key, schema, record, offset);
+        sinkRecords.add(sinkRecord);
+      }
+    }
+    task.initialize(context);
+    task.start(props);
+    task.put(sinkRecords);
+    task.stop();
+
+    AvroData avroData = task.getAvroData();
+    // Last file (offset 6) doesn't satisfy size requirement and gets discarded on close
+    long[] validOffsets = {-1, 2, 5};
+
+    for (TopicPartition tp : assignment) {
+      String directory = tp.topic() + "/" + "partition=" + String.valueOf(tp.partition());
+      for (int j = 1; j < validOffsets.length; ++j) {
+        long startOffset = validOffsets[j - 1] + 1;
+        long endOffset = validOffsets[j];
+        Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory, tp,
+                startOffset, endOffset, extension,
+                ZERO_PAD_FMT));
+        Collection<Object> records = schemaFileReader.readData(conf, path);
+        long size = endOffset - startOffset + 1;
+        assertEquals(records.size(), size);
+        for (Object avroRecord : records) {
+          assertEquals(avroRecord, record);
         }
       }
     }
