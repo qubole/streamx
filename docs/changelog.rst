@@ -3,6 +3,12 @@
 Changelog
 =========
 
+Version 3.2.0
+-------------
+
+* `PR-135 <https://github.com/confluentinc/kafka-connect-hdfs/pull/135>`_ - Fix typos
+* `PR-164 <https://github.com/confluentinc/kafka-connect-hdfs/pull/164>`_ - Issue 136 - Support topic with dots in hive.
+
 Version 3.1.1
 -------------
 No changes
