@@ -8,6 +8,7 @@ Version 3.2.0
 
 * `PR-135 <https://github.com/confluentinc/kafka-connect-hdfs/pull/135>`_ - Fix typos
 * `PR-164 <https://github.com/confluentinc/kafka-connect-hdfs/pull/164>`_ - Issue 136 - Support topic with dots in hive.
+* `PR-170 <https://github.com/confluentinc/kafka-connect-hdfs/pull/170>`_ - MINOR: Upgrade Hadoop version to 2.7.3 and joda-time to 2.9.7
 
 Version 3.1.1
 -------------
