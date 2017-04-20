@@ -14,50 +14,40 @@
 
 package io.confluent.connect.hdfs.avro;
 
-import io.confluent.connect.hdfs.DataWriter;
-import io.confluent.connect.hdfs.FileUtils;
-import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
-import io.confluent.connect.hdfs.SchemaFileReader;
-import io.confluent.connect.hdfs.TestWithMiniDFSCluster;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.SchemaProjector;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.junit.Before;
 import org.junit.Test;
 
-import io.confluent.connect.hdfs.filter.TopicPartitionCommittedFileFilter;
-import io.confluent.connect.hdfs.partitioner.Partitioner;
-import io.confluent.connect.hdfs.storage.Storage;
-import io.confluent.connect.hdfs.storage.StorageFactory;
-import io.confluent.connect.hdfs.wal.WAL;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.is;
+import io.confluent.connect.hdfs.DataWriter;
+import io.confluent.connect.hdfs.FileUtils;
+import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
+import io.confluent.connect.hdfs.TestWithMiniDFSCluster;
+import io.confluent.connect.hdfs.storage.Storage;
+import io.confluent.connect.hdfs.storage.StorageFactory;
+import io.confluent.connect.hdfs.wal.WAL;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 
-  private static final String extension = ".avro";
-  private static final String ZERO_PAD_FMT = "%010d";
-  private SchemaFileReader schemaFileReader = new AvroFileReader(avroData);
-  Partitioner partitioner;
+  @Before
+  public void setUp() throws Exception {
+    super.setUp();
+    schemaFileReader = new AvroFileReader(avroData);
+    extension = ".avro";
+  }
 
   @Test
   public void testWriteRecord() throws Exception {
@@ -97,7 +87,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
       String tempfile = FileUtils.tempFileName(url, topicsDir, getDirectory(), extension);
       fs.createNewFile(new Path(tempfile));
       String committedFile = FileUtils.committedFileName(url, topicsDir, getDirectory(), TOPIC_PARTITION, startOffset,
-                                                         endOffset, extension, ZERO_PAD_FMT);
+                                                         endOffset, extension, zeroPadFormat);
       wal.append(tempfile, committedFile);
     }
     wal.append(WAL.endMarker, "");
@@ -146,7 +136,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 
     for (int i = 0; i < startOffsets.length; ++i) {
       Path path = new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, startOffsets[i],
-                                                       endOffsets[i], extension, ZERO_PAD_FMT));
+                                                       endOffsets[i], extension, zeroPadFormat));
       fs.createNewFile(path);
     }
     Path path = new Path(FileUtils.tempFileName(url, topicsDir, directory, extension));
@@ -360,219 +350,6 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 
     hdfsWriter.close(assignment);
     hdfsWriter.stop();
-  }
-
-  /**
-   * Return a list of new records starting at zero offset.
-   *
-   * @param size the number of records to return.
-   * @return the list of records.
-   */
-  protected List<SinkRecord> createRecords(int size) {
-    return createRecords(size, 0);
-  }
-
-  /**
-   * Return a list of new records starting at the given offset.
-   *
-   * @param size the number of records to return.
-   * @param startOffset the starting offset.
-   * @return the list of records.
-   */
-  protected List<SinkRecord> createRecords(int size, long startOffset) {
-    return createRecords(size, startOffset, Collections.singleton(new TopicPartition(TOPIC, PARTITION)));
-  }
-
-  /**
-   * Return a list of new records for a set of partitions, starting at the given offset in each partition.
-   *
-   * @param size the number of records to return.
-   * @param startOffset the starting offset.
-   * @param partitions the set of partitions to create records for.
-   * @return the list of records.
-   */
-  protected List<SinkRecord> createRecords(int size, long startOffset, Set<TopicPartition> partitions) {
-    String key = "key";
-    Schema schema = createSchema();
-    Struct record = createRecord(schema);
-
-    List<SinkRecord> sinkRecords = new ArrayList<>();
-    for (TopicPartition tp : partitions) {
-      for (long offset = startOffset; offset < startOffset + size; ++offset) {
-        sinkRecords.add(new SinkRecord(TOPIC, tp.partition(), Schema.STRING_SCHEMA, key, schema, record, offset));
-      }
-    }
-    return sinkRecords;
-  }
-
-  protected List<SinkRecord> createRecordsNoVersion(int size, long startOffset) {
-    String key = "key";
-    Schema schemaNoVersion = SchemaBuilder.struct().name("record")
-                                 .field("boolean", Schema.BOOLEAN_SCHEMA)
-                                 .field("int", Schema.INT32_SCHEMA)
-                                 .field("long", Schema.INT64_SCHEMA)
-                                 .field("float", Schema.FLOAT32_SCHEMA)
-                                 .field("double", Schema.FLOAT64_SCHEMA)
-                                 .build();
-
-    Struct recordNoVersion = new Struct(schemaNoVersion);
-    recordNoVersion.put("boolean", true)
-        .put("int", 12)
-        .put("long", 12L)
-        .put("float", 12.2f)
-        .put("double", 12.2);
-
-    List<SinkRecord> sinkRecords = new ArrayList<>();
-    for (long offset = startOffset; offset < startOffset + size; ++offset) {
-      sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schemaNoVersion,
-                                     recordNoVersion, offset));
-    }
-    return sinkRecords;
-  }
-
-  protected List<SinkRecord> createRecordsWithAlteringSchemas(int size, long startOffset) {
-    String key = "key";
-    Schema schema = createSchema();
-    Struct record = createRecord(schema);
-    Schema newSchema = createNewSchema();
-    Struct newRecord = createNewRecord(newSchema);
-
-    int limit = (size / 2) * 2;
-    boolean remainder = size % 2 > 0;
-    List<SinkRecord> sinkRecords = new ArrayList<>();
-    for (long offset = startOffset; offset < startOffset + limit; ++offset) {
-      sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, offset));
-      sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, newSchema, newRecord, ++offset));
-    }
-    if (remainder) {
-      sinkRecords.add(new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record,
-                                     startOffset + size - 1));
-    }
-    return sinkRecords;
-  }
-
-  protected List<SinkRecord> createRecordsInterleaved(int size, long startOffset, Set<TopicPartition> partitions) {
-    String key = "key";
-    Schema schema = createSchema();
-    Struct record = createRecord(schema);
-
-    List<SinkRecord> sinkRecords = new ArrayList<>();
-    for (long offset = startOffset, total = 0; total < size; ++offset) {
-      for (TopicPartition tp : partitions) {
-        sinkRecords.add(new SinkRecord(TOPIC, tp.partition(), Schema.STRING_SCHEMA, key, schema, record, offset));
-        if (++total >= size) {
-          break;
-        }
-      }
-    }
-    return sinkRecords;
-  }
-
-  protected String getDirectory() {
-    return getDirectory(TOPIC, PARTITION);
-  }
-
-  protected String getDirectory(String topic, int partition) {
-    String encodedPartition = "partition=" + String.valueOf(partition);
-    return partitioner.generatePartitionedPath(topic, encodedPartition);
-  }
-
-  /**
-   * Verify files and records are uploaded appropriately.
-   * @param sinkRecords a flat list of the records that need to appear in potentially several files in S3.
-   * @param validOffsets an array containing the offsets that map to uploaded files for a topic-partition.
-   *                     Offsets appear in ascending order, the difference between two consecutive offsets
-   *                     equals the expected size of the file, and last offset is exclusive.
-   */
-  protected void verify(List<SinkRecord> sinkRecords, long[] validOffsets) throws IOException {
-    verify(sinkRecords, validOffsets, Collections.singleton(new TopicPartition(TOPIC, PARTITION)), false);
-  }
-
-  protected void verify(List<SinkRecord> sinkRecords, long[] validOffsets, Set<TopicPartition> partitions)
-      throws IOException {
-    verify(sinkRecords, validOffsets, partitions, false);
-  }
-
-  /**
-   * Verify files and records are uploaded appropriately.
-   * @param sinkRecords a flat list of the records that need to appear in potentially several files in S3.
-   * @param validOffsets an array containing the offsets that map to uploaded files for a topic-partition.
-   *                     Offsets appear in ascending order, the difference between two consecutive offsets
-   *                     equals the expected size of the file, and last offset is exclusive.
-   * @param partitions the set of partitions to verify records for.
-   */
-  protected void verify(List<SinkRecord> sinkRecords, long[] validOffsets, Set<TopicPartition> partitions,
-                        boolean skipFileListing) throws IOException {
-    if (!skipFileListing) {
-      verifyFileListing(validOffsets, partitions);
-    }
-
-    for (TopicPartition tp : partitions) {
-      for (int i = 1, j = 0; i < validOffsets.length; ++i) {
-        long startOffset = validOffsets[i - 1];
-        long endOffset = validOffsets[i] - 1;
-
-        String filename = FileUtils.committedFileName(url, topicsDir, getDirectory(tp.topic(), tp.partition()), tp,
-                                                      startOffset, endOffset, extension, ZERO_PAD_FMT);
-        Path path = new Path(filename);
-        Collection<Object> records = schemaFileReader.readData(conf, path);
-
-        long size = endOffset - startOffset + 1;
-        assertEquals(size, records.size());
-        verifyContents(sinkRecords, j, records);
-        j += size;
-      }
-    }
-  }
-
-  protected List<String> getExpectedFiles(long[] validOffsets, TopicPartition tp) {
-    List<String> expectedFiles = new ArrayList<>();
-    for (int i = 1; i < validOffsets.length; ++i) {
-      long startOffset = validOffsets[i - 1];
-      long endOffset = validOffsets[i] - 1;
-      expectedFiles.add(FileUtils.committedFileName(url, topicsDir, getDirectory(tp.topic(), tp.partition()), tp,
-                                                    startOffset, endOffset, extension, ZERO_PAD_FMT));
-    }
-    return expectedFiles;
-  }
-
-  protected void verifyFileListing(long[] validOffsets, Set<TopicPartition> partitions) throws IOException {
-    for (TopicPartition tp : partitions) {
-      verifyFileListing(getExpectedFiles(validOffsets, tp), tp);
-    }
-  }
-
-  protected void verifyFileListing(List<String> expectedFiles, TopicPartition tp) throws IOException {
-    FileStatus[] statuses = {};
-    try {
-      statuses = fs.listStatus(
-          new Path(FileUtils.directoryName(url, topicsDir, getDirectory(tp.topic(), tp.partition()))),
-          new TopicPartitionCommittedFileFilter(tp));
-    } catch (FileNotFoundException e) {
-      // the directory does not exist.
-    }
-
-    List<String> actualFiles = new ArrayList<>();
-    for (FileStatus status : statuses) {
-      actualFiles.add(status.getPath().toString());
-    }
-
-    Collections.sort(actualFiles);
-    Collections.sort(expectedFiles);
-    assertThat(actualFiles, is(expectedFiles));
-  }
-
-  protected void verifyContents(List<SinkRecord> expectedRecords, int startIndex, Collection<Object> records) {
-    Schema expectedSchema = null;
-    for (Object avroRecord : records) {
-      if (expectedSchema == null) {
-        expectedSchema = expectedRecords.get(startIndex).valueSchema();
-      }
-      Object expectedValue = SchemaProjector.project(expectedRecords.get(startIndex).valueSchema(),
-                                                     expectedRecords.get(startIndex++).value(),
-                                                     expectedSchema);
-      assertEquals(avroData.fromConnectData(expectedSchema, expectedValue), avroRecord);
-    }
   }
 
 }

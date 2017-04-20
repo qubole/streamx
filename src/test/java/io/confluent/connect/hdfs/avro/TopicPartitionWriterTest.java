@@ -52,13 +52,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
-  // The default based on default configuration of 10
-  private static final String ZERO_PAD_FMT = "%010d";
-
   private RecordWriterProvider writerProvider;
-  private SchemaFileReader schemaFileReader;
   private Storage storage;
-  private static String extension;
 
   @Before
   public void setUp() throws Exception {
@@ -142,9 +137,9 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     String directory3 = partitioner.generatePartitionedPath(TOPIC, partitionField + "=" + String.valueOf(18));
 
     Set<Path> expectedFiles = new HashSet<>();
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory1, TOPIC_PARTITION, 0, 2, extension, ZERO_PAD_FMT)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory2, TOPIC_PARTITION, 3, 5, extension, ZERO_PAD_FMT)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory3, TOPIC_PARTITION, 6, 8, extension, ZERO_PAD_FMT)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory1, TOPIC_PARTITION, 0, 2, extension, zeroPadFormat)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory2, TOPIC_PARTITION, 3, 5, extension, zeroPadFormat)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory3, TOPIC_PARTITION, 6, 8, extension, zeroPadFormat)));
 
     verify(expectedFiles, records, schema);
   }
@@ -183,9 +178,9 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     String directory = partitioner.generatePartitionedPath(TOPIC, encodedPartition);
 
     Set<Path> expectedFiles = new HashSet<>();
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 0, 2, extension, ZERO_PAD_FMT)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 3, 5, extension, ZERO_PAD_FMT)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 6, 8, extension, ZERO_PAD_FMT)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 0, 2, extension, zeroPadFormat)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 3, 5, extension, zeroPadFormat)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 6, 8, extension, zeroPadFormat)));
 
     verify(expectedFiles, records, schema);
   }
