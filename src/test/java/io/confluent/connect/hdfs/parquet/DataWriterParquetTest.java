@@ -49,7 +49,7 @@ public class DataWriterParquetTest extends TestWithMiniDFSCluster {
     partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
-    List<SinkRecord> sinkRecords = createRecords(7);
+    List<SinkRecord> sinkRecords = createSinkRecords(7);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);

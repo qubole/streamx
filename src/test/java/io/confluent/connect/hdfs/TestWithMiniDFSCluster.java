@@ -96,15 +96,14 @@ public class TestWithMiniDFSCluster extends HdfsSinkConnectorTestBase {
     return props;
   }
 
-
   /**
    * Return a list of new records starting at zero offset.
    *
    * @param size the number of records to return.
    * @return the list of records.
    */
-  protected List<SinkRecord> createRecords(int size) {
-    return createRecords(size, 0);
+  protected List<SinkRecord> createSinkRecords(int size) {
+    return createSinkRecords(size, 0);
   }
 
   /**
@@ -114,8 +113,8 @@ public class TestWithMiniDFSCluster extends HdfsSinkConnectorTestBase {
    * @param startOffset the starting offset.
    * @return the list of records.
    */
-  protected List<SinkRecord> createRecords(int size, long startOffset) {
-    return createRecords(size, startOffset, Collections.singleton(new TopicPartition(TOPIC, PARTITION)));
+  protected List<SinkRecord> createSinkRecords(int size, long startOffset) {
+    return createSinkRecords(size, startOffset, Collections.singleton(new TopicPartition(TOPIC, PARTITION)));
   }
 
   /**
@@ -126,7 +125,8 @@ public class TestWithMiniDFSCluster extends HdfsSinkConnectorTestBase {
    * @param partitions the set of partitions to create records for.
    * @return the list of records.
    */
-  protected List<SinkRecord> createRecords(int size, long startOffset, Set<TopicPartition> partitions) {
+  protected List<SinkRecord> createSinkRecords(int size, long startOffset, Set<TopicPartition> partitions) {
+    /*
     String key = "key";
     Schema schema = createSchema();
     Struct record = createRecord(schema);
@@ -138,9 +138,35 @@ public class TestWithMiniDFSCluster extends HdfsSinkConnectorTestBase {
       }
     }
     return sinkRecords;
+    */
+
+    Schema schema = createSchema();
+    Struct record = createRecord(schema);
+    List<Struct> same = new ArrayList<>();
+    for (int i = 0; i < size; ++i) {
+      same.add(record);
+    }
+    return createSinkRecords(same, schema, startOffset, partitions);
   }
 
-  protected List<SinkRecord> createRecordsNoVersion(int size, long startOffset) {
+  protected List<SinkRecord> createSinkRecords(List<Struct> records, Schema schema) {
+    return createSinkRecords(records, schema, 0, Collections.singleton(new TopicPartition(TOPIC, PARTITION)));
+  }
+
+  protected List<SinkRecord> createSinkRecords(List<Struct> records, Schema schema, long startOffset,
+                                               Set<TopicPartition> partitions) {
+    String key = "key";
+    List<SinkRecord> sinkRecords = new ArrayList<>();
+    for (TopicPartition tp : partitions) {
+      long offset = startOffset;
+      for (Struct record : records) {
+        sinkRecords.add(new SinkRecord(TOPIC, tp.partition(), Schema.STRING_SCHEMA, key, schema, record, offset++));
+      }
+    }
+    return sinkRecords;
+  }
+
+  protected List<SinkRecord> createSinkRecordsNoVersion(int size, long startOffset) {
     String key = "key";
     Schema schemaNoVersion = SchemaBuilder.struct().name("record")
                                  .field("boolean", Schema.BOOLEAN_SCHEMA)
@@ -165,7 +191,7 @@ public class TestWithMiniDFSCluster extends HdfsSinkConnectorTestBase {
     return sinkRecords;
   }
 
-  protected List<SinkRecord> createRecordsWithAlteringSchemas(int size, long startOffset) {
+  protected List<SinkRecord> createSinkRecordsWithAlteringSchemas(int size, long startOffset) {
     String key = "key";
     Schema schema = createSchema();
     Struct record = createRecord(schema);
@@ -186,7 +212,7 @@ public class TestWithMiniDFSCluster extends HdfsSinkConnectorTestBase {
     return sinkRecords;
   }
 
-  protected List<SinkRecord> createRecordsInterleaved(int size, long startOffset, Set<TopicPartition> partitions) {
+  protected List<SinkRecord> createSinkRecordsInterleaved(int size, long startOffset, Set<TopicPartition> partitions) {
     String key = "key";
     Schema schema = createSchema();
     Struct record = createRecord(schema);

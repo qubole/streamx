@@ -55,7 +55,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
-    List<SinkRecord> sinkRecords = createRecords(7);
+    List<SinkRecord> sinkRecords = createSinkRecords(7);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -98,7 +98,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     assertTrue(offsets.containsKey(TOPIC_PARTITION));
     assertEquals(50L, (long) offsets.get(TOPIC_PARTITION));
 
-    List<SinkRecord> sinkRecords = createRecords(3, 50);
+    List<SinkRecord> sinkRecords = createSinkRecords(3, 50);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -117,7 +117,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
       hdfsWriter.recover(tp);
     }
 
-    List<SinkRecord> sinkRecords = createRecords(7, 0, assignment);
+    List<SinkRecord> sinkRecords = createSinkRecords(7, 0, assignment);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -164,7 +164,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
-    List<SinkRecord> sinkRecords = createRecords(7, 3);
+    List<SinkRecord> sinkRecords = createSinkRecords(7, 3);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -185,7 +185,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
       hdfsWriter.recover(tp);
     }
 
-    List<SinkRecord> sinkRecords = createRecords(7, 0, assignment);
+    List<SinkRecord> sinkRecords = createSinkRecords(7, 0, assignment);
     hdfsWriter.write(sinkRecords);
 
     Set<TopicPartition> oldAssignment = new HashSet<>(assignment);
@@ -207,7 +207,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     verify(sinkRecords, validOffsetsTopicPartition2, Collections.singleton(TOPIC_PARTITION2), true);
 
     // Message offsets start at 6 because we discarded the in-progress temp file on re-balance
-    sinkRecords = createRecords(3, 6, assignment);
+    sinkRecords = createSinkRecords(3, 6, assignment);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(newAssignment);
@@ -234,7 +234,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
-    List<SinkRecord> sinkRecords = createRecordsWithAlteringSchemas(7, 0);
+    List<SinkRecord> sinkRecords = createSinkRecordsWithAlteringSchemas(7, 0);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -253,7 +253,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
-    List<SinkRecord> sinkRecords = createRecordsWithAlteringSchemas(7, 0);
+    List<SinkRecord> sinkRecords = createSinkRecordsWithAlteringSchemas(7, 0);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -275,7 +275,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.recover(TOPIC_PARTITION);
 
     // By excluding the first element we get a list starting with record having the new schema.
-    List<SinkRecord> sinkRecords = createRecordsWithAlteringSchemas(8, 0).subList(1, 8);
+    List<SinkRecord> sinkRecords = createSinkRecordsWithAlteringSchemas(8, 0).subList(1, 8);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -295,8 +295,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
-    List<SinkRecord> sinkRecords = createRecordsNoVersion(1, 0);
-    sinkRecords.addAll(createRecordsWithAlteringSchemas(7, 0));
+    List<SinkRecord> sinkRecords = createSinkRecordsNoVersion(1, 0);
+    sinkRecords.addAll(createSinkRecordsWithAlteringSchemas(7, 0));
 
     try {
       hdfsWriter.write(sinkRecords);
@@ -332,7 +332,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
-    List<SinkRecord> sinkRecords = createRecords(NUMBER_OF_RECORDS);
+    List<SinkRecord> sinkRecords = createSinkRecords(NUMBER_OF_RECORDS);
     hdfsWriter.write(sinkRecords);
 
     // wait for rotation to happen
