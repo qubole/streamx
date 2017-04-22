@@ -56,7 +56,6 @@ public class HdfsSinkConnectorTestBase {
   protected static final TopicPartition TOPIC_WITH_DOTS_PARTITION = new TopicPartition(TOPIC_WITH_DOTS, PARTITION);
   protected static Set<TopicPartition> assignment;
 
-
   protected Map<String, String> createProps() {
     Map<String, String> props = new HashMap<>();
     props.put(HdfsSinkConnectorConfig.HDFS_URL_CONFIG, url);
@@ -77,11 +76,11 @@ public class HdfsSinkConnectorTestBase {
   // Create a batch of records with incremental numeric field values. Total number of records is given by 'size'.
   protected Struct createRecord(Schema schema, int ibase, float fbase) {
     return new Struct(schema)
-               .put("boolean", true)
-               .put("int", ibase)
-               .put("long", (long) ibase)
-               .put("float", fbase)
-               .put("double", (double) fbase);
+        .put("boolean", true)
+        .put("int", ibase)
+        .put("long", (long) ibase)
+        .put("float", fbase)
+        .put("double", (double) fbase);
   }
 
   protected Struct createRecord(Schema schema) {

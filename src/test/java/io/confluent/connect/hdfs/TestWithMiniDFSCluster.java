@@ -240,10 +240,12 @@ public class TestWithMiniDFSCluster extends HdfsSinkConnectorTestBase {
 
   /**
    * Verify files and records are uploaded appropriately.
-   * @param sinkRecords a flat list of the records that need to appear in potentially several files in S3.
-   * @param validOffsets an array containing the offsets that map to uploaded files for a topic-partition.
-   *                     Offsets appear in ascending order, the difference between two consecutive offsets
-   *                     equals the expected size of the file, and last offset is exclusive.
+   *
+   * @param sinkRecords a flat list of the records that need to appear in potentially several files
+   * in HDFS.
+   * @param validOffsets an array containing the offsets that map to uploaded files for a
+   * topic-partition. Offsets appear in ascending order, the difference between two consecutive
+   * offsets equals the expected size of the file, and last offset is exclusive.
    */
   protected void verify(List<SinkRecord> sinkRecords, long[] validOffsets) throws IOException {
     verify(sinkRecords, validOffsets, Collections.singleton(new TopicPartition(TOPIC, PARTITION)), false);
@@ -256,10 +258,12 @@ public class TestWithMiniDFSCluster extends HdfsSinkConnectorTestBase {
 
   /**
    * Verify files and records are uploaded appropriately.
-   * @param sinkRecords a flat list of the records that need to appear in potentially several files in S3.
-   * @param validOffsets an array containing the offsets that map to uploaded files for a topic-partition.
-   *                     Offsets appear in ascending order, the difference between two consecutive offsets
-   *                     equals the expected size of the file, and last offset is exclusive.
+   *
+   * @param sinkRecords a flat list of the records that need to appear in potentially several *
+   * files in HDFS.
+   * @param validOffsets an array containing the offsets that map to uploaded files for a
+   * topic-partition. Offsets appear in ascending order, the difference between two consecutive
+   * offsets equals the expected size of the file, and last offset is exclusive.
    * @param partitions the set of partitions to verify records for.
    */
   protected void verify(List<SinkRecord> sinkRecords, long[] validOffsets, Set<TopicPartition> partitions,
