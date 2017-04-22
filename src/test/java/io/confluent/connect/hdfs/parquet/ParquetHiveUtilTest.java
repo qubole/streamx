@@ -69,9 +69,12 @@ public class ParquetHiveUtilTest extends HiveTestBase {
     String location = "partition=" + String.valueOf(PARTITION);
     hiveMetaStore.addPartition(hiveDatabase, TOPIC, location);
 
+    Struct expectedRecord = createRecord(schema);
+    List<String> expectedResult = new ArrayList<>();
     List<String> expectedColumnNames = new ArrayList<>();
-    for (Field field: schema.fields()) {
+    for (Field field : schema.fields()) {
       expectedColumnNames.add(field.name());
+      expectedResult.add(String.valueOf(expectedRecord.get(field.name())));
     }
 
     Table table = hiveMetaStore.getTable(hiveDatabase, TOPIC);
@@ -85,15 +88,15 @@ public class ParquetHiveUtilTest extends HiveTestBase {
     assertEquals(1, partitionCols.size());
     assertEquals("partition", partitionCols.get(0).getName());
 
-    String[] expectedResult = {"true", "12", "12", "12.2", "12.2", "12"};
-    String result = HiveTestUtils.runHive(hiveExec, "SELECT * FROM " + TOPIC);
+    String result = HiveTestUtils.runHive(hiveExec, "SELECT * from " + TOPIC);
     String[] rows = result.split("\n");
     // Only 6 of the 7 records should have been delivered due to flush_size = 3
     assertEquals(6, rows.length);
-    for (String row: rows) {
+    for (String row : rows) {
       String[] parts = HiveTestUtils.parseOutput(row);
-      for (int j = 0; j < expectedResult.length; ++j) {
-        assertEquals(expectedResult[j], parts[j]);
+      int j = 0;
+      for (String expectedValue : expectedResult) {
+        assertEquals(expectedValue, parts[j++]);
       }
     }
   }
@@ -108,9 +111,13 @@ public class ParquetHiveUtilTest extends HiveTestBase {
     String location = "partition=" + String.valueOf(PARTITION);
     hiveMetaStore.addPartition(hiveDatabase, TOPIC, location);
 
+    Schema newSchema = createNewSchema();
+    Struct expectedRecord = createRecord(newSchema);
+    List<String> expectedResult = new ArrayList<>();
     List<String> expectedColumnNames = new ArrayList<>();
-    for (Field field: schema.fields()) {
+    for (Field field : schema.fields()) {
       expectedColumnNames.add(field.name());
+      expectedResult.add(String.valueOf(expectedRecord.get(field.name())));
     }
 
     Table table = hiveMetaStore.getTable(hiveDatabase, TOPIC);
@@ -121,19 +128,17 @@ public class ParquetHiveUtilTest extends HiveTestBase {
 
     assertEquals(expectedColumnNames, actualColumnNames);
 
-    Schema newSchema = createNewSchema();
-
     hive.alterSchema(hiveDatabase, TOPIC, newSchema);
 
-    String[] expectedResult = {"true", "12", "12", "12.2", "12.2", "NULL", "12"};
     String result = HiveTestUtils.runHive(hiveExec, "SELECT * from " + TOPIC);
     String[] rows = result.split("\n");
     // Only 6 of the 7 records should have been delivered due to flush_size = 3
     assertEquals(6, rows.length);
-    for (String row: rows) {
+    for (String row : rows) {
       String[] parts = HiveTestUtils.parseOutput(row);
-      for (int j = 0; j < expectedResult.length; ++j) {
-        assertEquals(expectedResult[j], parts[j]);
+      int j = 0;
+      for (String expectedValue : expectedResult) {
+        assertEquals(expectedValue, parts[j++]);
       }
     }
   }
