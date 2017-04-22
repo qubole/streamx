@@ -129,6 +129,40 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
   }
 
   @Test
+  public void testWriteInterleavedRecordsInMultiplePartitions() throws Exception {
+    DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
+    partitioner = hdfsWriter.getPartitioner();
+
+    for (TopicPartition tp: assignment) {
+      hdfsWriter.recover(tp);
+    }
+
+    List<SinkRecord> sinkRecords = createSinkRecordsInterleaved(7 * assignment.size(), 0, assignment);
+
+    hdfsWriter.write(sinkRecords);
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
+
+    long[] validOffsets = {0, 3, 6};
+    verify(sinkRecords, validOffsets, assignment);
+  }
+
+  @Test
+  public void testWriteInterleavedRecordsInMultiplePartitionsNonZeroInitialOffset() throws Exception {
+    DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
+    partitioner = hdfsWriter.getPartitioner();
+
+    List<SinkRecord> sinkRecords = createSinkRecordsInterleaved(7 * assignment.size(), 9, assignment);
+
+    hdfsWriter.write(sinkRecords);
+    hdfsWriter.close(assignment);
+    hdfsWriter.stop();
+
+    long[] validOffsets = {9, 12, 15};
+    verify(sinkRecords, validOffsets, assignment);
+  }
+
+  @Test
   public void testGetPreviousOffsets() throws Exception {
     String directory = TOPIC + "/" + "partition=" + String.valueOf(PARTITION);
     long[] startOffsets = {0, 3};
