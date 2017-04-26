@@ -73,7 +73,6 @@ public class HdfsSinkConnectorTestBase {
         .build();
   }
 
-  // Create a batch of records with incremental numeric field values. Total number of records is given by 'size'.
   protected Struct createRecord(Schema schema, int ibase, float fbase) {
     return new Struct(schema)
         .put("boolean", true)
@@ -108,7 +107,8 @@ public class HdfsSinkConnectorTestBase {
         .put("string", "def");
   }
 
-  // Create a batch of records with incremental numeric field values. Total number of records is given by 'size'.
+  // Create a batch of records with incremental numeric field values. Total number of records is
+  // given by 'size'.
   protected List<Struct> createRecordBatch(Schema schema, int size) {
     ArrayList<Struct> records = new ArrayList<>(size);
     int ibase = 16;

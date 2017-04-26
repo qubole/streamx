@@ -126,20 +126,6 @@ public class TestWithMiniDFSCluster extends HdfsSinkConnectorTestBase {
    * @return the list of records.
    */
   protected List<SinkRecord> createSinkRecords(int size, long startOffset, Set<TopicPartition> partitions) {
-    /*
-    String key = "key";
-    Schema schema = createSchema();
-    Struct record = createRecord(schema);
-
-    List<SinkRecord> sinkRecords = new ArrayList<>();
-    for (TopicPartition tp : partitions) {
-      for (long offset = startOffset; offset < startOffset + size; ++offset) {
-        sinkRecords.add(new SinkRecord(TOPIC, tp.partition(), Schema.STRING_SCHEMA, key, schema, record, offset));
-      }
-    }
-    return sinkRecords;
-    */
-
     Schema schema = createSchema();
     Struct record = createRecord(schema);
     List<Struct> same = new ArrayList<>();
@@ -191,7 +177,7 @@ public class TestWithMiniDFSCluster extends HdfsSinkConnectorTestBase {
     return sinkRecords;
   }
 
-  protected List<SinkRecord> createSinkRecordsWithAlteringSchemas(int size, long startOffset) {
+  protected List<SinkRecord> createSinkRecordsWithAlternatingSchemas(int size, long startOffset) {
     String key = "key";
     Schema schema = createSchema();
     Struct record = createRecord(schema);

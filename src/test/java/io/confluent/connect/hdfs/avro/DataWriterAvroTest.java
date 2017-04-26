@@ -268,7 +268,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
-    List<SinkRecord> sinkRecords = createSinkRecordsWithAlteringSchemas(7, 0);
+    List<SinkRecord> sinkRecords = createSinkRecordsWithAlternatingSchemas(7, 0);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -287,7 +287,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
-    List<SinkRecord> sinkRecords = createSinkRecordsWithAlteringSchemas(7, 0);
+    List<SinkRecord> sinkRecords = createSinkRecordsWithAlternatingSchemas(7, 0);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -309,7 +309,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.recover(TOPIC_PARTITION);
 
     // By excluding the first element we get a list starting with record having the new schema.
-    List<SinkRecord> sinkRecords = createSinkRecordsWithAlteringSchemas(8, 0).subList(1, 8);
+    List<SinkRecord> sinkRecords = createSinkRecordsWithAlternatingSchemas(8, 0).subList(1, 8);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -330,7 +330,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     hdfsWriter.recover(TOPIC_PARTITION);
 
     List<SinkRecord> sinkRecords = createSinkRecordsNoVersion(1, 0);
-    sinkRecords.addAll(createSinkRecordsWithAlteringSchemas(7, 0));
+    sinkRecords.addAll(createSinkRecordsWithAlternatingSchemas(7, 0));
 
     try {
       hdfsWriter.write(sinkRecords);
