@@ -13,4 +13,10 @@ cat $CONNECT_CONF
 
 # Launch StreamX
 export CLASSPATH=/usr/local/streamx/*
+env | grep LOG_TO_FILE
+if [[ $? -eq 0 ]]; then
+  cp /usr/local/streamx/config/connect-log4j.properties /etc/kafka/
+  hostname=`hostname`
+  export KAFKA_OPTS="-Dcontainer_directory=$hostname"
+fi
 /usr/bin/connect-distributed $CONNECT_CONF
