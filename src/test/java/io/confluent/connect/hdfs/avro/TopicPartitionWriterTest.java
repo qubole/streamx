@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +37,6 @@ import io.confluent.connect.hdfs.FileUtils;
 import io.confluent.connect.hdfs.Format;
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.RecordWriterProvider;
-import io.confluent.connect.hdfs.SchemaFileReader;
 import io.confluent.connect.hdfs.TestWithMiniDFSCluster;
 import io.confluent.connect.hdfs.TopicPartitionWriter;
 import io.confluent.connect.hdfs.filter.CommittedFileFilter;
@@ -52,13 +52,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
-  // The default based on default configuration of 10
-  private static final String ZERO_PAD_FMT = "%010d";
-
   private RecordWriterProvider writerProvider;
-  private SchemaFileReader schemaFileReader;
   private Storage storage;
-  private static String extension;
 
   @Before
   public void setUp() throws Exception {
@@ -86,11 +81,11 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     TopicPartitionWriter topicPartitionWriter = new TopicPartitionWriter(
         TOPIC_PARTITION, storage, writerProvider, partitioner,  connectorConfig, context, avroData);
 
-    String key = "key";
     Schema schema = createSchema();
-    Struct[] records = createRecords(schema);
-
-    Collection<SinkRecord> sinkRecords = createSinkRecords(records, key, schema);
+    List<Struct> records = createRecordBatches(schema, 3, 3);
+    // Add a single records at the end of the batches sequence. Total records: 10
+    records.add(createRecord(schema));
+    List<SinkRecord> sinkRecords = createSinkRecords(records, schema);
 
     for (SinkRecord record : sinkRecords) {
       topicPartitionWriter.buffer(record);
@@ -107,7 +102,8 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
                                "/" + TOPIC + "+" + PARTITION + "+03+05" + extension));
     expectedFiles.add(new Path(url + "/" + topicsDir + "/" + TOPIC + "/partition=" + PARTITION +
                                "/" + TOPIC + "+" + PARTITION + "+06+08" + extension));
-    verify(expectedFiles, records, schema);
+    int expectedBatchSize = 3;
+    verify(expectedFiles, expectedBatchSize, records, schema);
   }
 
 
@@ -122,11 +118,17 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     TopicPartitionWriter topicPartitionWriter = new TopicPartitionWriter(
         TOPIC_PARTITION, storage, writerProvider, partitioner, connectorConfig, context, avroData);
 
-    String key = "key";
     Schema schema = createSchema();
-    Struct[] records = createRecords(schema);
+    List<Struct> records = new ArrayList<>();
+    for (int i = 16; i < 19; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        records.add(createRecord(schema, i, 12.2f));
 
-    Collection<SinkRecord> sinkRecords = createSinkRecords(records, key, schema);
+      }
+    }
+    // Add a single records at the end of the batches sequence. Total records: 10
+    records.add(createRecord(schema));
+    List<SinkRecord> sinkRecords = createSinkRecords(records, schema);
 
     for (SinkRecord record : sinkRecords) {
       topicPartitionWriter.buffer(record);
@@ -136,17 +138,17 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     topicPartitionWriter.write();
     topicPartitionWriter.close();
 
-
     String directory1 = partitioner.generatePartitionedPath(TOPIC, partitionField + "=" + String.valueOf(16));
     String directory2 = partitioner.generatePartitionedPath(TOPIC, partitionField + "=" + String.valueOf(17));
     String directory3 = partitioner.generatePartitionedPath(TOPIC, partitionField + "=" + String.valueOf(18));
 
     Set<Path> expectedFiles = new HashSet<>();
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory1, TOPIC_PARTITION, 0, 2, extension, ZERO_PAD_FMT)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory2, TOPIC_PARTITION, 3, 5, extension, ZERO_PAD_FMT)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory3, TOPIC_PARTITION, 6, 8, extension, ZERO_PAD_FMT)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory1, TOPIC_PARTITION, 0, 2, extension, zeroPadFormat)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory2, TOPIC_PARTITION, 3, 5, extension, zeroPadFormat)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory3, TOPIC_PARTITION, 6, 8, extension, zeroPadFormat)));
 
-    verify(expectedFiles, records, schema);
+    int expectedBatchSize = 3;
+    verify(expectedFiles, expectedBatchSize, records, schema);
   }
 
   @Test
@@ -158,11 +160,11 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     TopicPartitionWriter topicPartitionWriter = new TopicPartitionWriter(
         TOPIC_PARTITION, storage, writerProvider, partitioner, connectorConfig, context, avroData);
 
-    String key = "key";
     Schema schema = createSchema();
-    Struct[] records = createRecords(schema);
-
-    Collection<SinkRecord> sinkRecords = createSinkRecords(records, key, schema);
+    List<Struct> records = createRecordBatches(schema, 3, 3);
+    // Add a single records at the end of the batches sequence. Total records: 10
+    records.add(createRecord(schema));
+    List<SinkRecord> sinkRecords = createSinkRecords(records, schema);
 
     for (SinkRecord record : sinkRecords) {
       topicPartitionWriter.buffer(record);
@@ -171,7 +173,6 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     topicPartitionWriter.recover();
     topicPartitionWriter.write();
     topicPartitionWriter.close();
-
 
     long partitionDurationMs = (Long) config.get(HdfsSinkConnectorConfig.PARTITION_DURATION_MS_CONFIG);
     String pathFormat = (String) config.get(HdfsSinkConnectorConfig.PATH_FORMAT_CONFIG);
@@ -183,11 +184,12 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     String directory = partitioner.generatePartitionedPath(TOPIC, encodedPartition);
 
     Set<Path> expectedFiles = new HashSet<>();
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 0, 2, extension, ZERO_PAD_FMT)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 3, 5, extension, ZERO_PAD_FMT)));
-    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 6, 8, extension, ZERO_PAD_FMT)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 0, 2, extension, zeroPadFormat)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 3, 5, extension, zeroPadFormat)));
+    expectedFiles.add(new Path(FileUtils.committedFileName(url, topicsDir, directory, TOPIC_PARTITION, 6, 8, extension, zeroPadFormat)));
 
-    verify(expectedFiles, records, schema);
+    int expectedBatchSize = 3;
+    verify(expectedFiles, expectedBatchSize, records, schema);
   }
 
   private Map<String, Object> createConfig() {
@@ -214,51 +216,7 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
     }
   }
 
-  private Struct[] createRecords(Schema schema) {
-    Struct record1 = new Struct(schema)
-        .put("boolean", true)
-        .put("int", 16)
-        .put("long", 12L)
-        .put("float", 12.2f)
-        .put("double", 12.2);
-
-    Struct record2 = new Struct(schema)
-        .put("boolean", true)
-        .put("int", 17)
-        .put("long", 12L)
-        .put("float", 12.2f)
-        .put("double", 12.2);
-
-    Struct record3 = new Struct(schema)
-        .put("boolean", true)
-        .put("int", 18)
-        .put("long", 12L)
-        .put("float", 12.2f)
-        .put("double", 12.2);
-
-    ArrayList<Struct> records = new ArrayList<>();
-    records.add(record1);
-    records.add(record2);
-    records.add(record3);
-    return records.toArray(new Struct[records.size()]);
-  }
-
-
-  private ArrayList<SinkRecord> createSinkRecords(Struct[] records, String key, Schema schema) {
-    ArrayList<SinkRecord> sinkRecords = new ArrayList<>();
-    long offset = 0;
-    for (Struct record : records) {
-      for (long count = 0; count < 3; count++) {
-        SinkRecord sinkRecord = new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record,
-                                               offset + count);
-        sinkRecords.add(sinkRecord);
-      }
-      offset = offset + 3;
-    }
-    return sinkRecords;
-  }
-
-  private void verify(Set<Path> expectedFiles, Struct[] records, Schema schema) throws IOException {
+  private void verify(Set<Path> expectedFiles, int expectedSize, List<Struct> records, Schema schema) throws IOException {
     Path path = new Path(FileUtils.topicDirectory(url, topicsDir, TOPIC));
     FileStatus[] statuses = FileUtils.traverse(storage, path, new CommittedFileFilter());
     assertEquals(expectedFiles.size(), statuses.length);
@@ -267,11 +225,11 @@ public class TopicPartitionWriterTest extends TestWithMiniDFSCluster {
       Path filePath = status.getPath();
       assertTrue(expectedFiles.contains(status.getPath()));
       Collection<Object> avroRecords = schemaFileReader.readData(conf, filePath);
-      assertEquals(3, avroRecords.size());
-      for (Object avroRecord: avroRecords) {
-        assertEquals(avroData.fromConnectData(schema, records[index]), avroRecord);
+      assertEquals(expectedSize, avroRecords.size());
+      for (Object avroRecord : avroRecords) {
+        assertEquals(avroData.fromConnectData(schema, records.get(index++)), avroRecord);
       }
-      index++;
     }
   }
+
 }
