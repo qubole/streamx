@@ -277,7 +277,6 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
       String[] parts = HiveTestUtils.parseOutput(rows[i]);
       int j = 0;
       for (String expectedValue : expectedResults.get(i)) {
-        System.err.println("Exp: " + expectedValue + " Actual: " + parts[j]);
         assertEquals(expectedValue, parts[j++]);
       }
     }
