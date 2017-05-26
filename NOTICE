@@ -285,8 +285,8 @@ The following libraries are included in packaged versions of this project:
 
 * Pentaho aggdesigner
  * COPYRIGHT: Copyright 2006 - 2013 Pentaho Corporation
- * LICENSE: licenses/LICENSE.gpl2.txt
- * HOMEPAGE: https://github.com/pentaho/pentaho-aggdesigner
+ * LICENSE: licenses/LICENSE.apache2.txt
+ * HOMEPAGE: https://github.com/julianhyde/aggdesigner/tree/master/pentaho-aggdesigner-algorithm
 
 * SLF4J
  * COPYRIGHT: Copyright (c) 2004-2013 QOS.ch
