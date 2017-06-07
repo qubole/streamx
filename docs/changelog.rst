@@ -3,6 +3,12 @@
 Changelog
 =========
 
+Version 3.2.2
+-------------
+
+* `PR-194 <https://github.com/confluentinc/kafka-connect-hdfs/pull/194>`_ - Fix HdfsSinkConnector to extend from SinkConnector instead of Connector.
+* `PR-200 <https://github.com/confluentinc/kafka-connect-hdfs/pull/200>`_ - Fix incorrect licensing and webpage info.
+
 Version 3.2.1
 -------------
 No changes
