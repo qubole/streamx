@@ -12,7 +12,8 @@ def check_for_required_configs(confs):
     print_help()
     sys.exit(1)
 
-  required_configs = {"CONNECT_BOOTSTRAP_SERVERS": False, "CONNECT_AWS_ACCESS_KEY": False, "CONNECT_AWS_SECRET_KEY": False}
+  #required_configs = {"CONNECT_BOOTSTRAP_SERVERS": False, "CONNECT_AWS_ACCESS_KEY": False, "CONNECT_AWS_SECRET_KEY": False}
+  required_configs = {"CONNECT_BOOTSTRAP_SERVERS": False, "CONNECT_CLUSTER_ON_ROLES": False}
   for x in required_configs.keys():
     if x in confs:
        required_configs[x] = True
