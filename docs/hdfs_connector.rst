@@ -70,11 +70,11 @@ in HDFS::
 You should see a file with name ``/topics/test_hdfs/partition=0/test_hdfs+0+0000000000+0000000002.avro``
 The file name is encoded as ``topic+kafkaPartition+startOffset+endOffset.format``.
 
-You can use ``avro-tools-1.7.7.jar``
-(available in `Apache mirrors <http://mirror.metrocast.net/apache/avro/avro-1.7.7/java/avro-tools-1.7.7.jar>`_)
+You can use ``avro-tools-1.8.2.jar``
+(available in `Apache mirrors <http://mirror.metrocast.net/apache/avro/avro-1.8.2/java/avro-tools-1.8.2.jar>`_)
 to extract the content of the file. Run ``avro-tools`` directly on Hadoop as::
 
-  $ hadoop jar avro-tools-1.7.7.jar tojson \
+  $ hadoop jar avro-tools-1.8.2.jar tojson \
   hdfs://<namenode>/topics/test_hdfs/partition=0/test_hdfs+0+0000000000+0000000002.avro
 
 where "<namenode>" is the HDFS name node hostname.
@@ -84,7 +84,7 @@ or, if you experience issues, first copy the avro file from HDFS to the local fi
   $ hadoop fs -copyToLocal /topics/test_hdfs/partition=0/test_hdfs+0+0000000000+0000000002.avro \
   /tmp/test_hdfs+0+0000000000+0000000002.avro
 
-  $ java -jar avro-tools-1.7.7.jar tojson /tmp/test_hdfs+0+0000000000+0000000002.avro
+  $ java -jar avro-tools-1.8.2.jar tojson /tmp/test_hdfs+0+0000000000+0000000002.avro
 
 You should see the following output::
 
