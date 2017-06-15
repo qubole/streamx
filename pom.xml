@@ -53,7 +53,7 @@
         <confluent.version>3.1.2</confluent.version>
         <kafka.version>0.10.1.1-cp1</kafka.version>
         <junit.version>4.12</junit.version>
-        <hadoop.version>2.7.2</hadoop.version>
+        <hadoop.version>2.6.0-qds-0.4.12</hadoop.version>
         <hive.version>1.2.1</hive.version>
         <avro.version>1.7.7</avro.version>
         <parquet.version>1.7.0</parquet.version>
@@ -75,7 +75,12 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-aws</artifactId>
+            <artifactId>hadoop-common</artifactId>
+            <version>${hadoop.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-hdfs</artifactId>
             <version>${hadoop.version}</version>
         </dependency>
         <dependency>
@@ -133,7 +138,6 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-minicluster</artifactId>
             <version>${hadoop.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>

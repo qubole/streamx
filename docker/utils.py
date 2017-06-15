@@ -47,16 +47,16 @@ def override_connect_configs(confs):
       f.write(line+"\n")
 
 def override_hadoop_configs(confs):
-  hadoop_conf_file = "/usr/local/streamx/config/hadoop-conf/core-site.xml"
+  hadoop_conf_file = "/usr/local/streamx/config/hadoop-conf/hdfs-site.xml"
   #access_key = confs["CONNECT_AWS_ACCESS_KEY"] 
   #secret_key = confs["CONNECT_AWS_SECRET_KEY"]
   cluster_on_roles = confs["CONNECT_CLUSTER_ON_ROLES"]
   import subprocess
-  #cmd1='sed -i "s:SECRET_KEY_HERE:' + secret_key + ':g" /usr/local/streamx/config/hadoop-conf/core-site.xml'
-  #cmd2='sed -i "s:ACCESS_KEY_HERE:' + access_key + ':g" /usr/local/streamx/config/hadoop-conf/core-site.xml'
+  #cmd1='sed -i "s:SECRET_KEY_HERE:' + secret_key + ':g" /usr/local/streamx/config/hadoop-conf/hdfs-site.xml'
+  #cmd2='sed -i "s:ACCESS_KEY_HERE:' + access_key + ':g" /usr/local/streamx/config/hadoop-conf/hdfs-site.xml'
   #subprocess.Popen(cmd1, shell=True).wait()
   #subprocess.Popen(cmd2, shell=True).wait()
-  cmd='sed -i "s:IS_CLUSTER_ON_ROLE:' + cluster_on_roles + ':g" /usr/local/streamx/config/hadoop-conf/core-site.xml'
+  cmd='sed -i "s:IS_CLUSTER_ON_ROLE:' + cluster_on_roles + ':g" /usr/local/streamx/config/hadoop-conf/hdfs-site.xml'
   subprocess.Popen(cmd, shell=True).wait()
 
 def main():
