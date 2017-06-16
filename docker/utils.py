@@ -66,7 +66,7 @@ def override_hadoop_configs(confs):
   hadoop_conf_file = "/usr/local/streamx/config/hadoop-conf/hdfs-site.xml"
   cluster_on_roles = confs["CONNECT_CLUSTER_ON_ROLES"]
   import subprocess
-  cmd='sed -i "s:IS_CLUSTER_ON_ROLE:' + cluster_on_roles + ':g" /usr/local/streamx/config/hadoop-conf/hdfs-site.xml'
+  cmd='sed -i "s:IS_CLUSTER_ON_ROLES:' + cluster_on_roles + ':g" /usr/local/streamx/config/hadoop-conf/hdfs-site.xml'
   subprocess.Popen(cmd, shell=True).wait()
 
   if cluster_on_roles is False:
