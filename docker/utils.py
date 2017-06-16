@@ -30,6 +30,7 @@ def check_for_required_configs(confs):
 
   if not confs.has_key('CONNECT_CLUSTER_ON_ROLES'):
       print "Cluster on Roles property required(either true of false)."
+      sys.exit(1)
 
   cluster_on_roles = confs['CONNECT_CLUSTER_ON_ROLES']
   if cluster_on_roles is False:
