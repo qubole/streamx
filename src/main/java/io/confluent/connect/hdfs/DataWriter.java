@@ -168,8 +168,6 @@ public class DataWriter {
       Class<? extends Storage> storageClass = (Class<? extends Storage>) Class
               .forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
 
-      log.info("hadoop conf: " + conf.toString());
-      log.info("connector config" + connectorConfig.toString());
       storage = StorageFactory.createStorage(storageClass, connectorConfig, conf, url);
 
       createDir(topicsDir);
