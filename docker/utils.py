@@ -5,40 +5,24 @@ def print_help():
   CONNECT_BOOTSTRAP_SERVERS
   CONNECT_AWS_ACCESS_KEY
   CONNECT_AWS_SECRET_KEY
-  Cmd : docker run -d --env CONNECT_BOOTSTRAP_SERVERS=public_dns:9092 --env CONNECT_AWS_ACCESS_KEY=xxxxx --env CONNECT_AWS_SECRET_KEY=yyyy qubole/streamx"""
+  Cmd : docker run -d --env CONNECT_BOOTSTRAP_SERVERS=public_dns:9092 --env CONNECT_AWS_ACCESS_KEY=xxxxx --env CONNECT_AWS_SECRET_KEY=yyyy --env CONNECT_CLUSTER_ON_ROLES=True/False qubole/streamx"""
 
 def check_for_required_configs(confs):
   if len(confs) == 0:
     print_help()
     sys.exit(1)
 
-  required_configs = {"CONNECT_BOOTSTRAP_SERVERS": False, "CONNECT_PROPS": False}
-  for x in required_configs.keys():
-    if x in confs:
-       required_configs[x] = True
-
-  for x in required_configs.keys():
-    if required_configs[x] == False:
-      print x +" is required"
-      sys.exit(1)
-
-  props = confs['CONNECT_PROPS']
-  props_arr = props.split('!')[:-1]
-  for prop in props_arr:
-      (k,v) = prop.split('=',1)
-      confs[k] = v
-
-  if not confs.has_key('CONNECT_CLUSTER_ON_ROLES'):
-      print "Cluster on Roles property required(either true of false)."
-      sys.exit(1)
+  required_configs = ["CONNECT_BOOTSTRAP_SERVERS", "CONNECT_AWS_ACCESS_KEY", "CONNECT_AWS_SECRET_KEY", "CONNECT_CLUSTER_ON_ROLES"]
+  for x in required_configs:
+    if x not in confs.keys():
+       print x +" is required"
+       sys.exit(1)
 
   cluster_on_roles = confs['CONNECT_CLUSTER_ON_ROLES']
   if cluster_on_roles is False:
-      if (not (confs.has_key('CONNECT_AWS_ACCESS_KEY') and confs.has_key('CONNECT_AWS_SECRET_KEY'))):
+      if ((not confs['CONNECT_AWS_ACCESS_KEY'].strip()) or (not confs['CONNECT_AWS_SECRET_KEY'].strip())):
           print "AWS ACCESS and SECRET keys are required when not on Roles."
           sys.exit(1)
-
-  return confs
 
 def override_connect_configs(confs):
   connect_file = "/usr/local/streamx/config/connect-distributed.properties"
@@ -88,7 +72,7 @@ def main():
     else:
       print "Ignoring " + x + " as it does not start with CONNECT_"
 
-  confs = check_for_required_configs(confs)
+  check_for_required_configs(confs)
   override_connect_configs(confs)
   override_hadoop_configs(confs)
 
