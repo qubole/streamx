@@ -3,6 +3,12 @@
 Changelog
 =========
 
+Version 3.3.0
+-------------
+
+* `PR-187 <https://github.com/confluentinc/kafka-connect-hdfs/pull/187>`_ - CC-491: Consolidate and simplify unit tests of HDFS connector.
+* `PR-205 <https://github.com/confluentinc/kafka-connect-hdfs/pull/205>`_ - Upgrade avro to 1.8.2.
+
 Version 3.2.2
 -------------
 
