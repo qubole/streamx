@@ -147,20 +147,48 @@ You should see the following output:
   {"f1":"value2"}
   {"f1":"value3"}
 
+Finally, stop the Connect worker as well as all the rest of the Confluent services by running:
+
+.. sourcecode:: bash
+
+      $ confluent stop
+      Stopping connect
+      connect is [DOWN]
+      Stopping kafka-rest
+      kafka-rest is [DOWN]
+      Stopping schema-registry
+      schema-registry is [DOWN]
+      Stopping kafka
+      kafka is [DOWN]
+      Stopping zookeeper
+      zookeeper is [DOWN]
+
+or stop all the services and additionally wipe out any data generated during this quickstart by running:
+
+.. sourcecode:: bash
+
+      $ confluent destroy
+      Stopping connect
+      connect is [DOWN]
+      Stopping kafka-rest
+      kafka-rest is [DOWN]
+      Stopping schema-registry
+      schema-registry is [DOWN]
+      Stopping kafka
+      kafka is [DOWN]
+      Stopping zookeeper
+      zookeeper is [DOWN]
+      Deleting: /tmp/confluent.w1CpYsaI
 
 .. note:: If you want to run the Quickstart with Hive integration, before starting the connector,
    you need to add the following configurations to
-   ``etc/kafka-connect-hdfs/quickstart-hdfs.properties``:
-
-.. sourcecode:: bash
+   ``etc/kafka-connect-hdfs/quickstart-hdfs.properties``::
 
       hive.integration=true
       hive.metastore.uris=thrift uri to your Hive metastore
       schema.compatibility=BACKWARD
 
-   After the connector finishes ingesting data to HDFS, you can use Hive to check the data:
-
-.. sourcecode:: sql
+   After the connector finishes ingesting data to HDFS, you can use Hive to check the data::
 
       $hive>SELECT * FROM test_hdfs;
 
