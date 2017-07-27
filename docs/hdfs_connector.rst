@@ -101,14 +101,13 @@ configuration with the following command:
      "tasks": []
    }
 
-To check that the connector started successfully open the Connect worker's log by running:
-to HDFS.
+To check that the connector started successfully view the Connect worker's log by running:
 
 .. sourcecode:: bash
 
   $ confluent log connect
 
-By navigating at the end of the log, you should see that the connector starts, logs a few messages, and then exports
+Towards the end of the log you should see that the connector starts, logs a few messages, and then exports
 data from Kafka to HDFS.
 Once the connector finishes ingesting data to HDFS, check that the data is available in HDFS:
 
