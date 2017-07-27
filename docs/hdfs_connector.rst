@@ -20,9 +20,8 @@ Quickstart
 In this Quickstart, we use the HDFS connector to export data produced by the Avro console producer
 to HDFS.
 
-Start Zookeeper, Kafka and SchemaRegistry if you haven't done so. The instructions on how to start
-these services are available at the Confluent Platform QuickStart. You also need to have Hadoop
-running locally or remotely and make sure that you know the HDFS url. For Hive integration, you
+Before you start the Confluent services, make sure Hadoop is
+running locally or remotely and that you know the HDFS url. For Hive integration, you
 need to have Hive installed and to know the metastore thrift uri.
 
 This Quickstart assumes that you started the required services with the default configurations and
@@ -39,12 +38,41 @@ Also, this Quickstart assumes that security is not configured for HDFS and Hive 
 please make the necessary configurations change following `Secure HDFS and Hive Metastore`_
 section.
 
-First, start the Avro console producer::
+First, start all the necessary services using Confluent CLI.
+
+.. tip::
+
+   If not already in your PATH, add Confluent's ``bin`` directory by running: ``export PATH=<path-to-confluent>/bin:$PATH``
+
+.. sourcecode:: bash
+
+   $ confluent start
+
+Every service will start in order, printing a message with its status:
+
+.. sourcecode:: bash
+
+    Starting zookeeper
+    zookeeper is [UP]
+    Starting kafka
+    kafka is [UP]
+    Starting schema-registry
+    schema-registry is [UP]
+    Starting kafka-rest
+    kafka-rest is [UP]
+    Starting connect
+    connect is [UP]
+
+Next, start the Avro console producer to import a few records to Kafka:
+
+.. sourcecode:: bash
 
   $ ./bin/kafka-avro-console-producer --broker-list localhost:9092 --topic test_hdfs \
   --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"f1","type":"string"}]}'
 
-Then in the console producer, type in::
+Then in the console producer, type in:
+
+.. sourcecode:: bash
 
   {"f1": "value1"}
   {"f1": "value2"}
@@ -54,16 +82,36 @@ The three records entered are published to the Kafka topic ``test_hdfs`` in Avro
 
 Before starting the connector, please make sure that the configurations in
 ``etc/kafka-connect-hdfs/quickstart-hdfs.properties`` are properly set to your configurations of
-Hadoop, e.g. ``hdfs.url`` points to the proper HDFS and using FQDN in the host. Then run the
-following command to start Kafka connect with the HDFS connector::
+Hadoop, e.g. ``hdfs.url`` points to the proper HDFS and using FQDN in the host. Then start connector by loading its
+configuration with the following command:
 
+.. sourcecode:: bash
 
-  $ ./bin/connect-standalone etc/schema-registry/connect-avro-standalone.properties \
-  etc/kafka-connect-hdfs/quickstart-hdfs.properties
+   $ confluent load hdfs-sink -d etc/kafka-connect-hdfs/quickstart-hdfs.properties
+   {
+     "name": "hdfs-sink",
+     "config": {
+       "connector.class": "io.confluent.connect.hdfs.HdfsSinkConnector",
+       "tasks.max": "1",
+       "topics": "test_hdfs",
+       "hdfs.url": "hdfs://localhost:9000",
+       "flush.size": "3",
+       "name": "hdfs-sink"
+     },
+     "tasks": []
+   }
 
-You should see that the process starts up and logs some messages, and then exports data from Kafka
-to HDFS. Once the connector finishes ingesting data to HDFS, check that the data is available
-in HDFS::
+To check that the connector started successfully view the Connect worker's log by running:
+
+.. sourcecode:: bash
+
+  $ confluent log connect
+
+Towards the end of the log you should see that the connector starts, logs a few messages, and then exports
+data from Kafka to HDFS.
+Once the connector finishes ingesting data to HDFS, check that the data is available in HDFS:
+
+.. sourcecode:: bash
 
   $ hadoop fs -ls /topics/test_hdfs/partition=0
 
@@ -72,26 +120,64 @@ The file name is encoded as ``topic+kafkaPartition+startOffset+endOffset.format`
 
 You can use ``avro-tools-1.8.2.jar``
 (available in `Apache mirrors <http://mirror.metrocast.net/apache/avro/avro-1.8.2/java/avro-tools-1.8.2.jar>`_)
-to extract the content of the file. Run ``avro-tools`` directly on Hadoop as::
+to extract the content of the file. Run ``avro-tools`` directly on Hadoop as:
+
+.. sourcecode:: bash
 
   $ hadoop jar avro-tools-1.8.2.jar tojson \
   hdfs://<namenode>/topics/test_hdfs/partition=0/test_hdfs+0+0000000000+0000000002.avro
 
 where "<namenode>" is the HDFS name node hostname.
 
-or, if you experience issues, first copy the avro file from HDFS to the local filesystem and try again with java::
+or, if you experience issues, first copy the avro file from HDFS to the local filesystem and try again with java:
+
+.. sourcecode:: bash
 
   $ hadoop fs -copyToLocal /topics/test_hdfs/partition=0/test_hdfs+0+0000000000+0000000002.avro \
   /tmp/test_hdfs+0+0000000000+0000000002.avro
 
   $ java -jar avro-tools-1.8.2.jar tojson /tmp/test_hdfs+0+0000000000+0000000002.avro
 
-You should see the following output::
+You should see the following output:
+
+.. sourcecode:: bash
 
   {"f1":"value1"}
   {"f1":"value2"}
   {"f1":"value3"}
 
+Finally, stop the Connect worker as well as all the rest of the Confluent services by running:
+
+.. sourcecode:: bash
+
+      $ confluent stop
+      Stopping connect
+      connect is [DOWN]
+      Stopping kafka-rest
+      kafka-rest is [DOWN]
+      Stopping schema-registry
+      schema-registry is [DOWN]
+      Stopping kafka
+      kafka is [DOWN]
+      Stopping zookeeper
+      zookeeper is [DOWN]
+
+or stop all the services and additionally wipe out any data generated during this quickstart by running:
+
+.. sourcecode:: bash
+
+      $ confluent destroy
+      Stopping connect
+      connect is [DOWN]
+      Stopping kafka-rest
+      kafka-rest is [DOWN]
+      Stopping schema-registry
+      schema-registry is [DOWN]
+      Stopping kafka
+      kafka is [DOWN]
+      Stopping zookeeper
+      zookeeper is [DOWN]
+      Deleting: /tmp/confluent.w1CpYsaI
 
 .. note:: If you want to run the Quickstart with Hive integration, before starting the connector,
    you need to add the following configurations to
@@ -146,7 +232,9 @@ description of the available configuration options.
 
 Example
 ~~~~~~~
-Here is the content of ``etc/kafka-connect-hdfs/quickstart-hdfs.properties``::
+Here is the content of ``etc/kafka-connect-hdfs/quickstart-hdfs.properties``:
+
+.. sourcecode:: bash
 
   name=hdfs-sink
   connector.class=io.confluent.connect.hdfs.HdfsSinkConnector
@@ -168,7 +256,9 @@ Format and Partitioner
 ~~~~~~~~~~~~~~~~~~~~~~
 You need to specify the ``format.class`` and ``partitioner.class`` if you want to write other
 formats to HDFS or use other partitioners. The following example configurations demonstrates how to
-write Parquet format and use hourly partitioner::
+write Parquet format and use hourly partitioner:
+
+.. sourcecode:: bash
 
   format.class=io.confluent.connect.hdfs.parquet.ParquetFormat
   partitioner.class=io.confluent.connect.hdfs.partitioner.HourlyPartitioner
@@ -179,7 +269,9 @@ write Parquet format and use hourly partitioner::
 Hive Integration
 ~~~~~~~~~~~~~~~~
 At minimum, you need to specify ``hive.integration``, ``hive.metastore.uris`` and
-``schema.compatibility`` when integrating Hive. Here is an example configuration::
+``schema.compatibility`` when integrating Hive. Here is an example configuration:
+
+.. sourcecode:: bash
 
   hive.integration=true
   hive.metastore.uris=thrift://localhost:9083 # FQDN for the host part
@@ -205,7 +297,9 @@ latest Hive table schema. Please find more information on schema compatibility i
 Secure HDFS and Hive Metastore
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To work with secure HDFS and Hive metastore, you need to specify ``hdfs.authentication.kerberos``,
-``connect.hdfs.principal``, ``connect.keytab``, ``hdfs.namenode.principal``::
+``connect.hdfs.principal``, ``connect.keytab``, ``hdfs.namenode.principal``:
+
+.. sourcecode:: bash
 
   hdfs.authentication.kerberos=true
   connect.hdfs.principal=connect-hdfs/_HOST@YOUR-REALM.COM
