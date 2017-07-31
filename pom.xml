@@ -50,7 +50,7 @@
     </scm>
 
     <properties>
-        <confluent.version>3.2.2-SNAPSHOT</confluent.version>
+        <confluent.version>3.2.3-SNAPSHOT</confluent.version>
         <kafka.version>0.10.2.2-SNAPSHOT</kafka.version>
         <junit.version>4.12</junit.version>
         <hadoop.version>2.7.3</hadoop.version>
