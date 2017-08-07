@@ -21,7 +21,8 @@
   </property>
   <property>
     <name>google.cloud.auth.service.account.keyfile</name>
-    <value>SERVICE_ACCOUNT_KEYFILE</value></property>
+    <value>SERVICE_ACCOUNT_KEYFILE</value>
+  </property>
   <property>
     <name>fs.s3.awsAccessKeyId</name>
     <value>ACCESS_KEY_HERE</value>
@@ -45,6 +46,18 @@
   <property>
     <name>fs.s3a.secret.key</name>
     <value>SECRET_KEY_HERE</value>
+  </property>
+  <property>
+    <name>fs.s3.isClusterOnEc2Role</name>
+    <value>IS_CLUSTER_ON_ROLES</value>
+  </property>
+  <property>
+    <name>fs.s3a.isClusterOnEc2Role</name>
+    <value>IS_CLUSTER_ON_ROLES</value>
+  </property>
+  <property>
+    <name>fs.s3n.isClusterOnEc2Role</name>
+    <value>IS_CLUSTER_ON_ROLES</value>
   </property>
   <property>
     <name>fs.s3.impl</name>
