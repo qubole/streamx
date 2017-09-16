@@ -25,8 +25,10 @@ import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.junit.After;
 import org.junit.Before;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,14 +46,15 @@ public class HdfsSinkConnectorTestBase {
 
   protected MockSinkTaskContext context;
   protected static final String TOPIC = "topic";
+  protected static final String TOPIC_WITH_DOTS = "topic.with.dots";
   protected static final int PARTITION = 12;
   protected static final int PARTITION2 = 13;
   protected static final int PARTITION3 = 14;
   protected static final TopicPartition TOPIC_PARTITION = new TopicPartition(TOPIC, PARTITION);
   protected static final TopicPartition TOPIC_PARTITION2 = new TopicPartition(TOPIC, PARTITION2);
   protected static final TopicPartition TOPIC_PARTITION3 = new TopicPartition(TOPIC, PARTITION3);
+  protected static final TopicPartition TOPIC_WITH_DOTS_PARTITION = new TopicPartition(TOPIC_WITH_DOTS, PARTITION);
   protected static Set<TopicPartition> assignment;
-
 
   protected Map<String, String> createProps() {
     Map<String, String> props = new HashMap<>();
@@ -70,13 +73,17 @@ public class HdfsSinkConnectorTestBase {
         .build();
   }
 
-  protected Struct createRecord(Schema schema) {
+  protected Struct createRecord(Schema schema, int ibase, float fbase) {
     return new Struct(schema)
         .put("boolean", true)
-        .put("int", 12)
-        .put("long", 12L)
-        .put("float", 12.2f)
-        .put("double", 12.2);
+        .put("int", ibase)
+        .put("long", (long) ibase)
+        .put("float", fbase)
+        .put("double", (double) fbase);
+  }
+
+  protected Struct createRecord(Schema schema) {
+    return createRecord(schema, 12, 12.2f);
   }
 
   protected Schema createNewSchema() {
@@ -98,6 +105,28 @@ public class HdfsSinkConnectorTestBase {
         .put("float", 12.2f)
         .put("double", 12.2)
         .put("string", "def");
+  }
+
+  // Create a batch of records with incremental numeric field values. Total number of records is
+  // given by 'size'.
+  protected List<Struct> createRecordBatch(Schema schema, int size) {
+    ArrayList<Struct> records = new ArrayList<>(size);
+    int ibase = 16;
+    float fbase = 12.2f;
+
+    for (int i = 0; i < size; ++i) {
+      records.add(createRecord(schema, ibase + i, fbase + i));
+    }
+    return records;
+  }
+
+  // Create a list of records by repeating the same record batch. Total number of records: 'batchesNum' x 'batchSize'
+  protected List<Struct> createRecordBatches(Schema schema, int batchSize, int batchesNum) {
+    ArrayList<Struct> records = new ArrayList<>();
+    for (int i = 0; i < batchesNum; ++i) {
+      records.addAll(createRecordBatch(schema, batchSize));
+    }
+    return records;
   }
 
   @Before
@@ -181,13 +210,12 @@ public class HdfsSinkConnectorTestBase {
     }
 
     @Override
-    public void pause(TopicPartition... partitions) {
-      return;
-    }
+    public void pause(TopicPartition... partitions) {}
 
     @Override
-    public void resume(TopicPartition... partitions) {
-      return;
-    }
+    public void resume(TopicPartition... partitions) {}
+
+    @Override
+    public void requestCommit() {}
   }
 }

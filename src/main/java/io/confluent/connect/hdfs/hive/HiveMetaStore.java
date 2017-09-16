@@ -94,7 +94,7 @@ public class HiveMetaStore {
         // purposely don't check if the partition already exists because
         // getPartition(db, table, path) will throw an exception to indicate the
         // partition doesn't exist also. this way, it's only one call.
-        client.appendPartition(database, tableName, path);
+        client.appendPartition(database, tableNameConverter(tableName), path);
         return null;
       }
     };
@@ -104,7 +104,7 @@ public class HiveMetaStore {
     } catch (AlreadyExistsException e) {
       // this is okay
     } catch (InvalidObjectException e) {
-      throw new HiveMetaStoreException("Invalid partition for " + database + "." + tableName + ": " + path, e);
+      throw new HiveMetaStoreException("Invalid partition for " + database + "." + tableNameConverter(tableName) + ": " + path, e);
     } catch (MetaException e) {
       throw new HiveMetaStoreException("Hive MetaStore exception", e);
     } catch (TException e) {
@@ -116,7 +116,7 @@ public class HiveMetaStore {
     ClientAction<Void> dropPartition = new ClientAction<Void>() {
       @Override
       public Void call() throws TException {
-        client.dropPartition(database, tableName, path, false);
+        client.dropPartition(database, tableNameConverter(tableName), path, false);
         return null;
       }
     };
@@ -126,7 +126,7 @@ public class HiveMetaStore {
     } catch (NoSuchObjectException e) {
       // this is okay
     } catch (InvalidObjectException e) {
-      throw new HiveMetaStoreException("Invalid partition for " + database + "." + tableName + ": " + path, e);
+      throw new HiveMetaStoreException("Invalid partition for " + database + "." + tableNameConverter(tableName) + ": " + path, e);
     } catch (MetaException e) {
       throw new HiveMetaStoreException("Hive MetaStore exception", e);
     } catch (TException e) {
@@ -192,7 +192,7 @@ public class HiveMetaStore {
     try {
       doAction(create);
     } catch (NoSuchObjectException e) {
-      throw new HiveMetaStoreException("Hive table not found: " + table.getDbName() + "." + table.getTableName());
+      throw new HiveMetaStoreException("Hive table not found: " + table.getDbName() + "." + tableNameConverter(table.getTableName()));
     } catch (AlreadyExistsException e) {
       // this is okey
       log.warn("Hive table already exists: {}.{}", table.getDbName(), table.getTableName());
@@ -209,7 +209,7 @@ public class HiveMetaStore {
     ClientAction<Void> alter = new ClientAction<Void>() {
       @Override
       public Void call() throws TException {
-        client.alter_table(table.getDbName(), table.getTableName(), table.getTTable());
+        client.alter_table(table.getDbName(), tableNameConverter(table.getTableName()), table.getTTable());
         return null;
       }
     };
@@ -233,7 +233,7 @@ public class HiveMetaStore {
     ClientAction<Void> drop = new ClientAction<Void>() {
       @Override
       public Void call() throws TException {
-        client.dropTable(database, tableName, false, true);
+        client.dropTable(database, tableNameConverter(tableName), false, true);
         return null;
       }
     };
@@ -253,7 +253,7 @@ public class HiveMetaStore {
     ClientAction<Boolean> exists = new ClientAction<Boolean>() {
       @Override
       public Boolean call() throws TException {
-        return client.tableExists(database, tableName);
+        return client.tableExists(database, tableNameConverter(tableName));
       }
     };
     try {
@@ -271,7 +271,7 @@ public class HiveMetaStore {
     ClientAction<Table> getTable = new ClientAction<Table>() {
       @Override
       public Table call() throws TException {
-        return new Table(client.getTable(database, tableName));
+        return new Table(client.getTable(database, tableNameConverter(tableName)));
       }
     };
 
@@ -279,7 +279,7 @@ public class HiveMetaStore {
     try {
       table = doAction(getTable);
     } catch (NoSuchObjectException e) {
-      throw new HiveMetaStoreException("Hive table not found: " + database + "." + tableName);
+      throw new HiveMetaStoreException("Hive table not found: " + database + "." + tableNameConverter(tableName));
     } catch (MetaException e) {
       throw new HiveMetaStoreException("Hive table lookup exception", e);
     } catch (TException e) {
@@ -287,7 +287,7 @@ public class HiveMetaStore {
     }
 
     if (table == null) {
-      throw new HiveMetaStoreException("Could not find info for table: " + tableName);
+      throw new HiveMetaStoreException("Could not find info for table: " + tableNameConverter(tableName));
     }
     return table;
   }
@@ -296,7 +296,7 @@ public class HiveMetaStore {
     ClientAction<List<String>> listPartitions = new ClientAction<List<String>>() {
       @Override
       public List<String> call() throws TException {
-        List<Partition> partitions = client.listPartitions(database, tableName, max);
+        List<Partition> partitions = client.listPartitions(database, tableNameConverter(tableName), max);
         List<String> paths = new ArrayList<>();
         for (Partition partition : partitions) {
           paths.add(partition.getSd().getLocation());
@@ -353,5 +353,9 @@ public class HiveMetaStore {
     } catch (TException e) {
       throw new HiveMetaStoreException("Exception communicating with the Hive MetaStore", e);
     }
+  }
+
+  public String tableNameConverter(String table){
+    return table == null ? table : table.replaceAll("\\.", "_");
   }
 }

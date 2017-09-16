@@ -25,7 +25,7 @@ import org.joda.time.DateTimeZone;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -58,16 +58,7 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
     hdfsWriter.recover(TOPIC_PARTITION);
 
-    String key = "key";
-    Schema schema = createSchema();
-    Struct record = createRecord(schema);
-
-    Collection<SinkRecord> sinkRecords = new ArrayList<>();
-    for (long offset = 0; offset < 7; offset++) {
-      SinkRecord sinkRecord =
-          new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, offset);
-      sinkRecords.add(sinkRecord);
-    }
+    List<SinkRecord> sinkRecords = createSinkRecords(7);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -80,14 +71,18 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     hdfsWriter = new DataWriter(config, context, avroData);
     hdfsWriter.syncWithHive();
 
+    Schema schema = createSchema();
+    Struct expectedRecord = createRecord(schema);
+    List<String> expectedResult = new ArrayList<>();
     List<String> expectedColumnNames = new ArrayList<>();
-    for (Field field: schema.fields()) {
+    for (Field field : schema.fields()) {
       expectedColumnNames.add(field.name());
+      expectedResult.add(String.valueOf(expectedRecord.get(field.name())));
     }
 
     Table table = hiveMetaStore.getTable(hiveDatabase, TOPIC);
     List<String> actualColumnNames = new ArrayList<>();
-    for (FieldSchema column: table.getSd().getCols()) {
+    for (FieldSchema column : table.getSd().getCols()) {
       actualColumnNames.add(column.getName());
     }
     assertEquals(expectedColumnNames, actualColumnNames);
@@ -113,29 +108,21 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     DataWriter hdfsWriter = new DataWriter(config, context, avroData);
     hdfsWriter.recover(TOPIC_PARTITION);
 
-    String key = "key";
-    Schema schema = createSchema();
-    Struct record = createRecord(schema);
+    List<SinkRecord> sinkRecords = createSinkRecords(7);
 
-    Collection<SinkRecord> sinkRecords = new ArrayList<>();
-    for (long offset = 0; offset < 7; offset++) {
-      SinkRecord sinkRecord =
-          new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record, offset);
-
-      sinkRecords.add(sinkRecord);
-    }
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
     hdfsWriter.stop();
 
+    Schema schema = createSchema();
     Table table = hiveMetaStore.getTable(hiveDatabase, TOPIC);
     List<String> expectedColumnNames = new ArrayList<>();
-    for (Field field: schema.fields()) {
+    for (Field field : schema.fields()) {
       expectedColumnNames.add(field.name());
     }
 
     List<String> actualColumnNames = new ArrayList<>();
-    for (FieldSchema column: table.getSd().getCols()) {
+    for (FieldSchema column : table.getSd().getCols()) {
       actualColumnNames.add(column.getName());
     }
     assertEquals(expectedColumnNames, actualColumnNames);
@@ -159,20 +146,9 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     HdfsSinkConnectorConfig config = new HdfsSinkConnectorConfig(props);
     DataWriter hdfsWriter = new DataWriter(config, context, avroData);
 
-    String key = "key";
     Schema schema = createSchema();
-
-    Struct[] records = createRecords(schema);
-    ArrayList<SinkRecord> sinkRecords = new ArrayList<>();
-    long offset = 0;
-    for (Struct record : records) {
-      for (long count = 0; count < 3; count++) {
-        SinkRecord sinkRecord = new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record,
-                                               offset + count);
-        sinkRecords.add(sinkRecord);
-      }
-      offset = offset + 3;
-    }
+    List<Struct> records = createRecordBatches(schema, 3, 3);
+    List<SinkRecord> sinkRecords = createSinkRecords(records, schema);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -181,16 +157,15 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     Table table = hiveMetaStore.getTable(hiveDatabase, TOPIC);
 
     List<String> expectedColumnNames = new ArrayList<>();
-    for (Field field: schema.fields()) {
+    for (Field field : schema.fields()) {
       expectedColumnNames.add(field.name());
     }
 
     List<String> actualColumnNames = new ArrayList<>();
-    for (FieldSchema column: table.getSd().getCols()) {
+    for (FieldSchema column : table.getSd().getCols()) {
       actualColumnNames.add(column.getName());
     }
     assertEquals(expectedColumnNames, actualColumnNames);
-
 
     String partitionFieldName = config.getString(HdfsSinkConnectorConfig.PARTITION_FIELD_NAME_CONFIG);
     String directory1 = TOPIC + "/" + partitionFieldName + "=" + String.valueOf(16);
@@ -206,20 +181,25 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
 
     assertEquals(expectedPartitions, partitions);
 
-    ArrayList<String[]> expectedResult = new ArrayList<>();
-    for (int i = 16; i <= 18; ++i) {
-      String[] part = {"true", String.valueOf(i), "12", "12.2", "12.2"};
+    List<List<String>> expectedResults = new ArrayList<>();
+    for (int i = 0; i < 3; ++i) {
       for (int j = 0; j < 3; ++j) {
-        expectedResult.add(part);
+        List<String> result = new ArrayList<>();
+        for (Field field : schema.fields()) {
+          result.add(String.valueOf(records.get(i).get(field.name())));
+        }
+        expectedResults.add(result);
       }
     }
+
     String result = HiveTestUtils.runHive(hiveExec, "SELECT * FROM " + TOPIC);
     String[] rows = result.split("\n");
     assertEquals(9, rows.length);
     for (int i = 0; i < rows.length; ++i) {
       String[] parts = HiveTestUtils.parseOutput(rows[i]);
-      for (int j = 0; j < expectedResult.get(i).length; ++j) {
-        assertEquals(expectedResult.get(i)[j], parts[j]);
+      int j = 0;
+      for (String expectedValue : expectedResults.get(i)) {
+        assertEquals(expectedValue, parts[j++]);
       }
     }
   }
@@ -235,20 +215,9 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     HdfsSinkConnectorConfig config = new HdfsSinkConnectorConfig(props);
     DataWriter hdfsWriter = new DataWriter(config, context, avroData);
 
-    String key = "key";
     Schema schema = createSchema();
-
-    Struct[] records = createRecords(schema);
-    ArrayList<SinkRecord> sinkRecords = new ArrayList<>();
-    long offset = 0;
-    for (Struct record : records) {
-      for (long count = 0; count < 3; count++) {
-        SinkRecord sinkRecord = new SinkRecord(TOPIC, PARTITION, Schema.STRING_SCHEMA, key, schema, record,
-                                               offset + count);
-        sinkRecords.add(sinkRecord);
-      }
-      offset = offset + 3;
-    }
+    List<Struct> records = createRecordBatches(schema, 3, 3);
+    List<SinkRecord> sinkRecords = createSinkRecords(records, schema);
 
     hdfsWriter.write(sinkRecords);
     hdfsWriter.close(assignment);
@@ -257,12 +226,12 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     Table table = hiveMetaStore.getTable(hiveDatabase, TOPIC);
 
     List<String> expectedColumnNames = new ArrayList<>();
-    for (Field field: schema.fields()) {
+    for (Field field : schema.fields()) {
       expectedColumnNames.add(field.name());
     }
 
     List<String> actualColumnNames = new ArrayList<>();
-    for (FieldSchema column: table.getSd().getCols()) {
+    for (FieldSchema column : table.getSd().getCols()) {
       actualColumnNames.add(column.getName());
     }
     assertEquals(expectedColumnNames, actualColumnNames);
@@ -281,17 +250,23 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
 
     ArrayList<String> partitionFields = new ArrayList<>();
     String[] groups = encodedPartition.split("/");
-    for (String group: groups) {
+    for (String group : groups) {
       String field = group.split("=")[1];
       partitionFields.add(field);
     }
 
-    ArrayList<String[]> expectedResult = new ArrayList<>();
-    for (int i = 16; i <= 18; ++i) {
-      String[] part = {"true", String.valueOf(i), "12", "12.2", "12.2",
-                       partitionFields.get(0), partitionFields.get(1), partitionFields.get(2)};
-      for (int j = 0; j < 3; ++j) {
-        expectedResult.add(part);
+    List<List<String>> expectedResults = new ArrayList<>();
+    for (int j = 0; j < 3; ++j) {
+      for (int i = 0; i < 3; ++i) {
+        List<String> result = Arrays.asList("true",
+                                            String.valueOf(16 + i),
+                                            String.valueOf((long) (16 + i)),
+                                            String.valueOf(12.2f + i),
+                                            String.valueOf((double) (12.2f + i)),
+                                            partitionFields.get(0),
+                                            partitionFields.get(1),
+                                            partitionFields.get(2));
+        expectedResults.add(result);
       }
     }
 
@@ -300,38 +275,10 @@ public class HiveIntegrationParquetTest extends HiveTestBase {
     assertEquals(9, rows.length);
     for (int i = 0; i < rows.length; ++i) {
       String[] parts = HiveTestUtils.parseOutput(rows[i]);
-      for (int j = 0; j < expectedResult.get(i).length; ++j) {
-        assertEquals(expectedResult.get(i)[j], parts[j]);
+      int j = 0;
+      for (String expectedValue : expectedResults.get(i)) {
+        assertEquals(expectedValue, parts[j++]);
       }
     }
-  }
-
-  private Struct[] createRecords(Schema schema) {
-    Struct record1 = new Struct(schema)
-        .put("boolean", true)
-        .put("int", 16)
-        .put("long", 12L)
-        .put("float", 12.2f)
-        .put("double", 12.2);
-
-    Struct record2 = new Struct(schema)
-        .put("boolean", true)
-        .put("int", 17)
-        .put("long", 12L)
-        .put("float", 12.2f)
-        .put("double", 12.2);
-
-    Struct record3 = new Struct(schema)
-        .put("boolean", true)
-        .put("int", 18)
-        .put("long", 12L)
-        .put("float", 12.2f)
-        .put("double", 12.2);
-
-    ArrayList<Struct> records = new ArrayList<>();
-    records.add(record1);
-    records.add(record2);
-    records.add(record3);
-    return records.toArray(new Struct[records.size()]);
   }
 }
