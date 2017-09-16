@@ -17,9 +17,9 @@ package io.confluent.connect.hdfs;
 
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.connect.connector.Connector;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.sink.SinkConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ import java.util.Map;
 /**
  * HdfsSinkConnector is a Kafka Connect Connector implementation that ingest data from Kafka to HDFS.
  */
-public class HdfsSinkConnector extends Connector {
+public class HdfsSinkConnector extends SinkConnector {
 
   private static final Logger log = LoggerFactory.getLogger(HdfsSinkConnector.class);
   private Map<String, String> configProperties;

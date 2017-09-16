@@ -14,7 +14,6 @@
 
 package io.confluent.connect.hdfs;
 
-
 import com.qubole.streamx.s3.S3Storage;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.kafka.clients.producer.internals.DefaultPartitioner;
@@ -31,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.confluent.connect.hdfs.partitioner.DailyPartitioner;
+import io.confluent.connect.hdfs.partitioner.DefaultPartitioner;
 import io.confluent.connect.hdfs.partitioner.FieldPartitioner;
 import io.confluent.connect.hdfs.partitioner.HourlyPartitioner;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
@@ -414,6 +414,6 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   }
 
   public static void main(String[] args) {
-    System.out.println(config.toRst());
+    System.out.println(config.toEnrichedRst());
   }
 }
