@@ -58,6 +58,9 @@ public class S3SinkConnectorConfig extends HdfsSinkConnectorConfig {
   public static final String NAME_DEFAULT = "";
   private static final String NAME_DISPLAY = "Connector Name";
 
+  public static final String PARQUET_SCHEMA_CONFIG = "s3.parquet.schema";
+  private static final String PARQUET_SCHEMA_DOC = "The schema used to write a Parquet file";
+  private static final String PARQUET_SCHEMA_DISPLAY = "Parquet Schema";
 
   static {
     config.define(S3_URL_CONFIG, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, S3_URL_DOC, S3_GROUP, 1, ConfigDef.Width.MEDIUM, S3_URL_DISPLAY);
@@ -66,6 +69,7 @@ public class S3SinkConnectorConfig extends HdfsSinkConnectorConfig {
     config.define(DB_USER_CONFIG, ConfigDef.Type.STRING, DB_USER_DEFAULT, ConfigDef.Importance.LOW, DB_USER_DOC, WAL_GROUP, 1, ConfigDef.Width.MEDIUM, DB_USER_DISPLAY);
     config.define(DB_PASSWORD_CONFIG, ConfigDef.Type.STRING, DB_PASSWORD_DEFAULT, ConfigDef.Importance.LOW, DB_PASSWORD_DOC, WAL_GROUP, 1, ConfigDef.Width.MEDIUM, DB_PASSWORD_DISPLAY);
     config.define(NAME_CONFIG, ConfigDef.Type.STRING, NAME_DEFAULT, ConfigDef.Importance.HIGH, NAME_DOC, S3_GROUP,1, ConfigDef.Width.MEDIUM, NAME_DISPLAY);
+    config.define(PARQUET_SCHEMA_CONFIG, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, PARQUET_SCHEMA_DOC, S3_GROUP, 1, ConfigDef.Width.LONG, PARQUET_SCHEMA_DISPLAY);
   }
 
 

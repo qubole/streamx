@@ -73,8 +73,8 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     @SuppressWarnings("unchecked")
     Class<? extends Storage> storageClass = (Class<? extends Storage>)
         Class.forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
-    //Storage storage = StorageFactory.createStorage(storageClass, connectorConfig, conf, url);
-    Storage storage = StorageFactory.createStorage(storageClass, conf, url);
+    Storage storage = StorageFactory.createStorage(storageClass, connectorConfig, conf, url);
+    // Storage storage = StorageFactory.createStorage(storageClass, conf, url);
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
     partitioner = hdfsWriter.getPartitioner();
 

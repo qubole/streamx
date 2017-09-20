@@ -37,7 +37,7 @@ public class S3SinkConnector extends Connector {
 
   private static final Logger log = LoggerFactory.getLogger(S3SinkConnector.class);
   private Map<String, String> configProperties;
-  private S3SinkConnectorConfig config;
+  private static S3SinkConnectorConfig config;
 
   @Override
   public String version() {
@@ -78,4 +78,8 @@ public class S3SinkConnector extends Connector {
   public ConfigDef config() {
         return S3SinkConnectorConfig.getConfig();
     }
+
+  public static String getConfigString(String key) {
+    return config.getString(key);
+  }
 }
