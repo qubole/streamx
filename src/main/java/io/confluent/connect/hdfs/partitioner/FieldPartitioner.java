@@ -14,6 +14,8 @@
 
 package io.confluent.connect.hdfs.partitioner;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.kafka.connect.data.Schema;
@@ -23,6 +25,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,9 +34,9 @@ import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.errors.PartitionException;
 
 public class FieldPartitioner implements Partitioner {
-  private static final Logger log = LoggerFactory.getLogger(FieldPartitioner.class);
-  private static String fieldName;
-  private List<FieldSchema> partitionFields = new ArrayList<>();
+  protected static final Logger log = LoggerFactory.getLogger(FieldPartitioner.class);
+  protected static String fieldName;
+  protected List<FieldSchema> partitionFields = new ArrayList<>();
 
   @Override
   public void configure(Map<String, Object> config) {
