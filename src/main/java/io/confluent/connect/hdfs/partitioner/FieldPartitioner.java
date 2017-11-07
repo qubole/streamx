@@ -34,9 +34,9 @@ import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.errors.PartitionException;
 
 public class FieldPartitioner implements Partitioner {
-  private static final Logger log = LoggerFactory.getLogger(FieldPartitioner.class);
-  private static String fieldName;
-  private List<FieldSchema> partitionFields = new ArrayList<>();
+  protected static final Logger log = LoggerFactory.getLogger(FieldPartitioner.class);
+  protected static String fieldName;
+  protected List<FieldSchema> partitionFields = new ArrayList<>();
 
   @Override
   public void configure(Map<String, Object> config) {
@@ -47,7 +47,6 @@ public class FieldPartitioner implements Partitioner {
   @Override
   public String encodePartition(SinkRecord sinkRecord) {
     Object value = sinkRecord.value();
-    log.info(value.toString());
     Schema valueSchema = sinkRecord.valueSchema();
     if (value instanceof Struct) {
       Struct struct = (Struct) value;
@@ -71,19 +70,8 @@ public class FieldPartitioner implements Partitioner {
       }
     } else {
       log.error("Value is not Struct type.");
-      return encodeParitionFromJson(sinkRecord);
+      throw new PartitionException("Error encoding partition.");
     }
-  }
-
-  private String encodeParitionFromJson(SinkRecord sinkRecord){
-      ObjectMapper mapper = new ObjectMapper();
-      String jsonString = new String((byte[]) sinkRecord.value());
-      try {
-          JsonNode jsonObj = mapper.readTree(jsonString);
-          return fieldName + "=" + jsonObj.get(fieldName).toString();
-      } catch (IOException e) {
-          throw new PartitionException("Error encoding partition.");
-      }
   }
 
   @Override

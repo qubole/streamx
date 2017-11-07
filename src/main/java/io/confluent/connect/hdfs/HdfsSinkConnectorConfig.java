@@ -188,7 +188,10 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
       "io.confluent.connect.hdfs.partitioner.DefaultPartitioner";
   private static final String PARTITIONER_CLASS_DISPLAY = "Partitioner Class";
 
-  public static final String PARTITION_FIELD_NAME_CONFIG = "partition.field.name";
+  public static final String PARTITION_TIME_FIELD_NAME_CONFIG = "partition.time.field.name";
+    public static final String PARTITION_TIME_FIELD_FORMAT_CONFIG = "partition.time.field.format";
+    public static final String PARTITION_TIME_FIELD_FORMAT_DEFAULT = "YYYMMDD";
+    public static final String PARTITION_FIELD_NAME_CONFIG = "partition.field.name";
   private static final String PARTITION_FIELD_NAME_DOC =
       "The name of the partitioning field when FieldPartitioner is used.";
   public static final String PARTITION_FIELD_NAME_DEFAULT = "";
@@ -313,6 +316,10 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
                 Arrays.asList(PARTITION_FIELD_NAME_CONFIG, PARTITION_DURATION_MS_CONFIG, PATH_FORMAT_CONFIG, LOCALE_CONFIG, TIMEZONE_CONFIG))
         .define(PARTITION_FIELD_NAME_CONFIG, Type.STRING, PARTITION_FIELD_NAME_DEFAULT, Importance.MEDIUM, PARTITION_FIELD_NAME_DOC, CONNECTOR_GROUP, 7, Width.MEDIUM,
                 PARTITION_FIELD_NAME_DISPLAY, partitionerClassDependentsRecommender)
+          .define(PARTITION_TIME_FIELD_NAME_CONFIG, Type.STRING, "time", Importance.MEDIUM, "", CONNECTOR_GROUP, 8, Width.MEDIUM,
+              PARTITION_FIELD_NAME_DISPLAY, partitionerClassDependentsRecommender)
+          .define(PARTITION_TIME_FIELD_FORMAT_CONFIG, Type.STRING, PARTITION_TIME_FIELD_FORMAT_DEFAULT, Importance.MEDIUM, "", CONNECTOR_GROUP, 8, Width.MEDIUM,
+              PARTITION_FIELD_NAME_DISPLAY, partitionerClassDependentsRecommender)
         .define(PARTITION_DURATION_MS_CONFIG, Type.LONG, PARTITION_DURATION_MS_DEFAULT, Importance.MEDIUM, PARTITION_DURATION_MS_DOC, CONNECTOR_GROUP, 8, Width.SHORT,
                 PARTITION_DURATION_MS_DISPLAY, partitionerClassDependentsRecommender)
         .define(PATH_FORMAT_CONFIG, Type.STRING, PATH_FORMAT_DEFAULT, Importance.MEDIUM, PATH_FORMAT_DOC, CONNECTOR_GROUP, 9, Width.LONG, PATH_FORMAT_DISPLAY,

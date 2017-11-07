@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 docker run --rm -p 8083:8083/tcp -p 4001:4001 \
 --name=kafka-s3 \
 --net=containers_sandbox \
