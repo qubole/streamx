@@ -14,6 +14,8 @@
 
 package io.confluent.connect.hdfs.partitioner;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.kafka.connect.data.Schema;
@@ -23,6 +25,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +47,7 @@ public class FieldPartitioner implements Partitioner {
   @Override
   public String encodePartition(SinkRecord sinkRecord) {
     Object value = sinkRecord.value();
+    log.info(value.toString());
     Schema valueSchema = sinkRecord.valueSchema();
     if (value instanceof Struct) {
       Struct struct = (Struct) value;
@@ -67,8 +71,19 @@ public class FieldPartitioner implements Partitioner {
       }
     } else {
       log.error("Value is not Struct type.");
-      throw new PartitionException("Error encoding partition.");
+      return encodeParitionFromJson(sinkRecord);
     }
+  }
+
+  private String encodeParitionFromJson(SinkRecord sinkRecord){
+      ObjectMapper mapper = new ObjectMapper();
+      String jsonString = new String((byte[]) sinkRecord.value());
+      try {
+          JsonNode jsonObj = mapper.readTree(jsonString);
+          return fieldName + "=" + jsonObj.get(fieldName).toString();
+      } catch (IOException e) {
+          throw new PartitionException("Error encoding partition.");
+      }
   }
 
   @Override
