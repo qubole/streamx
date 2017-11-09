@@ -51,7 +51,7 @@
 
     <properties>
         <confluent.version>3.1.2</confluent.version>
-        <kafka.version>0.10.1.1-cp1</kafka.version>
+        <kafka.version>0.10.2.1-cp1</kafka.version>
         <junit.version>4.12</junit.version>
         <hadoop.version>2.7.2</hadoop.version>
         <hive.version>1.2.1</hive.version>
@@ -203,7 +203,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>19.0</version>
+            <version>20.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.cloud.bigdataoss</groupId>
