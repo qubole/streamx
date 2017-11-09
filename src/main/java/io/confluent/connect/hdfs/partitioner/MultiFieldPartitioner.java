@@ -11,18 +11,21 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import javax.naming.ConfigurationException;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
 
-public class MultiFieldParitioner extends FieldPartitioner {
+public class MultiFieldPartitioner extends FieldPartitioner {
 
     private static String timeField;
-    private static String timeFormat = "yyyymmdd";
+    private static String timeFormat;
     private SimpleDateFormat mDtFormatter;
     private final ObjectMapper mapper = new ObjectMapper();
     private String[] handledDateFormats = {"yyyMMdd", "yyyy-MM-dd'T'HH:mm:ss", "epoch_secs"};
@@ -30,9 +33,19 @@ public class MultiFieldParitioner extends FieldPartitioner {
 
     @Override
     public void configure(Map<String, Object> config) {
+
         super.configure(config);
         timeField = (String) config.get(HdfsSinkConnectorConfig.PARTITION_TIME_FIELD_NAME_CONFIG);
         timeFormat = (String) config.get(HdfsSinkConnectorConfig.PARTITION_TIME_FIELD_FORMAT_CONFIG);
+        if(timeField == null || timeField== ""){
+            timeField = HdfsSinkConnectorConfig.PARTITION_TIME_FIELD_NAME_DEFAULT;
+        }
+        if(timeFormat == null || timeFormat == ""){
+            timeFormat = HdfsSinkConnectorConfig.PARTITION_TIME_FIELD_FORMAT_DEFAULT;
+        }
+        if(!Arrays.asList(handledDateFormats).contains(timeFormat)){
+            throw new RuntimeException("Unsupported time format " + timeFormat);
+        }
         mDtFormatter = new SimpleDateFormat(timeFormat);
         mDtFormatter.setTimeZone(TimeZone.getTimeZone((String) config.get(HdfsSinkConnectorConfig.TIMEZONE_CONFIG)));
         partitionFields.add(new FieldSchema(fieldName, TypeInfoFactory.stringTypeInfo.toString(), ""));
@@ -57,11 +70,12 @@ public class MultiFieldParitioner extends FieldPartitioner {
         try {
             return fieldName + "=" + getValueFromJsonOrAvroRecord(sinkRecord, fieldName);
         } catch (IOException e) {
-            throw new PartitionException("Error encoding partition.");
+            throw new PartitionException("Error encoding partition.", e);
         }
     }
 
     private String parseTimeStamp(SinkRecord sinkRecord){
+
         String timeStamp = null;
         try{
             Object timeFieldValue = getValueFromJsonOrAvroRecord(sinkRecord, timeField);
@@ -73,7 +87,7 @@ public class MultiFieldParitioner extends FieldPartitioner {
                 timeStamp = mDtFormatter.format(date);
             }
         } catch (Exception e){
-            throw new PartitionException("Error encoding partition.");
+            throw new PartitionException("Error encoding partition.", e);
         }
         return timeStamp;
     }

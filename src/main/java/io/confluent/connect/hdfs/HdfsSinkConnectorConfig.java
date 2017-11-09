@@ -189,8 +189,9 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
   private static final String PARTITIONER_CLASS_DISPLAY = "Partitioner Class";
 
   public static final String PARTITION_TIME_FIELD_NAME_CONFIG = "partition.time.field.name";
+    public static final String PARTITION_TIME_FIELD_NAME_DEFAULT = "time";
     public static final String PARTITION_TIME_FIELD_FORMAT_CONFIG = "partition.time.field.format";
-    public static final String PARTITION_TIME_FIELD_FORMAT_DEFAULT = "YYYMMDD";
+    public static final String PARTITION_TIME_FIELD_FORMAT_DEFAULT = "yyyMMdd";
     public static final String PARTITION_FIELD_NAME_CONFIG = "partition.field.name";
   private static final String PARTITION_FIELD_NAME_DOC =
       "The name of the partitioning field when FieldPartitioner is used.";
@@ -316,7 +317,7 @@ public class HdfsSinkConnectorConfig extends AbstractConfig {
                 Arrays.asList(PARTITION_FIELD_NAME_CONFIG, PARTITION_DURATION_MS_CONFIG, PATH_FORMAT_CONFIG, LOCALE_CONFIG, TIMEZONE_CONFIG))
         .define(PARTITION_FIELD_NAME_CONFIG, Type.STRING, PARTITION_FIELD_NAME_DEFAULT, Importance.MEDIUM, PARTITION_FIELD_NAME_DOC, CONNECTOR_GROUP, 7, Width.MEDIUM,
                 PARTITION_FIELD_NAME_DISPLAY, partitionerClassDependentsRecommender)
-          .define(PARTITION_TIME_FIELD_NAME_CONFIG, Type.STRING, "time", Importance.MEDIUM, "", CONNECTOR_GROUP, 8, Width.MEDIUM,
+          .define(PARTITION_TIME_FIELD_NAME_CONFIG, Type.STRING, PARTITION_TIME_FIELD_NAME_DEFAULT, Importance.MEDIUM, "", CONNECTOR_GROUP, 8, Width.MEDIUM,
               PARTITION_FIELD_NAME_DISPLAY, partitionerClassDependentsRecommender)
           .define(PARTITION_TIME_FIELD_FORMAT_CONFIG, Type.STRING, PARTITION_TIME_FIELD_FORMAT_DEFAULT, Importance.MEDIUM, "", CONNECTOR_GROUP, 8, Width.MEDIUM,
               PARTITION_FIELD_NAME_DISPLAY, partitionerClassDependentsRecommender)

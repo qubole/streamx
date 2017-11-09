@@ -25,27 +25,27 @@
   </property>
   <property>
     <name>fs.s3.awsAccessKeyId</name>
-    <value>$AWS_S3_BUCKET_SAILTHRU_DS_DATA_ACCESS</value>
+    <value>${aws_access_key}</value>
   </property>
   <property>
     <name>fs.s3.awsSecretAccessKey</name>
-    <value>$AWS_S3_BUCKET_SAILTHRU_DS_DATA_SECRET</value>
+    <value>${aws_secret}</value>
   </property>
   <property>
     <name>fs.s3n.awsAccessKeyId</name>
-    <value>$AWS_S3_BUCKET_SAILTHRU_DS_DATA_ACCESS</value>
+    <value>${aws_access_key}</value>
   </property>
   <property>
     <name>fs.s3n.awsSecretAccessKey</name>
-    <value>$AWS_S3_BUCKET_SAILTHRU_DS_DATA_SECRET</value>
+    <value>${aws_secret}</value>
   </property>
   <property>
     <name>fs.s3a.access.key</name>
-    <value>$AWS_S3_BUCKET_SAILTHRU_DS_DATA_ACCESS</value>
+    <value>${aws_access_key}</value>
   </property>
   <property>
     <name>fs.s3a.secret.key</name>
-    <value>$AWS_S3_BUCKET_SAILTHRU_DS_DATA_SECRET</value>
+    <value>${aws_secret}</value>
   </property>
   <property>
     <name>fs.s3.isClusterOnEc2Role</name>

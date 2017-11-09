@@ -19,4 +19,7 @@ if [[ $? -eq 0 ]]; then
   hostname=`hostname`
   export KAFKA_OPTS="-Dcontainer_directory=$hostname"
 fi
+#set aws credentials as system properties
+export KAFKA_OPTS="$KAFKA_OPTS -Daws_access_key=$CONNECT_AWS_ACCESS_KEY -Daws_secret=$CONNECT_AWS_SECRET_KEY"
+
 /usr/bin/connect-distributed $CONNECT_CONF
