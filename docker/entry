@@ -7,9 +7,10 @@ if [ $? -ne 0 ]; then
  exit
 fi
 
-CONNECT_CONF=/usr/local/streamx/config/connect-distributed-override.properties
+CONNECT_DISTRIBUTED_CONF=/usr/local/streamx/config/connect-distributed-override.properties
+CONNECT_STANDALONE_CONF=/usr/local/streamx/config/connect-standalone.properties
+S3_PROPS=/usr/local/streamx/config/quickstart-s3.properties
 
-cat $CONNECT_CONF
 
 # Launch StreamX
 export CLASSPATH=/usr/local/streamx/*
@@ -22,4 +23,12 @@ fi
 #set aws credentials as system properties
 export KAFKA_OPTS="$KAFKA_OPTS -Daws_access_key=$CONNECT_AWS_ACCESS_KEY -Daws_secret=$CONNECT_AWS_SECRET_KEY"
 
-/usr/bin/connect-distributed $CONNECT_CONF
+if [ ! -z "$DISTRIBUTED_MODE" ] ; then
+  echo "Starting kafka connect in distributed mode"
+  cat $CONNECT_DISTRIBUTED_CONF
+  /usr/bin/connect-distributed $CONNECT_DISTRIBUTED_CONF
+else
+  echo "Starting kafka connect in standalone mode"
+  /usr/bin/connect-standalone $CONNECT_STANDALONE_CONF $S3_PROPS
+fi
+
