@@ -4,7 +4,7 @@ _Forked from the awesome [kafka-connect-hdfs](https://github.com/confluentinc/ka
 
 StreamX is a kafka-connect based connector to copy data from Kafka to Object Stores like Amazon s3, Google Cloud Storage and Azure Blob Store. It focusses on reliable and scalable data copying. It can write the data out in different formats (like parquet, so that it can readily be used by analytical tools) and also in different partitioning requirements.
 
-##Features :
+## Features :
 
 StreamX inherits rich set of features from kafka-connect-hdfs. 
  - Support for writing data in Avro and Parquet formats.
@@ -18,7 +18,7 @@ In addition to these, we have made changes to the following to make it work effi
  - Exactly-once guarantee using WAL
  - Support for storing Hive tables in Qubole's hive metastore (coming soon)
  
-##Getting Started:
+## Getting Started:
 
 Pre-req : StreamX is based on Kafka Connect framework, which is part of Kafka project. Kafka Connect is added in Kafka 0.9, hence StreamX can only be used with Kafka version >= 0.9. To download Kafka binaries, check [here](http://kafka.apache.org/downloads.html).
 
@@ -137,7 +137,7 @@ docker run -d -p 8083:8083 --env CONNECT_BOOTSTRAP_SERVERS=public_dns:9092 --env
 
 ```
 
-##Roadmap
+## Roadmap
 - Support other object stores like Google Cloud Storage and Azure Blob Store
 - Currently, data can be written in avro/parquet format. This project will add support for more formats
 - Deal with features related to s3, like small-file consolidation
