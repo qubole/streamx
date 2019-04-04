@@ -1,3 +1,7 @@
+THIS REPO IS ARCHIVED Based on Security issues 
+SEC ticket #SEC-2988
+
+
 # StreamX: Kafka Connect for S3
 
 _Forked from the awesome [kafka-connect-hdfs](https://github.com/confluentinc/kafka-connect-hdfs)_
