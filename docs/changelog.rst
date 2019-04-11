@@ -3,6 +3,29 @@
 Changelog
 =========
 
+Version 3.3.0
+-------------
+
+* `PR-187 <https://github.com/confluentinc/kafka-connect-hdfs/pull/187>`_ - CC-491: Consolidate and simplify unit tests of HDFS connector.
+* `PR-205 <https://github.com/confluentinc/kafka-connect-hdfs/pull/205>`_ - Upgrade avro to 1.8.2.
+
+Version 3.2.2
+-------------
+
+* `PR-194 <https://github.com/confluentinc/kafka-connect-hdfs/pull/194>`_ - Fix HdfsSinkConnector to extend from SinkConnector instead of Connector.
+* `PR-200 <https://github.com/confluentinc/kafka-connect-hdfs/pull/200>`_ - Fix incorrect licensing and webpage info.
+
+Version 3.2.1
+-------------
+No changes
+
+Version 3.2.0
+-------------
+
+* `PR-135 <https://github.com/confluentinc/kafka-connect-hdfs/pull/135>`_ - Fix typos
+* `PR-164 <https://github.com/confluentinc/kafka-connect-hdfs/pull/164>`_ - Issue 136 - Support topic with dots in hive.
+* `PR-170 <https://github.com/confluentinc/kafka-connect-hdfs/pull/170>`_ - MINOR: Upgrade Hadoop version to 2.7.3 and joda-time to 2.9.7
+
 Version 3.1.1
 -------------
 No changes
