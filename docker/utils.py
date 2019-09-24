@@ -5,6 +5,7 @@ def print_help():
   CONNECT_BOOTSTRAP_SERVERS
   CONNECT_AWS_ACCESS_KEY
   CONNECT_AWS_SECRET_KEY
+  CONNECT_CLUSTER_ON_ROLES
   Cmd : docker run -d --env CONNECT_BOOTSTRAP_SERVERS=public_dns:9092 --env CONNECT_AWS_ACCESS_KEY=xxxxx --env CONNECT_AWS_SECRET_KEY=yyyy --env CONNECT_CLUSTER_ON_ROLES=True/False qubole/streamx"""
 
 def check_for_required_configs(confs):
